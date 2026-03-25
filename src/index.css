@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Ant Design: User side (light) ── */
+.ant-input,
+.ant-input-affix-wrapper {
+  @apply bg-lightbg border border-line rounded-[10px] text-navy font-jakarta text-sm transition-all duration-200;
+}
+.ant-input::placeholder { @apply text-mist; }
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  border-color: #1d6ede !important;
+  box-shadow: 0 0 0 3px rgba(29, 110, 222, 0.1) !important;
+  background: #fff !important;
+}
+
+/* ── Ant Design: Admin side (dark) ── */
+.admin-ant .ant-input,
+.admin-ant .ant-input-affix-wrapper {
+  @apply bg-abg3 text-adark font-syne rounded-[10px];
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+.admin-ant .ant-input-affix-wrapper-focused {
+  border-color: #e9a628 !important;
+  box-shadow: 0 0 0 3px rgba(233, 166, 40, 0.12) !important;
+}
+.admin-ant .ant-btn-primary {
+  background: #e9a628 !important;
+  border-color: #e9a628 !important;
+  color: #0b0b0e !important;
+  @apply font-syne font-bold rounded-[10px];
+}
+.admin-ant .ant-btn-primary:hover {
+  background: #ffc85a !important;
+  border-color: #ffc85a !important;
+}
+.admin-ant .ant-modal-content {
+  @apply bg-abg3 rounded-2xl;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+.admin-ant .ant-modal-header { @apply bg-transparent; border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
+.admin-ant .ant-modal-title  { @apply text-adark font-syne; }
+.admin-ant .ant-modal-close  { @apply text-amuted; }
+.admin-ant .ant-select-selector {
+  @apply bg-abg3 text-adark font-syne rounded-[10px];
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+.admin-ant .ant-select-dropdown { @apply bg-abg3; border: 1px solid rgba(255,255,255,0.07) !important; }
+.admin-ant .ant-select-item     { @apply text-adark font-syne; }
+.admin-ant .ant-select-item-option-active,
+.admin-ant .ant-select-item-option-selected { background: rgba(233, 166, 40, 0.12) !important; }
+.admin-ant .ant-select-arrow    { @apply text-amuted; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { @apply bg-lightbg; }
+::-webkit-scrollbar-thumb  { @apply bg-blue/30 rounded; }
+
+.admin-scroll ::-webkit-scrollbar-track { @apply bg-abg2; }
+.admin-scroll ::-webkit-scrollbar-thumb { background: rgba(233, 166, 40, 0.35); border-radius: 4px; }
+
+/* ── Toastify ── */
+.Toastify__toast { @apply font-jakarta rounded-xl; }

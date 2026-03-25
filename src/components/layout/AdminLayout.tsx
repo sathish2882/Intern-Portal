@@ -1,0 +1,185 @@
+import { useState } from 'react'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { useAppDispatch, useAppSelector } from '../../redux/hooks'
+import { logout } from '../../redux/slices/authSlice'
+import { toast } from 'react-toastify'
+
+const NAV_ITEMS = [
+  {
+    to: '/admin/dashboard',
+    label: 'Dashboard',
+    icon: (
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+      </svg>
+    ),
+  },
+  {
+    to: '/admin/send-email',
+    label: 'Send Email',
+    icon: (
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+      </svg>
+    ),
+  },
+  {
+    to: '/admin/customers',
+    label: 'Customers',
+    icon: (
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+      </svg>
+    ),
+  },
+  {
+    to: '/admin/email-history',
+    label: 'Email History',
+    icon: (
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />
+      </svg>
+    ),
+  },
+]
+
+const AdminLayout = () => {
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
+  const { user } = useAppSelector((s) => s.auth)
+  const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  const handleLogout = () => {
+    dispatch(logout())
+    toast.success('Logged out successfully')
+    navigate('/login')
+  }
+
+  const SidebarContent = () => (
+    <>
+      {/* Brand */}
+      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/[0.07]">
+        <span className="text-2xl text-gold flex-shrink-0">💰</span>
+        {!collapsed && (
+          <span className="font-syne font-extrabold text-lg text-adark tracking-wide whitespace-nowrap overflow-hidden">
+            PayMail
+          </span>
+        )}
+      </div>
+
+      {/* Nav */}
+      <nav className="flex flex-col gap-0.5 p-2.5 flex-1">
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            onClick={() => setMobileOpen(false)}
+            title={collapsed ? item.label : undefined}
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 font-syne
+               ${isActive
+                 ? 'bg-golddim text-goldtxt'
+                 : 'text-amuted hover:bg-abg3 hover:text-adark'
+               }
+               ${collapsed ? 'justify-center' : ''}`
+            }
+          >
+            <span className="flex-shrink-0 w-5 text-center">{item.icon}</span>
+            {!collapsed && <span>{item.label}</span>}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div className="border-t border-white/[0.07] p-3 space-y-2">
+        {!collapsed && user && (
+          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.04]">
+            <div className="w-8 h-8 rounded-full bg-asuccess flex items-center justify-center text-xs font-bold text-abg flex-shrink-0 shadow-[0_0_6px_#3dba78]">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-adark font-syne truncate">{user.name}</p>
+              <p className="text-xs text-amuted font-mono truncate">{user.email}</p>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          title={collapsed ? 'Sign Out' : undefined}
+          className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-adanger hover:bg-adanger/10 transition-all font-syne ${collapsed ? 'justify-center' : ''}`}
+        >
+          <svg className="flex-shrink-0" width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+          </svg>
+          {!collapsed && 'Sign Out'}
+        </button>
+      </div>
+    </>
+  )
+
+  return (
+    <div className="flex min-h-screen bg-abg font-syne text-adark admin-scroll">
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Desktop Sidebar */}
+      <aside
+        className={`hidden lg:flex flex-col flex-shrink-0 bg-abg2 border-r border-white/[0.07] min-h-screen transition-all duration-300 ${collapsed ? 'w-16' : 'w-56'}`}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 h-full w-64 bg-abg2 border-r border-white/[0.07] z-50 flex flex-col transition-transform duration-300 lg:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* Main */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Topbar */}
+        <header className="h-14 flex items-center justify-between px-4 lg:px-6 bg-abg2 border-b border-white/[0.07] flex-shrink-0">
+          <div className="flex items-center gap-3">
+            {/* Mobile menu toggle */}
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="lg:hidden p-2 rounded-lg text-amuted hover:bg-abg3 transition-colors"
+            >
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+              </svg>
+            </button>
+            {/* Desktop collapse */}
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden lg:flex p-2 rounded-lg text-amuted hover:bg-abg3 transition-colors"
+            >
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-asuccess shadow-[0_0_6px_#3dba78]" />
+            <span className="text-xs text-amuted font-mono">Admin Panel</span>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 p-4 lg:p-7 overflow-auto bg-abg">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  )
+}
+
+export default AdminLayout
