@@ -8,8 +8,8 @@ const LoginScreen = () => {
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex flex-col items-center justify-center font-sans px-4">
 
-      {/* Avatar */}
-      <div className="w-[100px] h-[100px] rounded-full bg-[#7dd3fc] flex items-center justify-center text-4xl mb-4">
+
+      <div className="w-[100px] h-[100px] rounded-full bg-[#7dd3fc] flex items-center justify-center text-4xl mb-[16px]">
         🐻
       </div>
 
