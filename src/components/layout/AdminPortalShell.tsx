@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { toast } from "react-toastify";
 
 const user = {
@@ -26,7 +25,6 @@ const AdminPortalShell = ({
   subtitle,
   children,
 }: AdminPortalShellProps) => {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const handleLogout = () => {

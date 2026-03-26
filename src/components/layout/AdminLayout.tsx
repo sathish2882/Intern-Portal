@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { useAppDispatch,} from '../../redux/hooks'
 import { toast } from 'react-toastify'
 import {MailOutlined,} from "@ant-design/icons"
 import { IoTimeOutline } from "react-icons/io5";
@@ -56,7 +55,6 @@ const NAV_ITEMS = [
 ]
 
 const AdminLayout = () => {
-  const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)

@@ -7,13 +7,6 @@ import {
 } from '../../redux/slices/testSlice'
 import { TEST_CONFIG } from '../../utils/testData'
 import { TestResult } from '../../types'
-
-
-const user = {
-  name: "Sathish",
-  email: "sathish19222978sk@gmail.com"
-}
-
 const TestPage = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -97,8 +90,6 @@ const TestPage = () => {
   const isLow = timeLeft < 300
   const q = questions[currentQuestion]
   const isLast = currentQuestion === questions.length - 1
-  const initials = user?.name?.charAt(0).toUpperCase() ?? 'U'
-  const firstName = user?.name?.split(' ')[0] ?? 'User'
 
   return (
     <div className="min-h-screen flex flex-col bg-lightbg font-jakarta text-navy">

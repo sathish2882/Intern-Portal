@@ -3,13 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../redux/hooks'
 import { startTest } from '../../redux/slices/testSlice'
 import { TEST_CONFIG } from '../../utils/testData'
-
-
-const user = {
-  name: "Sathish",
-  email: "sathish19222978sk@gmail.com"
-}
-
 const ResultPage = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
@@ -23,8 +16,6 @@ const ResultPage = () => {
   const sectionBreakdown = config.sectionBreakdown
   const pct       = Math.round((result.correct / result.total) * 100)
   const passed    = result.passed
-  const initials  = user?.name?.charAt(0).toUpperCase() ?? 'U'
-  const firstName = user?.name?.split(' ')[0] ?? 'User'
 
   // Section-wise breakdown
   const sectionScores = sectionBreakdown.map((sec, si) => {

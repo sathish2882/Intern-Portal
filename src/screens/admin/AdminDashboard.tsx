@@ -1,11 +1,3 @@
-import { useAppSelector } from '../../redux/hooks'
-
-
-const user = {
-  name: "Sathish",
-  email: "sathish19222978sk@gmail.com"
-}
-
 const RECENT_EMAILS = [
   { recipient: 'Arjun Sharma',  email: 'arjun@example.com',   type: 'Invoice',      amount: '₹12,500', date: '25 Mar 2026', status: 'Sent'    },
   { recipient: 'Priya Menon',   email: 'priya@example.com',   type: 'Reminder',     amount: '₹8,200',  date: '24 Mar 2026', status: 'Sent'    },

@@ -1,13 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "antd";
-import { useAppDispatch } from "../../redux/hooks";
-import { AuthUser } from "../../types";
 
 const OtpScreen = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const email = state?.email ?? "";
 
   const [otp, setOtp] = useState("");
@@ -28,26 +25,28 @@ const OtpScreen = () => {
     return () => clearInterval(interval);
   }, [timer]);
 
-  const formatNameFromEmail = (value: string) => {
-    const localPart = value.split("@")[0] || "user";
-    return localPart
-      .split(/[._-]/)
-      .filter(Boolean)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
+  const getUserType = (value: string): 1 | 2 | 3 => {
+    const emailValue = value.toLowerCase();
+
+    if (emailValue.includes("admin")) return 1;
+    if (emailValue.includes("intern")) return 3;
+    return 2;
   };
 
   const handleVerify = () => {
-    const isAdmin = email.toLowerCase().includes("admin");
-    const mockUser: AuthUser = {
-      id: String(Date.now()),
-      name: formatNameFromEmail(email) || (isAdmin ? "Admin User" : "Portal User"),
-      email,
-      user_type: isAdmin ? "admin" : "user",
-      token: `mock-token-${Date.now()}`,
-    };
+    const userType = getUserType(email);
 
-    navigate(isAdmin ? "/admin/portals" : "/user/dashboard", { replace: true });
+    if (userType === 1) {
+      navigate("/admin/portals", { replace: true });
+      return;
+    }
+
+    if (userType === 3) {
+      navigate("/intern/dashboard", { replace: true });
+      return;
+    }
+
+    navigate("/user/dashboard", { replace: true });
   };
 
   const handleResend = () => {
