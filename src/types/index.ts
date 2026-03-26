@@ -101,3 +101,12 @@ export interface InternStep3 {
   linkedIn: string
   github: string
 }
+
+
+export interface SignupPayload {
+  username: string;
+  email: string;
+  password: string;
+  type: number;
+  batch: number;
+}

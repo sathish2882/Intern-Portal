@@ -12,10 +12,42 @@ interface FormValues {
   password: string;
 }
 
+interface LoginResponse {
+  token?: string;
+  access_token?: string;
+  user_type?: number | string;
+  type?: number | string;
+  data?: {
+    token?: string;
+    access_token?: string;
+    user_type?: number | string;
+    type?: number | string;
+  };
+}
+
 const getRedirectByUserType = (userType: number) => {
   if (userType === 1) return "/admin/portals";
   if (userType === 2) return "/intern/dashboard";
   return "/user/dashboard";
+};
+
+const getAuthData = (responseData: LoginResponse) => {
+  const token =
+    responseData?.token ??
+    responseData?.access_token ??
+    responseData?.data?.token ??
+    responseData?.data?.access_token;
+
+  const rawUserType =
+    responseData?.user_type ??
+    responseData?.type ??
+    responseData?.data?.user_type ??
+    responseData?.data?.type;
+
+  return {
+    token,
+    userType: Number(rawUserType),
+  };
 };
 
 const LoginScreen = () => {
@@ -31,43 +63,56 @@ const LoginScreen = () => {
     try {
       setLoading(true);
 
-      const formdata = new FormData();
-      formdata.append("email", values.email);
-      formdata.append("password", values.password);
+      const formData = new FormData();
+      formData.append("email", values.email);
+      formData.append("password", values.password);
 
-      const response = await loginApi(formdata);
-      const token = response?.data?.token;
-      const userType = Number(
-        response?.data?.user_type ?? response?.data?.data?.user_type ?? 2,
-      );
+      const response = await loginApi(formData);
+      const { token, userType } = getAuthData(response?.data ?? {});
 
-      if (token) {
+      if (token && !Number.isNaN(userType)) {
         setToken(token);
         setUser(String(userType));
+        toast.success("Login successful");
         navigate(getRedirectByUserType(userType), { replace: true });
         return;
       }
 
       toast.error("Invalid login response");
     } catch (error: any) {
-      const message = error?.response?.data?.detail || "Something went wrong";
+      const message =
+        error?.response?.data?.detail || "Something went wrong";
       toast.error(message);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#f1f5f9] flex flex-col items-center justify-center font-body px-4">
-      <div>
-        <img src={image} alt="placeholder-img" className="h-44 w-44" />
-      </div>
+  // 🔥 Production Input Wrapper
+  const inputWrapperClass = (hasError: boolean) => `
+    flex items-center rounded-[12px] bg-white overflow-hidden
+    border transition-all duration-200 ease-in-out
 
-      <p className="text-[11px] tracking-[2px] text-gray-400 mb-6 font-body">
-        INTERNSHIP PORTAL
+    ${
+      hasError
+        ? "border-red-400 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-200"
+        : "border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200"
+    }
+
+    hover:border-gray-400 focus-within:shadow-sm
+  `;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] flex flex-col items-center justify-center px-4 font-sans">
+
+      {/* Logo */}
+      <img src={image} alt="logo" className="h-40 w-40 mb-4" />
+
+      <p className="text-lg tracking-[2px] text-[blue] mb-6">
+        M-Guru Portal
       </p>
 
-      <p className="text-sm text-gray-500 mb-3 font-body">
+      <p className="text-md text-gray-700 mb-4">
         Enter your registered credentials
       </p>
 
@@ -77,88 +122,89 @@ const LoginScreen = () => {
         onSubmit={handleSubmit}
       >
         {({ values, handleChange, errors, touched }) => (
-          <Form className="w-full max-w-[360px] space-y-3">
-            <div
-              className={`flex items-center border-2 rounded-[12px] bg-white overflow-hidden transition-all duration-200
-              focus-within:border-blue-500 focus-within:shadow-[0_0_0_2px_rgba(59,130,246,0.2)]
-              ${
-                errors.email && touched.email
-                  ? "border-red-400 focus-within:border-red-500 focus-within:shadow-[0_0_0_2px_rgba(248,113,113,0.2)]"
-                  : "border-[#3b82f6]"
-              }`}
-            >
-              <input
-                name="email"
-                value={values.email}
-                onChange={handleChange}
-                placeholder="Email address"
-                className="flex-1 px-4 py-3 text-sm outline-none font-body bg-transparent"
-              />
+          <Form className="w-full max-w-[360px] space-y-4">
+
+            {/* EMAIL */}
+            <div>
+              <div className={inputWrapperClass(!!(errors.email && touched.email))}>
+                <input
+                  name="email"
+                  value={values.email}
+                  onChange={handleChange}
+                  placeholder="Email address"
+                  className="
+                    flex-1 px-4 py-3 text-sm bg-transparent
+                    outline-none border-none
+                    placeholder:text-gray-400
+                  "
+                />
+              </div>
+
+              {errors.email && touched.email && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.email}
+                </p>
+              )}
             </div>
 
-            {errors.email && touched.email && (
-              <p className="text-red-500 text-xs mt-1 font-body">
-                {errors.email}
-              </p>
-            )}
+            {/* PASSWORD */}
+            <div>
+              <div className={inputWrapperClass(!!(errors.password && touched.password))}>
+                <input
+                  name="password"
+                  type="password"
+                  value={values.password}
+                  onChange={handleChange}
+                  placeholder="Password"
+                  className="
+                    flex-1 px-4 py-3 text-sm bg-transparent
+                    outline-none border-none
+                    placeholder:text-gray-400
+                  "
+                />
 
-            <div
-              className={`flex items-center border-2 rounded-[12px] bg-white overflow-hidden transition-all duration-200
-              focus-within:border-blue-500 focus-within:shadow-[0_0_0_2px_rgba(59,130,246,0.2)]
-              ${
-                errors.password && touched.password
-                  ? "border-red-400 focus-within:border-red-500 focus-within:shadow-[0_0_0_2px_rgba(248,113,113,0.2)]"
-                  : "border-[#3b82f6]"
-              }`}
-            >
-              <input
-                name="password"
-                type="password"
-                value={values.password}
-                onChange={handleChange}
-                placeholder="Password"
-                className="flex-1 px-4 py-3 text-sm outline-none font-body bg-transparent"
-              />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="
+                    px-4 py-3 text-blue-500 text-xl
+                    flex items-center justify-center
+                    transition-all duration-200
+                    hover:scale-110 active:scale-95
+                  "
+                >
+                  {loading ? (
+                    <div className="loader-btn" />
+                  ) : (
+                    "→"
+                  )}
+                </button>
+              </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-3 text-[#3b82f6] text-xl flex items-center justify-center transition hover:scale-110"
-              >
-                {loading ? <div className="loader-btn" /> : "→"}
-              </button>
+              {errors.password && touched.password && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.password}
+                </p>
+              )}
             </div>
 
-            {errors.password && touched.password && (
-              <p className="text-red-500 text-xs mt-1 font-body">
-                {errors.password}
-              </p>
-            )}
           </Form>
         )}
       </Formik>
 
+      {/* Divider */}
       <div className="flex items-center gap-4 my-6 w-full max-w-[360px]">
         <div className="flex-1 h-[1px] bg-gray-300" />
-        <span className="text-xs text-gray-400 font-body">OR</span>
+        <span className="text-xs text-gray-400">OR</span>
         <div className="flex-1 h-[1px] bg-gray-300" />
       </div>
 
+      {/* Back */}
       <p
         onClick={() => navigate("/")}
-        className="text-sm text-gray-500 cursor-pointer mb-2 hover:underline font-body"
+        className="text-sm text-gray-500 cursor-pointer hover:underline"
       >
         ← Back to Home
-      </p>
-
-      <p className="text-sm text-gray-500 font-body">
-        Don't have an account?{" "}
-        <span
-          onClick={() => navigate("/register")}
-          className="text-blue-600 cursor-pointer font-medium hover:underline"
-        >
-          Register Now
-        </span>
       </p>
     </div>
   );

@@ -3,7 +3,7 @@ import { createHashRouter, Navigate } from "react-router-dom";
 // Auth
 import WelcomeScreen from "../screens/auth/WelcomeScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
-import RegisterScreen from "../screens/auth/RegisterScreen";
+import AddUser from "../screens/auth/AddUser";
 import OtpScreen from "../screens/auth/OtpScreen";
 
 // Admin
@@ -30,7 +30,8 @@ import ResultPage from "../screens/user/ResultPage";
 export const router = createHashRouter([
   { path: "/", element: <WelcomeScreen /> },
   { path: "/login", element: <LoginScreen /> },
-  { path: "/register", element: <RegisterScreen /> },
+  { path: "/register", element: <AddUser /> },
+  { path: "/add-user", element: <AddUser /> },
   { path: "/otp", element: <OtpScreen /> },
 
   {
