@@ -61,7 +61,7 @@ export const router = createHashRouter([
           { index: true, element: <Navigate to="dashboard" replace /> },
           { path: "dashboard", element: <AdminDashboard /> },
           { path: "send-email", element: <SendEmail /> },
-          { path: "customers", element: <Customers /> },
+          { path: "users", element: <Customers /> },
           { path: "email-history", element: <EmailHistory /> },
         ],
       },

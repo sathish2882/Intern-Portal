@@ -30,10 +30,10 @@ interface AdminInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 const AdminInput = ({ label, ...props }: AdminInputProps) => (
   <div>
-    <label className="block text-sm text-adark  uppercase tracking-[0.06em] mb-1.5">{label}</label>
+    <label className="block text-xs text-adark  uppercase tracking-[0.06em] mb-1.5">{label}</label>
     <input
       {...props}
-      className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-base text-amuted  outline-none transition-colors focus:border-gold placeholder:text-amuted2"
+      className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-xs text-amuted  outline-none transition-colors focus:border-gold placeholder:text-amuted2"
     />
   </div>
 )
@@ -71,7 +71,7 @@ const SendEmail = () => {
   return (
     <div className="text-adark">
       <h1 className="text-2xl font-extrabold text-adark mb-1">Send Email</h1>
-      <p className="text-lg text-amuted mb-6">Compose and send payment emails to your customers.</p>
+      <p className="text-sm text-amuted mb-6">Compose and send payment emails to your customers.</p>
 
       {/* Type tabs */}
       <div className="flex flex-wrap gap-5 mb-6">
@@ -95,7 +95,7 @@ const SendEmail = () => {
 
           {/* Customer selector */}
           <div className="mb-4">
-            <label className="block text-sm text-adark uppercase tracking-[0.06em] mb-1.5">
+            <label className="block text-xs text-adark uppercase tracking-[0.06em] mb-1.5">
               Select Customer
             </label>
             <select
@@ -123,7 +123,7 @@ const SendEmail = () => {
           </div>
 
           <div className="mb-5">
-            <label className="block text-sm text-adark uppercase tracking-[0.06em] mb-1.5">
+            <label className="block text-xs text-adark uppercase tracking-[0.06em] mb-1.5">
               Custom Note (optional)
             </label>
             <textarea
@@ -131,7 +131,7 @@ const SendEmail = () => {
               placeholder="Add any extra information..."
               value={form.note}
               onChange={(e) => set('note', e.target.value)}
-              className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-base text-amuted  outline-none focus:border-gold resize-y placeholder:text-amuted2"
+              className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-xs text-amuted  outline-none focus:border-gold resize-y placeholder:text-amuted2"
             />
           </div>
 
@@ -149,19 +149,19 @@ const SendEmail = () => {
           <div className="bg-abg3 border border-white/[0.07] rounded-xl p-4">
             {/* Email header */}
             <div className="flex items-center gap-3 pb-3 mb-3 border-b border-white/[0.07]">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold text-abg ${TYPE_ACTIVE[emailType].split(' ')[0]}`}>
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold text-abg ${TYPE_ACTIVE[emailType].split(' ')[0]}`}>
                 💰
               </div>
               <div>
-                <p className="text-md font-bold text-adark">M-Guru Payments</p>
-                <p className="text-md text-amuted font-mono">payments@mguru.com</p>
+                <p className="text-sm font-bold text-adark">M-Guru Payments</p>
+                <p className="text-sm text-amuted font-mono">payments@mguru.com</p>
               </div>
             </div>
-            <p className="text-base text-amuted mb-1">
+            <p className="text-xs text-amuted mb-1">
               To: <span className="text-adark">{form.email || 'customer@example.com'}</span>
             </p>
             <p className="text-sm font-bold text-adark mb-3">{previewTitle[emailType]}</p>
-            <p className="text-md text-amuted mb-3">
+            <p className="text-xs text-amuted mb-3">
               Dear <span className="text-adark">{form.name || 'Customer'}</span>,
             </p>
             {/* Amount box */}

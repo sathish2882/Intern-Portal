@@ -6,7 +6,6 @@ import { toast } from 'react-toastify'
 
 interface AdminPortalShellProps {
   title: string
-  subtitle: string
   children: ReactNode
 }
 
@@ -17,7 +16,7 @@ const NAV_ITEMS = [
   { to: '/admin/exam-dashboard', label: 'Exam Dashboard' },
 ]
 
-const AdminPortalShell = ({ title, subtitle, children }: AdminPortalShellProps) => {
+const AdminPortalShell = ({ title,children }: AdminPortalShellProps) => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { user } = useAppSelector((s) => s.auth)
@@ -29,13 +28,11 @@ const AdminPortalShell = ({ title, subtitle, children }: AdminPortalShellProps) 
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white">
+    <div className="min-h-screen bg-black text-white">
       <header className="border-b border-white/10 bg-[#111827]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Admin Portal</p>
             <h1 className="text-2xl font-extrabold tracking-tight mt-1">{title}</h1>
-            <p className="text-sm text-slate-300 mt-1">{subtitle}</p>
           </div>
 
           <div className="flex items-center gap-3">

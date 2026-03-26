@@ -33,7 +33,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    to: '/admin/payment/customers',
+    to: '/admin/payment/users',
     label: 'Users',
     icon: (
       <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
