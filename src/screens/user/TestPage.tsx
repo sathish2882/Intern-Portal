@@ -5,15 +5,17 @@ import {
   selectAnswer, goToQuestion, nextQuestion,
   prevQuestion, tickTimer, submitTest, resetTest,
 } from '../../redux/slices/testSlice'
-import { APTITUDE_TEST } from '../../utils/testData'
+import { TEST_CONFIG } from '../../utils/testData'
 import { TestResult } from '../../types'
 
 const TestPage = () => {
-  const dispatch  = useAppDispatch()
-  const navigate  = useNavigate()
-  const { user }  = useAppSelector((s) => s.auth)
-  const { currentQuestion, answers, testStarted, timeLeft } = useAppSelector((s) => s.test)
-  const questions = APTITUDE_TEST.questions
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
+  const { user } = useAppSelector((s) => s.auth)
+  const { activeTestType, currentQuestion, answers, testStarted, timeLeft } = useAppSelector((s) => s.test)
+  const activeTest = TEST_CONFIG[activeTestType].data
+  const durationSeconds = TEST_CONFIG[activeTestType].durationSeconds
+  const questions = activeTest.questions
 
   const handleSubmit = useCallback(() => {
     let correct = 0, wrong = 0, skipped = 0
@@ -22,18 +24,19 @@ const TestPage = () => {
       else if (ans === questions[i].ans) correct++
       else wrong++
     })
-    const elapsed = APTITUDE_TEST.total * 45 - timeLeft
+    const elapsed = durationSeconds - timeLeft
     const m = Math.floor(Math.abs(elapsed) / 60).toString().padStart(2, '0')
     const s = (Math.abs(elapsed) % 60).toString().padStart(2, '0')
     const result: TestResult = {
+      testType: activeTestType,
       correct, wrong, skipped,
       total: questions.length,
-      passed: correct >= APTITUDE_TEST.pass,
+      passed: correct >= activeTest.pass,
       timeTaken: `${m}:${s}`,
     }
     dispatch(submitTest(result))
     navigate('/user/result')
-  }, [answers, dispatch, navigate, questions, timeLeft])
+  }, [activeTest.pass, activeTestType, answers, dispatch, durationSeconds, navigate, questions, timeLeft])
 
   useEffect(() => {
     if (!testStarted) { navigate('/user/dashboard'); return }
@@ -57,11 +60,11 @@ const TestPage = () => {
   const fmt = (sec: number) =>
     `${Math.floor(sec / 60).toString().padStart(2, '0')}:${(sec % 60).toString().padStart(2, '0')}`
 
-  const answered  = answers.filter((a) => a !== null).length
-  const isLow     = timeLeft < 300
-  const q         = questions[currentQuestion]
-  const isLast    = currentQuestion === questions.length - 1
-  const initials  = user?.name?.charAt(0).toUpperCase() ?? 'U'
+  const answered = answers.filter((a) => a !== null).length
+  const isLow = timeLeft < 300
+  const q = questions[currentQuestion]
+  const isLast = currentQuestion === questions.length - 1
+  const initials = user?.name?.charAt(0).toUpperCase() ?? 'U'
   const firstName = user?.name?.split(' ')[0] ?? 'User'
 
   return (
@@ -73,7 +76,7 @@ const TestPage = () => {
           <div className="w-[34px] h-[34px] bg-blue rounded-lg flex items-center justify-center text-base">🎯</div>
           <span className="text-[17px] font-extrabold text-navy hidden sm:block">Aptitude Portal</span>
         </div>
-        <span className="text-[13px] text-slate font-mono hidden md:block">{APTITUDE_TEST.title}</span>
+        <span className="text-[13px] text-slate font-mono hidden md:block">{activeTest.title}</span>
         <div className="flex items-center gap-2 lg:gap-3">
           <div className={`flex items-center gap-2 px-3 py-2 border rounded-[9px] font-mono text-[18px] font-bold
             ${isLow ? 'border-danger text-danger animate-blink' : 'border-line text-navy'}`}>

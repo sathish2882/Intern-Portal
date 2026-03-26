@@ -29,7 +29,7 @@ const LoginScreen = () => {
 
       setTimeout(() => {
         navigate("/otp", { state: { email: values.email } });
-        toast.success("OTP sent to your email 📩");
+        toast.success("OTP sent to your email");
       }, 800);
     } catch (err) {
       toast.error("Something went wrong");
