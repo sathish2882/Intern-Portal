@@ -1,0 +1,86 @@
+import { ReactNode } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAppDispatch, useAppSelector } from '../../redux/hooks'
+import { logout } from '../../redux/slices/authSlice'
+import { toast } from 'react-toastify'
+
+interface AdminPortalShellProps {
+  title: string
+  subtitle: string
+  children: ReactNode
+}
+
+const NAV_ITEMS = [
+  { to: '/admin/portals', label: 'Portals' },
+  { to: '/admin/user-dashboard', label: 'User Dashboard' },
+  { to: '/admin/attendance-dashboard', label: 'Attendance Dashboard' },
+  { to: '/admin/exam-dashboard', label: 'Exam Dashboard' },
+]
+
+const AdminPortalShell = ({ title, subtitle, children }: AdminPortalShellProps) => {
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
+  const { user } = useAppSelector((s) => s.auth)
+
+  const handleLogout = () => {
+    dispatch(logout())
+    toast.success('Logged out successfully')
+    navigate('/login')
+  }
+
+  return (
+    <div className="min-h-screen bg-[#0f172a] text-white">
+      <header className="border-b border-white/10 bg-[#111827]">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Admin Portal</p>
+            <h1 className="text-2xl font-extrabold tracking-tight mt-1">{title}</h1>
+            <p className="text-sm text-slate-300 mt-1">{subtitle}</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 bg-white/5">
+              <div className="w-8 h-8 rounded-full bg-sky-500 text-slate-950 flex items-center justify-center text-sm font-bold">
+                {user?.name?.charAt(0).toUpperCase() ?? 'A'}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">{user?.name ?? 'Admin'}</p>
+                <p className="text-xs text-slate-400 truncate">{user?.email ?? 'admin@example.com'}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 rounded-xl border border-red-400/30 text-red-300 hover:bg-red-500/10 transition-colors text-sm font-semibold"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-6">
+        <nav className="flex flex-wrap gap-2 mb-6">
+          {NAV_ITEMS.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                  isActive
+                    ? 'bg-sky-500 text-slate-950'
+                    : 'bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10'
+                }`
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        {children}
+      </div>
+    </div>
+  )
+}
+
+export default AdminPortalShell

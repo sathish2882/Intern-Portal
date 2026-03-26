@@ -1,17 +1,22 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "antd";
+import { useAppDispatch } from "../../redux/hooks";
+import { loginSuccess } from "../../redux/slices/authSlice";
+import { AuthUser } from "../../types";
 
 const OtpScreen = () => {
   const { state } = useLocation();
-  const email = state?.email;
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const email = state?.email ?? "";
 
   const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
 
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval>;
 
     if (timer > 0) {
       interval = setInterval(() => {
@@ -24,9 +29,27 @@ const OtpScreen = () => {
     return () => clearInterval(interval);
   }, [timer]);
 
+  const formatNameFromEmail = (value: string) => {
+    const localPart = value.split("@")[0] || "user";
+    return localPart
+      .split(/[._-]/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  };
+
   const handleVerify = () => {
-    console.log("OTP:", otp);
-    alert("OTP Verified (Mock)");
+    const isAdmin = email.toLowerCase().includes("admin");
+    const mockUser: AuthUser = {
+      id: String(Date.now()),
+      name: formatNameFromEmail(email) || (isAdmin ? "Admin User" : "Portal User"),
+      email,
+      user_type: isAdmin ? "admin" : "user",
+      token: `mock-token-${Date.now()}`,
+    };
+
+    dispatch(loginSuccess(mockUser));
+    navigate(isAdmin ? "/admin/portals" : "/user/dashboard", { replace: true });
   };
 
   const handleResend = () => {
@@ -46,16 +69,13 @@ const OtpScreen = () => {
       className="min-h-screen flex items-center justify-center 
     bg-gradient-to-br from-blue-50 to-indigo-100 px-4 font-body"
     >
-      {/* CARD */}
       <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-lg">
-        {/* ICON */}
         <div className="flex justify-center mb-4">
           <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-xl">
             🔐
           </div>
         </div>
 
-        {/* TITLE */}
         <h2 className="text-xl font-heading font-semibold text-center mb-2 text-gray-800">
           Verify OTP
         </h2>
@@ -65,7 +85,6 @@ const OtpScreen = () => {
           <span className="text-blue-600 font-medium">{email}</span>
         </p>
 
-        {/* INPUT */}
         <input
           value={otp}
           onChange={(e) => setOtp(e.target.value)}
@@ -77,7 +96,6 @@ const OtpScreen = () => {
           transition font-body"
         />
 
-        {/* BUTTON */}
         <Button
           type="primary"
           block
@@ -89,7 +107,6 @@ const OtpScreen = () => {
           Verify OTP
         </Button>
 
-        {/* TIMER / RESEND */}
         {!canResend ? (
           <p className="text-center text-sm text-gray-500">
             Resend OTP in{" "}

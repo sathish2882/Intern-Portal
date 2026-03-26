@@ -6,8 +6,17 @@ import { toast } from 'react-toastify'
 
 const NAV_ITEMS = [
   {
-    to: '/admin/dashboard',
-    label: 'Dashboard',
+    to: '/admin/portals',
+    label: 'Dashboards',
+    icon: (
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M4 5h7v6H4V5zm9 0h7v4h-7V5zM4 13h7v6H4v-6zm9-2h7v8h-7v-8z" />
+      </svg>
+    ),
+  },
+  {
+    to: '/admin/payment/dashboard',
+    label: 'Main Dashboard',
     icon: (
       <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
         <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
@@ -15,7 +24,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    to: '/admin/send-email',
+    to: '/admin/payment/send-email',
     label: 'Send Email',
     icon: (
       <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
@@ -24,7 +33,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    to: '/admin/customers',
+    to: '/admin/payment/customers',
     label: 'Customers',
     icon: (
       <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
@@ -33,7 +42,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    to: '/admin/email-history',
+    to: '/admin/payment/email-history',
     label: 'Email History',
     icon: (
       <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
@@ -41,6 +50,7 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  
 ]
 
 const AdminLayout = () => {
