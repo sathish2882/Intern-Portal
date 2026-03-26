@@ -8,10 +8,16 @@ import {
 import { TEST_CONFIG } from '../../utils/testData'
 import { TestResult } from '../../types'
 
+
+const user = {
+  name: "Sathish",
+  email: "sathish19222978sk@gmail.com"
+}
+
 const TestPage = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
-  const { user } = useAppSelector((s) => s.auth)
+
   const { activeTestType, currentQuestion, answers, testStarted, timeLeft } = useAppSelector((s) => s.test)
   const activeTest = TEST_CONFIG[activeTestType].data
   const durationSeconds = TEST_CONFIG[activeTestType].durationSeconds
@@ -72,10 +78,7 @@ const TestPage = () => {
 
       {/* Topbar */}
       <nav className="bg-white border-b border-line flex items-center justify-between px-4 lg:px-8 h-[60px] sticky top-0 z-50">
-        <div className="flex items-center gap-2.5">
-          <div className="w-[34px] h-[34px] bg-blue rounded-lg flex items-center justify-center text-base">🎯</div>
-          <span className="text-[17px] font-extrabold text-navy hidden sm:block">Aptitude Portal</span>
-        </div>
+        
         <span className="text-[13px] text-slate font-mono hidden md:block">{activeTest.title}</span>
         <div className="flex items-center gap-2 lg:gap-3">
           <div className={`flex items-center gap-2 px-3 py-2 border rounded-[9px] font-mono text-[18px] font-bold
@@ -83,12 +86,7 @@ const TestPage = () => {
             <span>⏱</span>
             <span>{fmt(timeLeft)}</span>
           </div>
-          <div className="hidden sm:flex items-center gap-2 py-[5px] pl-[5px] pr-3 border border-line rounded-[9px]">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue to-[#6b49e8] flex items-center justify-center text-[13px] font-extrabold text-white">
-              {initials}
-            </div>
-            <span className="text-[13px] font-bold text-navy">{firstName}</span>
-          </div>
+          
         </div>
       </nav>
 

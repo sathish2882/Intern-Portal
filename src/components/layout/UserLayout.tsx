@@ -1,15 +1,20 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../redux/hooks'
-import { logout } from '../../redux/slices/authSlice'
 import { toast } from 'react-toastify'
+
+
+const user = {
+  name: "Sathish",
+  email: "sathish19222978sk@gmail.com"
+}
 
 const UserLayout = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
-  const { user } = useAppSelector((s) => s.auth)
+
 
   const handleLogout = () => {
-    dispatch(logout())
+
     toast.success('Logged out successfully')
     navigate('/login')
   }

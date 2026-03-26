@@ -4,6 +4,12 @@ import { startTest } from '../../redux/slices/testSlice'
 import { TEST_CONFIG } from '../../utils/testData'
 import { TestType } from '../../types'
 
+
+const user = {
+  name: "Sathish",
+  email: "sathish19222978sk@gmail.com"
+}
+
 const ASSESSMENTS: { id: TestType; name: string; meta: string; icon: string; active: boolean }[] = [
   {
     id: 'aptitude',
@@ -24,7 +30,7 @@ const ASSESSMENTS: { id: TestType; name: string; meta: string; icon: string; act
 const UserDashboard = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const { user } = useAppSelector((s) => s.auth)
+
   const { result, resultsByType } = useAppSelector((s) => s.test)
 
   const firstName = user?.name?.split(' ')[0] ?? 'Intern'

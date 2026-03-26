@@ -1,5 +1,4 @@
 import { createHashRouter, Navigate } from "react-router-dom";
-import { store } from "../redux/store";
 
 // Route Guard
 //import ProtectedRoute from "../components/ui/ProtectedRoute";
@@ -29,14 +28,6 @@ import UserDashboard from "../screens/user/UserDashboard";
 import TestPage from "../screens/user/TestPage";
 import ResultPage from "../screens/user/ResultPage";
 
-const getDefaultRoute = () => {
-  const { user } = store.getState().auth;
-
-  if (!user) return "/login";
-  return user.user_type === "admin"
-    ? "/admin/portals"
-    : "/user/dashboard";
-};
 
 export const router = createHashRouter([
   // 🌍 PUBLIC
@@ -87,6 +78,6 @@ export const router = createHashRouter([
   // 🔁 FALLBACK
   {
     path: "*",
-    element: <Navigate to={getDefaultRoute()} replace />,
+    element: <Navigate to="/" replace />,
   },
 ]);

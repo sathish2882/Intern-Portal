@@ -2,7 +2,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "antd";
 import { useAppDispatch } from "../../redux/hooks";
-import { loginSuccess } from "../../redux/slices/authSlice";
 import { AuthUser } from "../../types";
 
 const OtpScreen = () => {
@@ -48,7 +47,6 @@ const OtpScreen = () => {
       token: `mock-token-${Date.now()}`,
     };
 
-    dispatch(loginSuccess(mockUser));
     navigate(isAdmin ? "/admin/portals" : "/user/dashboard", { replace: true });
   };
 

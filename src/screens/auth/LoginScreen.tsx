@@ -3,6 +3,8 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { loginApi } from "../../services/authApi";
+import { setToken } from "../../utils/authCookies";
 
 interface FormValues {
   email: string;
@@ -24,8 +26,14 @@ const LoginScreen = () => {
 
       const formdata = new FormData();
       formdata.append("email", values.email);
-
-      // 👉 later connect API here
+      
+      const response = await loginApi(formdata)
+      if(response.data.token){
+        setToken(response.data.token)
+        
+        navigate("/dashboard")
+      }
+      
     } catch (error: any) {
       const message = error?.response?.data?.detail || "Something went wrong";
       toast.error(message);

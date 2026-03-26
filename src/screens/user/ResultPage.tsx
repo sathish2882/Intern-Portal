@@ -3,11 +3,17 @@ import { useAppDispatch, useAppSelector } from '../../redux/hooks'
 import { startTest } from '../../redux/slices/testSlice'
 import { TEST_CONFIG } from '../../utils/testData'
 
+
+const user = {
+  name: "Sathish",
+  email: "sathish19222978sk@gmail.com"
+}
+
 const ResultPage = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const { activeTestType, result, answers } = useAppSelector((s) => s.test)
-  const { user }            = useAppSelector((s) => s.auth)
+
 
   if (!result) { navigate('/user/dashboard'); return null }
 
@@ -33,19 +39,6 @@ const ResultPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-lightbg font-jakarta text-navy">
 
-      {/* Topbar */}
-      <nav className="bg-white border-b border-line flex items-center justify-between px-4 lg:px-8 h-[60px]">
-        <div className="flex items-center gap-2.5">
-          <div className="w-[34px] h-[34px] bg-blue rounded-lg flex items-center justify-center text-base">🎯</div>
-          <span className="text-[17px] font-extrabold text-navy">Aptitude Portal</span>
-        </div>
-        <div className="flex items-center gap-2 py-[5px] pl-[5px] pr-3 border border-line rounded-[9px]">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue to-[#6b49e8] flex items-center justify-center text-[13px] font-extrabold text-white">
-            {initials}
-          </div>
-          <span className="text-[13px] font-bold text-navy hidden sm:block">{firstName}</span>
-        </div>
-      </nav>
 
       {/* Result body */}
       <div className="flex-1 flex items-start lg:items-center justify-center px-4 py-8">
@@ -58,7 +51,7 @@ const ResultPage = () => {
           >
             <div className="text-5xl mb-4">{passed ? '🎉' : '😔'}</div>
             <h1 className={`text-2xl lg:text-[32px] font-extrabold tracking-tight mb-1.5 ${passed ? 'text-[#065f46]' : 'text-[#991b1b]'}`}>
-              {passed ? 'CONGRATULATIONS! YOU PASSED' : 'UNFORTUNATELY, YOU FAILED'}
+              {passed ? 'CONGRATULATIONS! YOU PASSED' : 'You\'re not eligible for the sponsorship benefit'}
             </h1>
             <p className={`text-[15px] mb-6 ${passed ? 'text-[#047857]' : 'text-[#b91c1c]'}`}>
               {passed
