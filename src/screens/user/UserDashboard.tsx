@@ -1,30 +1,49 @@
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../redux/hooks'
 import { startTest } from '../../redux/slices/testSlice'
+import { TEST_CONFIG } from '../../utils/testData'
+import { TestType } from '../../types'
 
-const ASSESSMENTS = [
-  { id: 'apt',   name: 'Aptitude Test — Batch 1', meta: '22 Qs · 45 min · Above Medium', icon: '📐', active: true  },
-  { id: 'py',    name: 'Python Coding Test',       meta: '5 Qs · 45 min · Medium',        icon: '🐍', active: false },
-  { id: 'react', name: 'React Coding Test',        meta: '5 Qs · 45 min · Medium',        icon: '⚛️', active: false },
+const ASSESSMENTS: { id: TestType; name: string; meta: string; icon: string; active: boolean }[] = [
+  {
+    id: 'aptitude',
+    name: TEST_CONFIG.aptitude.data.title,
+    meta: `${TEST_CONFIG.aptitude.data.total} Qs · 45 min · Above Medium`,
+    icon: '📐',
+    active: true,
+  },
+  {
+    id: 'technical',
+    name: TEST_CONFIG.technical.data.title,
+    meta: `${TEST_CONFIG.technical.data.total} Qs · 30 min · Medium`,
+    icon: '💻',
+    active: true,
+  },
 ]
 
 const UserDashboard = () => {
-  const navigate  = useNavigate()
-  const dispatch  = useAppDispatch()
-  const { user }  = useAppSelector((s) => s.auth)
-  const { testSubmitted, result } = useAppSelector((s) => s.test)
+  const navigate = useNavigate()
+  const dispatch = useAppDispatch()
+  const { user } = useAppSelector((s) => s.auth)
+  const { result, resultsByType } = useAppSelector((s) => s.test)
 
   const firstName = user?.name?.split(' ')[0] ?? 'Intern'
-  const completed = testSubmitted ? 1 : 0
-  const pct       = result ? Math.round((result.correct / result.total) * 100) : 0
+  const completed = Object.keys(resultsByType).length
+  const bestPct = Object.values(resultsByType).reduce((best, item) => {
+    if (!item) return best
+    return Math.max(best, Math.round((item.correct / item.total) * 100))
+  }, 0)
 
-  const handleStart = () => { dispatch(startTest()); navigate('/user/test') }
+  const handleStart = (testType: TestType) => {
+    dispatch(startTest(testType))
+    navigate('/user/test')
+  }
 
   const KPIS = [
-    { icon: '📋', label: 'Tests Assigned', value: '3',              badgeClass: 'bg-sky text-blue',     badge: 'Assigned' },
-    { icon: '✅', label: 'Completed',      value: String(completed), badgeClass: 'bg-[#ecfdf5] text-asuccess', badge: 'Done'     },
-    { icon: '⏳', label: 'Pending',         value: String(3 - completed), badgeClass: 'bg-[#fff7ed] text-[#e07b00]', badge: 'Pending' },
-    { icon: '🏆', label: 'Best Score',     value: result ? `${pct}%` : '—', badgeClass: 'bg-sky text-blue', badge: 'Best' },
+    { icon: '📋', label: 'Tests Assigned', value: String(ASSESSMENTS.length), badgeClass: 'bg-sky text-blue', badge: 'Assigned' },
+    { icon: '✅', label: 'Completed', value: String(completed), badgeClass: 'bg-[#ecfdf5] text-asuccess', badge: 'Done' },
+    { icon: '⏳', label: 'Pending', value: String(ASSESSMENTS.length - completed), badgeClass: 'bg-[#fff7ed] text-[#e07b00]', badge: 'Pending' },
+    { icon: '🏆', label: 'Best Score', value: bestPct ? `${bestPct}%` : '—', badgeClass: 'bg-sky text-blue', badge: 'Best' },
   ]
 
   return (
@@ -82,8 +101,10 @@ const UserDashboard = () => {
               </thead>
               <tbody>
                 {ASSESSMENTS.map((a) => {
-                  const isDone    = a.id === 'apt' && testSubmitted
-                  const isPassed  = result?.passed ?? false
+                  const testResult = resultsByType[a.id]
+                  const isDone = Boolean(testResult)
+                  const isPassed = testResult?.passed ?? false
+
                   return (
                     <tr key={a.id} className="border-b border-line last:border-b-0">
                       <td className="px-5 py-3.5 align-middle">
@@ -103,7 +124,7 @@ const UserDashboard = () => {
                         ) : isDone ? (
                           <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full
                             ${isPassed ? 'bg-[#ecfdf5] text-asuccess' : 'bg-red-50 text-danger'}`}>
-                            {isPassed ? '✓ Pass' : '✗ Fail'}
+                            {isPassed ? '✓ Pass' : '✕ Fail'}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ecfdf5] text-asuccess">
@@ -118,20 +139,20 @@ const UserDashboard = () => {
                       </td>
                       <td className="px-5 py-3.5 align-middle">
                         <span className={`text-[13px] font-bold ${isDone && isPassed ? 'text-asuccess' : isDone ? 'text-danger' : 'text-mist'}`}>
-                          {isDone && result ? `${result.correct}/${result.total}` : '—'}
+                          {isDone && testResult ? `${testResult.correct}/${testResult.total}` : '—'}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 align-middle">
                         {!a.active ? null : isDone ? (
                           <button
-                            onClick={() => navigate('/user/result')}
-                            className="border border-line rounded-lg px-3 py-1.5 text-xs font-bold text-blue hover:bg-sky hover:border-blue transition-all"
+                            disabled
+                            className="border border-line rounded-lg px-3 py-1.5 text-xs font-bold text-mist cursor-not-allowed bg-lightbg"
                           >
-                            Review →
+                            Attempted
                           </button>
                         ) : (
                           <button
-                            onClick={handleStart}
+                            onClick={() => handleStart(a.id)}
                             className="border border-line rounded-lg px-3 py-1.5 text-xs font-bold text-blue hover:bg-sky hover:border-blue transition-all"
                           >
                             Start →
@@ -152,15 +173,15 @@ const UserDashboard = () => {
             <span className="text-sm font-extrabold text-navy">Recent Activity</span>
           </div>
           <div className="p-5">
-            {testSubmitted && result ? (
+            {result ? (
               <div className="flex gap-3">
                 <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${result.passed ? 'bg-asuccess' : 'bg-[#e07b00]'}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-semibold text-navy">
-                    Aptitude Test {result.passed ? 'Passed ✅' : 'Failed ❌'}
+                    {TEST_CONFIG[result.testType].data.title} {result.passed ? 'Passed ✅' : 'Failed ❌'}
                   </p>
                   <p className="text-[11px] text-mist mt-0.5">
-                    Score: {result.correct}/{result.total} ({pct}%)
+                    Score: {result.correct}/{result.total} ({Math.round((result.correct / result.total) * 100)}%)
                   </p>
                 </div>
                 <span className={`text-[13px] font-extrabold flex-shrink-0 ${result.passed ? 'text-asuccess' : 'text-danger'}`}>

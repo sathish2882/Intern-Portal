@@ -23,16 +23,13 @@ const LoginScreen = () => {
     try {
       setLoading(true);
 
-      console.log("Email:", values.email);
+      const formdata = new FormData();
+      formdata.append("email", values.email);
 
       // 👉 later connect API here
-
-      setTimeout(() => {
-        navigate("/otp", { state: { email: values.email } });
-        toast.success("OTP sent to your email");
-      }, 800);
-    } catch (err) {
-      toast.error("Something went wrong");
+    } catch (error: any) {
+      const message = error?.response?.data?.detail || "Something went wrong";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

@@ -8,8 +8,17 @@ import { IoTimeOutline } from "react-icons/io5";
 
 const NAV_ITEMS = [
   {
-    to: '/admin/dashboard',
-    label: 'Dashboard',
+    to: '/admin/portals',
+    label: 'Dashboards',
+    icon: (
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M4 5h7v6H4V5zm9 0h7v4h-7V5zM4 13h7v6H4v-6zm9-2h7v8h-7v-8z" />
+      </svg>
+    ),
+  },
+  {
+    to: '/admin/payment/dashboard',
+    label: 'Main Dashboard',
     icon: (
       <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
         <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
@@ -17,15 +26,15 @@ const NAV_ITEMS = [
     ),
   },
   {
-    to: '/admin/send-email',
+    to: '/admin/payment/send-email',
     label: 'Send Email',
     icon: (
      <MailOutlined />
     ),
   },
   {
-    to: '/admin/customers',
-    label: 'User',
+    to: '/admin/payment/customers',
+    label: 'Users',
     icon: (
       <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
         <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
@@ -33,12 +42,13 @@ const NAV_ITEMS = [
     ),
   },
   {
-    to: '/admin/email-history',
+    to: '/admin/payment/email-history',
     label: 'Email History',
     icon: (
      <IoTimeOutline />
     ),
   },
+  
 ]
 
 const AdminLayout = () => {

@@ -1,30 +1,33 @@
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../redux/hooks'
 import { startTest } from '../../redux/slices/testSlice'
-import { APTITUDE_TEST, SECTION_BREAKDOWN } from '../../utils/testData'
+import { TEST_CONFIG } from '../../utils/testData'
 
 const ResultPage = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const { result, answers } = useAppSelector((s) => s.test)
+  const { activeTestType, result, answers } = useAppSelector((s) => s.test)
   const { user }            = useAppSelector((s) => s.auth)
 
   if (!result) { navigate('/user/dashboard'); return null }
 
+  const config = TEST_CONFIG[result.testType ?? activeTestType]
+  const testData = config.data
+  const sectionBreakdown = config.sectionBreakdown
   const pct       = Math.round((result.correct / result.total) * 100)
   const passed    = result.passed
   const initials  = user?.name?.charAt(0).toUpperCase() ?? 'U'
   const firstName = user?.name?.split(' ')[0] ?? 'User'
 
   // Section-wise breakdown
-  const sectionScores = SECTION_BREAKDOWN.map((sec, si) => {
-    const start = SECTION_BREAKDOWN.slice(0, si).reduce((a, b) => a + b.total, 0)
+  const sectionScores = sectionBreakdown.map((sec, si) => {
+    const start = sectionBreakdown.slice(0, si).reduce((a, b) => a + b.total, 0)
     const slice = answers.slice(start, start + sec.total)
-    const correct = slice.filter((a, i) => a === APTITUDE_TEST.questions[start + i].ans).length
+    const correct = slice.filter((a, i) => a === testData.questions[start + i].ans).length
     return { name: sec.name, correct, total: sec.total }
   })
 
-  const handleRetake    = () => { dispatch(startTest()); navigate('/user/test') }
+  const handleRetake    = () => { dispatch(startTest(result.testType)); navigate('/user/test') }
   const handleDashboard = () => navigate('/user/dashboard')
 
   return (
@@ -60,7 +63,7 @@ const ResultPage = () => {
             <p className={`text-[15px] mb-6 ${passed ? 'text-[#047857]' : 'text-[#b91c1c]'}`}>
               {passed
                 ? `Great job! You scored ${pct}% and qualified for the next round.`
-                : `You scored ${pct}%. You need ${APTITUDE_TEST.pass}/${APTITUDE_TEST.total} (60%) to pass.`}
+                : `You scored ${pct}%. You need ${testData.pass}/${testData.total} (60%) to pass.`}
             </p>
             <div className="inline-flex items-baseline gap-1 bg-white rounded-xl px-7 py-4 shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
               <span className={`text-5xl font-extrabold tracking-tight ${passed ? 'text-[#065f46]' : 'text-[#991b1b]'}`}>
@@ -75,7 +78,7 @@ const ResultPage = () => {
 
             {/* Threshold */}
             <div className="bg-sky border border-[#ccdff8] rounded-[9px] px-4 py-2.5 text-[13px] text-blue font-semibold text-center mb-5">
-              Pass mark: 60% ({APTITUDE_TEST.pass} out of {APTITUDE_TEST.total} correct)
+              Pass mark: 60% ({testData.pass} out of {testData.total} correct)
             </div>
 
             {/* Stats grid */}
@@ -137,7 +140,7 @@ const ResultPage = () => {
                 onClick={handleRetake}
                 className="flex-1 bg-white border-[1.5px] border-line hover:border-blue hover:text-blue text-slate font-bold py-3 rounded-[9px] text-sm transition-all"
               >
-                ↺ Retake Test
+                ↻ Retake Test
               </button>
               <button
                 onClick={handleDashboard}
