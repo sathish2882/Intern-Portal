@@ -62,6 +62,7 @@ export interface TestData {
 }
 
 export interface TestResult {
+  testType: TestType
   correct: number
   wrong: number
   skipped: number
@@ -70,12 +71,16 @@ export interface TestResult {
   timeTaken: string
 }
 
+export type TestType = 'aptitude' | 'technical'
+
 export interface TestState {
+  activeTestType: TestType
   currentQuestion: number
   answers: (number | null)[]
   testStarted: boolean
   testSubmitted: boolean
   result: TestResult | null
+  resultsByType: Partial<Record<TestType, TestResult>>
   timeLeft: number
 }
 
