@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../redux/hooks'
 import {
@@ -17,6 +17,7 @@ const user = {
 const TestPage = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const violationsRef = useRef(0)
 
   const { activeTestType, currentQuestion, answers, testStarted, timeLeft } = useAppSelector((s) => s.test)
   const activeTest = TEST_CONFIG[activeTestType].data
@@ -56,6 +57,32 @@ const TestPage = () => {
       handleSubmit()
     }
   }, [timeLeft, testStarted, handleSubmit])
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!testStarted) return
+
+      if (document.hidden) {
+        violationsRef.current += 1
+
+        if (violationsRef.current >= 2) {
+          sessionStorage.setItem(
+            'test_alert_message',
+            'You switched tabs multiple times. Your test was submitted automatically.',
+          )
+          handleSubmit()
+        }
+      } else if (violationsRef.current > 0 && violationsRef.current < 2) {
+        alert(`Warning ${violationsRef.current}/2: Do not switch tabs!`)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [handleSubmit, testStarted])
 
   const confirmSubmit = () => {
     const unanswered = answers.filter((a) => a === null).length

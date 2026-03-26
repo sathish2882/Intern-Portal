@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../redux/hooks'
 import { startTest } from '../../redux/slices/testSlice'
@@ -35,6 +36,15 @@ const ResultPage = () => {
 
   const handleRetake    = () => { dispatch(startTest(result.testType)); navigate('/user/test') }
   const handleDashboard = () => navigate('/user/dashboard')
+
+  useEffect(() => {
+    const pendingAlert = sessionStorage.getItem('test_alert_message')
+
+    if (pendingAlert) {
+      alert(pendingAlert)
+      sessionStorage.removeItem('test_alert_message')
+    }
+  }, [])
 
   return (
     <div className="min-h-screen flex flex-col bg-lightbg font-jakarta text-navy">
