@@ -1,4 +1,4 @@
-import WelcomeImg from "../assets/welcome-logo.jpg"
+import WelcomeImg from "../assets/images/jpg/welcome-logo.jpg"
 
 export {
     WelcomeImg

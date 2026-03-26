@@ -1,16 +1,29 @@
-{/*import { Navigate } from 'react-router-dom'
-import { useAppSelector } from '../../redux/hooks'
+{/*import { Navigate } from "react-router-dom";
+import Cookies from "js-cookie";
+import { useAppSelector } from "../../redux/hooks";
 
-interface Props {
-  children: React.ReactNode
-  allowedRole: 'admin' | 'user'
-}
+const ProtectedRoute = ({ children, role }: any) => {
+  const { user } = useAppSelector((s) => s.auth);
 
-const ProtectedRoute = ({ children, allowedRole }: Props) => {
-  const { user } = useAppSelector((s) => s.auth)
-  if (!user) return <Navigate to="/login" replace />
-  if (user.user_type !== allowedRole) return <Navigate to="/login" replace />
-  return <>{children}</>
-}
+  const token = Cookies.get("token");
+  const userTypeFromCookie = Cookies.get("userType");
 
-export default ProtectedRoute */}
+  // No token → not logged in
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Role mismatch (check both Redux + cookie)
+  if (
+    role &&
+    user &&
+    user.user_type !== role &&
+    userTypeFromCookie !== role
+  ) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+export default ProtectedRoute;*/}
