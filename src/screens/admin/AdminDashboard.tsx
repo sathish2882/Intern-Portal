@@ -37,38 +37,38 @@ const AdminDashboard = () => {
   ]
 
   return (
-    <div className="font-syne text-adark">
+    <div className="text-adark">
       {/* Page header */}
       <h1 className="text-2xl font-extrabold text-adark mb-1">Dashboard</h1>
-      <p className="text-sm text-amuted mb-7">
-        Good day, {user?.name ?? 'Admin'} 👋 — Here's your email overview.
+      <p className="text-2xl text-amuted mb-7">
+        Payment email overview.
       </p>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
         {STATS.map((s) => (
           <div key={s.label} className="bg-abg2 border border-white/[0.07] rounded-2xl p-4 lg:p-5">
-            <p className="text-[11px] text-amuted font-mono uppercase tracking-[0.07em] mb-2">{s.label}</p>
-            <p className={`text-3xl font-bold font-mono ${s.valueClass}`}>{s.value}</p>
+            <p className="text-[11px] text-amuted  uppercase tracking-[0.07em] mb-2">{s.label}</p>
+            <p className={`text-3xl font-bold font-jakarta ${s.valueClass}`}>{s.value}</p>
             <p className="text-xs text-asuccess mt-1.5">{s.change}</p>
           </div>
         ))}
       </div>
 
       {/* Two column */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div className="flex flex-col gap-7">
 
         {/* Recent emails */}
         <div className="xl:col-span-2 bg-abg2 border border-white/[0.07] rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-white/[0.07]">
-            <h2 className="text-sm font-bold text-adark">Recent Emails</h2>
+            <h2 className="text-2xl font-bold text-adark">Recent Emails</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[13.5px]">
               <thead>
                 <tr className="border-b border-white/[0.07]">
                   {['Recipient', 'Type', 'Amount', 'Date', 'Status'].map((h) => (
-                    <th key={h} className="text-left px-4 py-3 text-[11px] font-mono uppercase tracking-[0.06em] text-amuted font-medium">
+                    <th key={h} className="text-left text-lg px-4 py-3 text-[11px] font-mono uppercase tracking-[0.06em] text-amuted font-medium">
                       {h}
                     </th>
                   ))}
@@ -78,14 +78,14 @@ const AdminDashboard = () => {
                 {RECENT_EMAILS.map((row, i) => (
                   <tr key={i} className="border-b border-white/[0.04] hover:bg-abg3 transition-colors">
                     <td className="px-4 py-3 align-middle">
-                      <p className="font-semibold text-adark leading-none">{row.recipient}</p>
-                      <p className="text-xs text-amuted mt-0.5">{row.email}</p>
+                      <p className="font-semibold text-lg text-adark leading-none">{row.recipient}</p>
+                      <p className="text-md text-amuted mt-0.5">{row.email}</p>
                     </td>
-                    <td className="px-4 py-3 align-middle text-amuted">{row.type}</td>
-                    <td className="px-4 py-3 align-middle font-mono text-adark">{row.amount}</td>
-                    <td className="px-4 py-3 align-middle text-amuted">{row.date}</td>
+                    <td className="px-4 py-3 align-middle text-md text-amuted">{row.type}</td>
+                    <td className="px-4 py-3 align-middle text-md  text-adark">{row.amount}</td>
+                    <td className="px-4 py-3 align-middle text-md  text-amuted">{row.date}</td>
                     <td className="px-4 py-3 align-middle">
-                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono ${STATUS_CLASSES[row.status]}`}>
+                      <span className={`text-md font-bold px-2.5 py-0.5 rounded-full  ${STATUS_CLASSES[row.status]}`}>
                         {row.status}
                       </span>
                     </td>
@@ -98,18 +98,18 @@ const AdminDashboard = () => {
 
         {/* Type breakdown */}
         <div className="bg-abg2 border border-white/[0.07] rounded-2xl p-5">
-          <h2 className="text-sm font-bold text-adark mb-5">Email Type Breakdown</h2>
+          <h2 className="text-2xl font-bold text-adark mb-5">Email Type Breakdown</h2>
           <div className="space-y-5">
             {TYPE_BREAKDOWN.map((t) => (
               <div key={t.type}>
                 <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-sm font-semibold text-adark">{t.type}</span>
-                  <span className="text-xs font-mono text-amuted">{t.count}</span>
+                  <span className="text-lg font-semibold text-adark">{t.type}</span>
+                  <span className="text-md text-amuted">{t.count}</span>
                 </div>
                 <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                   <div className={`h-full rounded-full transition-all duration-700 ${t.colorClass}`} style={{ width: `${t.pct}%` }} />
                 </div>
-                <p className="text-[11px] text-amuted mt-1 font-mono">{t.pct}%</p>
+                <p className="text-md text-amuted mt-1">{t.pct}%</p>
               </div>
             ))}
           </div>

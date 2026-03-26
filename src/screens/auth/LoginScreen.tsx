@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { loginApi } from "../../services/authApi";
 import { setToken } from "../../utils/authCookies";
+import image from "../../assets/images/png/loginplaceholder1.png"
 
 interface FormValues {
   email: string;
@@ -45,11 +46,8 @@ const LoginScreen = () => {
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex flex-col items-center justify-center font-body px-4">
       {/* ICON */}
-      <div
-        className="w-[120px] h-[120px] rounded-full bg-[#7dd3fc] 
-        flex items-center justify-center text-5xl mb-4 shadow-md"
-      >
-        <img src="" alt="" />
+      <div>
+        <img src={image} alt="placeholder-img" className="h-44 w-44"/>
       </div>
 
       {/* TITLE */}

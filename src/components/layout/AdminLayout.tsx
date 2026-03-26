@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAppDispatch,} from '../../redux/hooks'
 import { toast } from 'react-toastify'
+import {MailOutlined,} from "@ant-design/icons"
+import { IoTimeOutline } from "react-icons/io5";
 
 const user = {
   name: "Sathish",
@@ -23,7 +25,7 @@ const NAV_ITEMS = [
     label: 'Main Dashboard',
     icon: (
       <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
       </svg>
     ),
   },
@@ -31,9 +33,7 @@ const NAV_ITEMS = [
     to: '/admin/payment/send-email',
     label: 'Send Email',
     icon: (
-      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-      </svg>
+     <MailOutlined />
     ),
   },
   {
@@ -49,9 +49,7 @@ const NAV_ITEMS = [
     to: '/admin/payment/email-history',
     label: 'Email History',
     icon: (
-      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />
-      </svg>
+     <IoTimeOutline />
     ),
   },
   
@@ -72,11 +70,14 @@ const AdminLayout = () => {
     <>
       {/* Brand */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-white/[0.07]">
-        <span className="text-2xl text-gold flex-shrink-0">💰</span>
+        <span className="text-2xl text-gold flex-shrink-0"></span>
         {!collapsed && (
-          <span className="font-syne font-extrabold text-lg text-adark tracking-wide whitespace-nowrap overflow-hidden">
-            PayMail
+          <div className='flex gap-5 items-center justify-start'>
+            <span className="text-gold text-2xl">◈</span>
+          <span className="font-syne font-extrabold text-2xl text-adark tracking-wide whitespace-nowrap overflow-hidden">
+              PayMail
           </span>
+          </div>
         )}
       </div>
 
@@ -89,7 +90,7 @@ const AdminLayout = () => {
             onClick={() => setMobileOpen(false)}
             title={collapsed ? item.label : undefined}
             className={({ isActive }) =>
-              `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 font-syne
+              `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-lg font-medium transition-all duration-150 font-syne
                ${isActive
                  ? 'bg-golddim text-goldtxt'
                  : 'text-amuted hover:bg-abg3 hover:text-adark'
@@ -119,7 +120,7 @@ const AdminLayout = () => {
         <button
           onClick={handleLogout}
           title={collapsed ? 'Sign Out' : undefined}
-          className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-adanger hover:bg-adanger/10 transition-all font-syne ${collapsed ? 'justify-center' : ''}`}
+          className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-lg font-medium text-adanger hover:bg-adanger/10 transition-all font-syne ${collapsed ? 'justify-center' : ''}`}
         >
           <svg className="flex-shrink-0" width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
             <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
