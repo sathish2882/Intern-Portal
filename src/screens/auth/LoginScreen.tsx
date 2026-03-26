@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import image from "../../assets/images/png/loginplaceholder1.png"
 
 const LoginScreen = () => {
   const navigate = useNavigate();
@@ -9,8 +10,8 @@ const LoginScreen = () => {
     <div className="min-h-screen bg-[#f1f5f9] flex flex-col items-center justify-center font-sans px-4">
 
 
-      <div className="w-[100px] h-[100px] rounded-full bg-[#7dd3fc] flex items-center justify-center text-4xl mb-[16px]">
-        🐻
+      <div className="mb-[16px]">
+        <img src={image} alt="no images" className="rounded-full h-36 w-36"/>
       </div>
 
       <p className="text-[11px] tracking-[2px] text-gray-400 mb-6">
