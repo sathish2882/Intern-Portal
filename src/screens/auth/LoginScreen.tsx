@@ -1,10 +1,42 @@
 import { useNavigate } from "react-router-dom";
+import { Formik, Form } from "formik";
+import * as Yup from "yup";
 import { useState } from "react";
 import image from "../../assets/images/png/loginplaceholder1.png"
+import { toast } from "react-toastify";
+
+interface FormValues {
+  email: string;
+}
 
 const LoginScreen = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  /* ✅ Validation */
+  const validationSchema = Yup.object({
+    email: Yup.string().email("Invalid email").required("Email is required"),
+  });
+
+  /* ✅ Submit */
+  const handleSubmit = async (values: FormValues) => {
+    try {
+      setLoading(true);
+
+      console.log("Email:", values.email);
+
+      // 👉 later connect API here
+
+      setTimeout(() => {
+        navigate("/otp", { state: { email: values.email } });
+        toast.success("OTP sent to your email 📩");
+      }, 800);
+    } catch (err) {
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex flex-col items-center justify-center font-sans px-4">
@@ -14,48 +46,80 @@ const LoginScreen = () => {
         <img src={image} alt="no images" className="rounded-full h-36 w-36"/>
       </div>
 
-      <p className="text-[11px] tracking-[2px] text-gray-400 mb-6">
+      {/* TITLE */}
+      <p className="text-[11px] tracking-[2px] text-gray-400 mb-6 font-body">
         INTERNSHIP PORTAL
       </p>
 
-      <p className="text-sm text-gray-500 mb-2">
+      <p className="text-sm text-gray-500 mb-3 font-body">
         Enter your registered email
       </p>
 
-      {/* Input box */}
-      <div className="flex items-center w-full max-w-[360px] border-[2px] border-[#3b82f6] rounded-[12px] bg-white overflow-hidden">
+      {/* FORM */}
+      <Formik
+        initialValues={{ email: "" }}
+        validationSchema={validationSchema}
+        onSubmit={handleSubmit}
+      >
+        {({ values, handleChange, errors, touched }) => (
+          <Form className="w-full max-w-[360px]">
+            {/* INPUT BOX */}
+            <div
+              className={`flex items-center border-2 rounded-[12px] bg-white overflow-hidden transition-all duration-200
+  focus-within:border-blue-500 focus-within:shadow-[0_0_0_2px_rgba(59,130,246,0.2)]
+  ${
+    errors.email && touched.email
+      ? "border-red-400 focus-within:border-red-500 focus-within:shadow-[0_0_0_2px_rgba(248,113,113,0.2)]"
+      : "border-[#3b82f6]"
+  }`}
+            >
+              <input
+                name="email"
+                value={values.email}
+                onChange={handleChange}
+                placeholder="Email address"
+                className="flex-1 px-4 py-3 text-sm outline-none font-body bg-transparent"
+              />
 
-        <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email address"
-          className="flex-1 px-4 py-3 text-sm outline-none"
-        />
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-3 text-[#3b82f6] text-xl flex items-center justify-center transition hover:scale-110"
+              >
+                {loading ? <div className="loader-btn" /> : "→"}
+              </button>
+            </div>
 
-        <button className="px-4 text-[#3b82f6] text-xl">
-          →
-        </button>
-      </div>
+            {/* ERROR */}
+            {errors.email && touched.email && (
+              <p className="text-red-500 text-xs mt-1 font-body">
+                {errors.email}
+              </p>
+            )}
+          </Form>
+        )}
+      </Formik>
 
-      {/* Divider */}
+      {/* DIVIDER */}
       <div className="flex items-center gap-4 my-6 w-full max-w-[360px]">
         <div className="flex-1 h-[1px] bg-gray-300" />
-        <span className="text-xs text-gray-400">OR</span>
+        <span className="text-xs text-gray-400 font-body">OR</span>
         <div className="flex-1 h-[1px] bg-gray-300" />
       </div>
 
+      {/* NAVIGATION */}
       <p
         onClick={() => navigate("/")}
-        className="text-sm text-gray-500 cursor-pointer mb-2"
+        className="text-sm text-gray-500 cursor-pointer mb-2 hover:underline font-body"
       >
         ← Back to Home
       </p>
 
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-gray-500 font-body">
         Don't have an account?{" "}
         <span
           onClick={() => navigate("/register")}
-          className="text-blue-600 cursor-pointer"
+          className="text-blue-600 cursor-pointer font-medium hover:underline"
         >
           Register Now
         </span>
