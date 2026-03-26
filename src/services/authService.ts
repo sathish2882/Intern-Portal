@@ -2,7 +2,7 @@ import axios from 'axios'
 import { LoginPayload, AuthUser } from '../types'
 import { getAuthToken } from '../utils/authCookies'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.mguru.com'
+const BASE_URL = 'https://api.mguru.com'
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,

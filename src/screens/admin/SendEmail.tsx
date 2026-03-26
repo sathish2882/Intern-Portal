@@ -30,10 +30,10 @@ interface AdminInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 const AdminInput = ({ label, ...props }: AdminInputProps) => (
   <div>
-    <label className="block text-[11px] text-amuted font-mono uppercase tracking-[0.06em] mb-1.5">{label}</label>
+    <label className="block text-sm text-adark  uppercase tracking-[0.06em] mb-1.5">{label}</label>
     <input
       {...props}
-      className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-sm text-adark font-syne outline-none transition-colors focus:border-gold placeholder:text-amuted2"
+      className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-base text-amuted  outline-none transition-colors focus:border-gold placeholder:text-amuted2"
     />
   </div>
 )
@@ -69,17 +69,17 @@ const SendEmail = () => {
   }
 
   return (
-    <div className="font-syne text-adark">
+    <div className="text-adark">
       <h1 className="text-2xl font-extrabold text-adark mb-1">Send Email</h1>
-      <p className="text-sm text-amuted mb-6">Compose and send payment emails to your customers.</p>
+      <p className="text-lg text-amuted mb-6">Compose and send payment emails to your customers.</p>
 
       {/* Type tabs */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-5 mb-6">
         {EMAIL_TYPES.map((t) => (
           <button
             key={t.key}
             onClick={() => setEmailType(t.key)}
-            className={`px-4 py-2 rounded-[10px] text-[13px] font-bold border transition-all font-syne
+            className={`px-4 py-2 rounded-[10px] text-lg font-bold border transition-all
               ${emailType === t.key ? TYPE_ACTIVE[t.key] : `bg-abg3 ${TYPE_COLOR[t.key]}`}`}
           >
             {t.label}
@@ -91,18 +91,18 @@ const SendEmail = () => {
 
         {/* Form */}
         <div className="bg-abg2 border border-white/[0.07] rounded-2xl p-5">
-          <h2 className="text-sm font-bold text-adark mb-4">Email Details</h2>
+          <h2 className="text-lg font-bold text-adark mb-4">Email Details</h2>
 
           {/* Customer selector */}
           <div className="mb-4">
-            <label className="block text-[11px] text-amuted font-mono uppercase tracking-[0.06em] mb-1.5">
+            <label className="block text-sm text-adark uppercase tracking-[0.06em] mb-1.5">
               Select Customer
             </label>
             <select
               onChange={(e) => handleCustomer(e.target.value)}
-              className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-sm text-adark font-syne outline-none focus:border-gold cursor-pointer"
+              className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-md text-amuted  outline-none focus:border-gold cursor-pointer"
             >
-              <option value="">Choose existing customer...</option>
+              <option value="" className='text-base'>Choose existing customer...</option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>{c.name} — {c.email}</option>
               ))}
@@ -123,7 +123,7 @@ const SendEmail = () => {
           </div>
 
           <div className="mb-5">
-            <label className="block text-[11px] text-amuted font-mono uppercase tracking-[0.06em] mb-1.5">
+            <label className="block text-sm text-adark uppercase tracking-[0.06em] mb-1.5">
               Custom Note (optional)
             </label>
             <textarea
@@ -131,13 +131,13 @@ const SendEmail = () => {
               placeholder="Add any extra information..."
               value={form.note}
               onChange={(e) => set('note', e.target.value)}
-              className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-sm text-adark font-syne outline-none focus:border-gold resize-y placeholder:text-amuted2"
+              className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-base text-amuted  outline-none focus:border-gold resize-y placeholder:text-amuted2"
             />
           </div>
 
           <button
             onClick={handleSend}
-            className={`w-full py-3 rounded-[10px] text-sm font-bold transition-all hover:opacity-90 font-syne border ${TYPE_ACTIVE[emailType]}`}
+            className={`w-full py-3 rounded-[10px] text-md font-bold transition-all hover:opacity-90 text-white/90 text-semibold border ${TYPE_ACTIVE[emailType]}`}
           >
             Send Email ↗
           </button>
@@ -145,7 +145,7 @@ const SendEmail = () => {
 
         {/* Preview */}
         <div className="bg-abg2 border border-white/[0.07] rounded-2xl p-5">
-          <h2 className="text-sm font-bold text-adark mb-4">Preview</h2>
+          <h2 className="text-lg font-bold text-adark mb-4">Preview</h2>
           <div className="bg-abg3 border border-white/[0.07] rounded-xl p-4">
             {/* Email header */}
             <div className="flex items-center gap-3 pb-3 mb-3 border-b border-white/[0.07]">
@@ -153,25 +153,25 @@ const SendEmail = () => {
                 💰
               </div>
               <div>
-                <p className="text-[13px] font-bold text-adark font-syne">M-Guru Payments</p>
-                <p className="text-[11px] text-amuted font-mono">payments@mguru.com</p>
+                <p className="text-md font-bold text-adark">M-Guru Payments</p>
+                <p className="text-md text-amuted font-mono">payments@mguru.com</p>
               </div>
             </div>
-            <p className="text-xs text-amuted mb-1">
+            <p className="text-base text-amuted mb-1">
               To: <span className="text-adark">{form.email || 'customer@example.com'}</span>
             </p>
             <p className="text-sm font-bold text-adark mb-3">{previewTitle[emailType]}</p>
-            <p className="text-xs text-amuted mb-3">
+            <p className="text-md text-amuted mb-3">
               Dear <span className="text-adark">{form.name || 'Customer'}</span>,
             </p>
             {/* Amount box */}
             <div className={`rounded-[10px] p-3 mb-3 text-center border ${TYPE_COLOR[emailType]}`}>
-              <p className="text-xs text-amuted mb-0.5">Amount Due</p>
-              <p className="text-3xl font-bold font-mono">₹{form.amount || '0'}</p>
+              <p className="text-sm text-amuted mb-0.5">Amount Due</p>
+              <p className="text-3xl font-bold">₹{form.amount || '0'}</p>
               {form.dueDate && <p className="text-xs text-amuted mt-1">Due by {form.dueDate}</p>}
             </div>
             {form.note && (
-              <p className="text-xs text-amuted bg-white/[0.03] rounded-lg p-2.5">{form.note}</p>
+              <p className="text-sm text-amuted bg-white/[0.03] rounded-lg p-2.5">{form.note}</p>
             )}
           </div>
         </div>
@@ -181,4 +181,4 @@ const SendEmail = () => {
   )
 }
 
-export default SendEmail
+export default SendEmail;
