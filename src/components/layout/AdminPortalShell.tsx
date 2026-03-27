@@ -11,6 +11,7 @@ const user = {
 
 interface AdminPortalShellProps {
   title: string
+  subtitle?: string
   children: ReactNode
 }
 
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
 
 const AdminPortalShell = ({
   title,
+  subtitle,
   children,
 }: AdminPortalShellProps) => {
   const navigate = useNavigate();
@@ -52,6 +54,7 @@ const AdminPortalShell = ({
         <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight mt-1">{title}</h1>
+            {subtitle && <p className="text-sm text-slate-300 mt-1">{subtitle}</p>}
           </div>
 
           <div className="flex items-center gap-3">

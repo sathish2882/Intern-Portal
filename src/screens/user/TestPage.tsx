@@ -7,39 +7,88 @@ import {
 } from '../../redux/slices/testSlice'
 import { TEST_CONFIG } from '../../utils/testData'
 import { TestResult } from '../../types'
+import { submitResultApi } from '../../services/testApi'
+
+
+
 const TestPage = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const violationsRef = useRef(0)
 
-  const { activeTestType, currentQuestion, answers, testStarted, timeLeft } = useAppSelector((s) => s.test)
+  const { activeTestType, currentQuestion, answers, testStarted, timeLeft } =
+    useAppSelector((s) => s.test)
+
   const activeTest = TEST_CONFIG[activeTestType].data
   const durationSeconds = TEST_CONFIG[activeTestType].durationSeconds
   const questions = activeTest.questions
 
-  const handleSubmit = useCallback(() => {
+  // ✅ UPDATED SUBMIT FUNCTION
+  const handleSubmit = useCallback(async () => {
     let correct = 0, wrong = 0, skipped = 0
+
     answers.forEach((ans, i) => {
       if (ans === null) skipped++
       else if (ans === questions[i].ans) correct++
       else wrong++
     })
+
     const elapsed = durationSeconds - timeLeft
-    const m = Math.floor(Math.abs(elapsed) / 60).toString().padStart(2, '0')
-    const s = (Math.abs(elapsed) % 60).toString().padStart(2, '0')
+
+    const m = Math.floor(Math.abs(elapsed) / 60)
+      .toString()
+      .padStart(2, '0')
+    const s = (Math.abs(elapsed) % 60)
+      .toString()
+      .padStart(2, '0')
+
     const result: TestResult = {
       testType: activeTestType,
-      correct, wrong, skipped,
+      correct,
+      wrong,
+      skipped,
       total: questions.length,
       passed: correct >= activeTest.pass,
       timeTaken: `${m}:${s}`,
     }
+
+    try {
+      // ✅ BACKEND PAYLOAD
+      const payload = {
+        test_type: activeTestType,
+        correct_answers: correct,
+        wrong_answers: wrong,
+        skipped_answers: skipped,
+        total_questions: questions.length,
+        score: correct,
+        time_taken: elapsed,
+      }
+
+      await submitResultApi(payload)
+    } catch (error) {
+      console.log("Result API error:", error)
+    }
+
+    // ✅ KEEP EXISTING FLOW
     dispatch(submitTest(result))
     navigate('/user/result')
-  }, [activeTest.pass, activeTestType, answers, dispatch, durationSeconds, navigate, questions, timeLeft])
+
+  }, [
+    activeTest.pass,
+    activeTestType,
+    answers,
+    dispatch,
+    durationSeconds,
+    navigate,
+    questions,
+    timeLeft,
+  ])
 
   useEffect(() => {
-    if (!testStarted) { navigate('/user/dashboard'); return }
+    if (!testStarted) {
+      navigate('/user/dashboard')
+      return
+    }
     const t = setInterval(() => dispatch(tickTimer()), 1000)
     return () => clearInterval(t)
   }, [testStarted, dispatch, navigate])
@@ -79,18 +128,24 @@ const TestPage = () => {
 
   const confirmSubmit = () => {
     const unanswered = answers.filter((a) => a === null).length
-    if (unanswered > 0 && !window.confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)) return
+    if (
+      unanswered > 0 &&
+      !window.confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)
+    )
+      return
+
     handleSubmit()
   }
 
   const fmt = (sec: number) =>
-    `${Math.floor(sec / 60).toString().padStart(2, '0')}:${(sec % 60).toString().padStart(2, '0')}`
+    `${Math.floor(sec / 60)
+      .toString()
+      .padStart(2, '0')}:${(sec % 60).toString().padStart(2, '0')}`
 
   const answered = answers.filter((a) => a !== null).length
   const isLow = timeLeft < 300
   const q = questions[currentQuestion]
   const isLast = currentQuestion === questions.length - 1
-
   return (
     <div className="min-h-screen flex flex-col bg-lightbg font-jakarta text-navy">
 
