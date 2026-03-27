@@ -10,9 +10,8 @@ const user = {
 };
 
 interface AdminPortalShellProps {
-  title: string;
-  subtitle: string;
-  children: ReactNode;
+  title: string
+  children: ReactNode
 }
 
 const NAV_ITEMS = [
@@ -24,7 +23,6 @@ const NAV_ITEMS = [
 
 const AdminPortalShell = ({
   title,
-  subtitle,
   children,
 }: AdminPortalShellProps) => {
   const navigate = useNavigate();
@@ -49,17 +47,11 @@ const AdminPortalShell = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white">
+    <div className="min-h-screen bg-black text-white">
       <header className="border-b border-white/10 bg-[#111827]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-slate-400">
-              Admin Portal
-            </p>
-            <h1 className="text-2xl font-extrabold tracking-tight mt-1">
-              {title}
-            </h1>
-            <p className="text-sm text-slate-300 mt-1">{subtitle}</p>
+            <h1 className="text-2xl font-extrabold tracking-tight mt-1">{title}</h1>
           </div>
 
           <div className="flex items-center gap-3">
@@ -98,7 +90,7 @@ const AdminPortalShell = ({
               className={({ isActive }) =>
                 `px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
                   isActive
-                    ? "bg-sky-500 text-slate-950"
+                    ? "bg-sky-500 text-yellow-400"
                     : "bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10"
                 }`
               }

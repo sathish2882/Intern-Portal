@@ -87,7 +87,7 @@ const InternDashboard = () => {
   return (
     <div className="max-w-[1160px] mx-auto px-4 lg:px-8 py-8 font-jakarta text-navy animate-fadeUp">
       <p className="text-xs text-mist font-mono mb-6">
-        Intern Portal › <span className="text-blue">Attendance Dashboard</span>
+        Intern Portal <span className="text-blue">Attendance Dashboard</span>
       </p>
 
       <div className="mb-7">

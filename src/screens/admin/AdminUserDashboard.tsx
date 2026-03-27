@@ -29,9 +29,7 @@ const AdminUserDashboard = () => {
   const navigate = useNavigate()
   return (
     <AdminPortalShell
-      title="User Dashboard"
-      subtitle="Overview of registered interns, current progress, and engagement status."
-    >
+      title="User Dashboard">
       <div className='flex flex-col'>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {USER_STATS.map((card) => (

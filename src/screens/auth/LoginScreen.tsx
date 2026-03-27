@@ -28,7 +28,7 @@ interface LoginResponse {
 const getRedirectByUserType = (userType: number) => {
   if (userType === 1) return "/admin/portals";
   if (userType === 2) return "/intern/dashboard";
-  return "/user/dashboard";
+   return "/user/userDetails"
 };
 
 const getAuthData = (responseData: LoginResponse) => {

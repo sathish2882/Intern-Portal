@@ -27,6 +27,7 @@ import UserDashboard from "../screens/user/UserDashboard";
 import TestPage from "../screens/user/TestPage";
 import ResultPage from "../screens/user/ResultPage";
 import ProtectedRoute from "../components/ui/ProtectedRoute";
+import UserDetails from "../screens/auth/userDetails";
 
 export const router = createHashRouter([
   {
@@ -69,7 +70,7 @@ export const router = createHashRouter([
           { index: true, element: <Navigate to="dashboard" replace /> },
           { path: "dashboard", element: <AdminDashboard /> },
           { path: "send-email", element: <SendEmail /> },
-          { path: "customers", element: <Customers /> },
+          { path: "users", element: <Customers /> },
           { path: "email-history", element: <EmailHistory /> },
         ],
       },
@@ -101,6 +102,8 @@ export const router = createHashRouter([
       { path: "dashboard", element: <UserDashboard /> },
       { path: "test", element: <TestPage /> },
       { path: "result", element: <ResultPage /> },
+      { path:"userDetails", element:<UserDetails/>}
+      
     ],
   },
 

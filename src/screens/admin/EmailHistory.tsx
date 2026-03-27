@@ -35,7 +35,7 @@ const EmailHistory = () => {
   )
 
   return (
-    <div className="font-syne text-adark">
+    <div className=" text-adark">
       <h1 className="text-2xl font-extrabold text-adark mb-1">Email History</h1>
       <p className="text-sm text-amuted mb-7">Track all payment emails sent from this portal.</p>
 
@@ -45,7 +45,7 @@ const EmailHistory = () => {
           placeholder="Search emails..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-abg2 border border-white/[0.07] rounded-[10px] pl-9 pr-4 py-2.5 text-sm text-adark font-syne outline-none focus:border-gold placeholder:text-amuted2"
+          className="w-full bg-abg2 border border-white/[0.07] rounded-[10px] pl-9 pr-4 py-2.5 text-sm text-adark outline-none focus:border-gold placeholder:text-amuted2"
         />
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-amuted" width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
           <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
@@ -75,7 +75,7 @@ const EmailHistory = () => {
               ) : (
                 filtered.map((row) => (
                   <tr key={row.id} className="border-b border-white/[0.04] hover:bg-abg3 transition-colors">
-                    <td className="px-5 py-3.5 align-middle font-mono text-amuted2 text-xs">
+                    <td className="px-5 py-3.5 align-middle text-amuted2 text-xs">
                       #{String(row.id).padStart(4, '0')}
                     </td>
                     <td className="px-5 py-3.5 align-middle">
@@ -87,10 +87,10 @@ const EmailHistory = () => {
                         {row.type}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 align-middle font-mono text-adark">{row.amount}</td>
+                    <td className="px-5 py-3.5 align-middle text-adark">{row.amount}</td>
                     <td className="px-5 py-3.5 align-middle text-amuted">{row.date}</td>
                     <td className="px-5 py-3.5 align-middle">
-                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full font-mono ${STATUS_CLASSES[row.status]}`}>
+                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${STATUS_CLASSES[row.status]}`}>
                         {row.status}
                       </span>
                     </td>
@@ -101,7 +101,7 @@ const EmailHistory = () => {
           </table>
         </div>
         <div className="px-5 py-3 border-t border-white/[0.07] flex items-center justify-between">
-          <p className="text-xs text-amuted font-mono">
+          <p className="text-xs text-amuted">
             Showing {filtered.length} of {MOCK_HISTORY.length} records
           </p>
         </div>

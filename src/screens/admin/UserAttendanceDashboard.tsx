@@ -74,4 +74,4 @@ const UserAttendanceDashboard = () => {
   )
 }
 
-export default UserAttendanceDashboard
+export default UserAttendanceDashboard;
