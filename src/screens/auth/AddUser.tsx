@@ -105,7 +105,7 @@ const AddUser = () => {
                 flex items-center justify-center gap-2"
               >
                 <span className="flex h-6 w-[88px] items-center justify-center">
-                  {loading ? <div className="loader-btn scale-75" /> : "Add User"}
+                  {loading ? <div className="loader-btn loader-btn-sm" /> : "Add User"}
                 </span>
               </button>
 

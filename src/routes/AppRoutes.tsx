@@ -4,17 +4,16 @@ import { createHashRouter, Navigate, Outlet } from "react-router-dom";
 import WelcomeScreen from "../screens/auth/WelcomeScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
 import AddUser from "../screens/auth/AddUser";
-import OtpScreen from "../screens/auth/OtpScreen";
 
 // Admin
 import AdminLayout from "../components/layout/AdminLayout";
 import AdminPortalSelector from "../screens/admin/AdminPortalSelector";
 import AdminUserDashboard from "../screens/admin/AdminUserDashboard";
 import UserAttendanceDashboard from "../screens/admin/UserAttendanceDashboard";
-import UserExamMarksDashboard from "../screens/admin/UserExamMarksDashboard";
+import InterviewDashboard from "../screens/admin/InterviewDashboard";
 import AdminDashboard from "../screens/admin/AdminDashboard";
 import SendEmail from "../screens/admin/SendEmail";
-import Customers from "../screens/admin/Customers";
+import Customers from "../screens/admin/User";
 import EmailHistory from "../screens/admin/EmailHistory";
 
 // Intern
@@ -46,9 +45,7 @@ export const router = createHashRouter([
       </ProtectedRoute>
     ),
   },
-  { path: "/register", element: <AddUser /> },
   { path: "/add-user", element: <AddUser /> },
-  { path: "/otp", element: <OtpScreen /> },
 
   {
     path: "/admin",
@@ -62,7 +59,7 @@ export const router = createHashRouter([
       { path: "portals", element: <AdminPortalSelector /> },
       { path: "user-dashboard", element: <AdminUserDashboard /> },
       { path: "attendance-dashboard", element: <UserAttendanceDashboard /> },
-      { path: "exam-dashboard", element: <UserExamMarksDashboard /> },
+      { path: "interview-dashboard", element: <InterviewDashboard /> },
       {
         path: "payment",
         element: <AdminLayout />,

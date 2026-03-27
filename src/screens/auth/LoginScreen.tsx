@@ -5,7 +5,8 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { loginApi } from "../../services/authApi";
 import { setToken, setUser } from "../../utils/authCookies";
-import image from "../../assets/images/png/loginplaceholder1.png";
+import { WelcomeImg } from "../../utils/Images";
+import FormInput from "../../components/form/FormInput";
 
 interface FormValues {
   identifier: string;
@@ -99,115 +100,78 @@ const LoginScreen = () => {
     }
   };
 
-  const inputWrapperClass = (hasError: boolean) => `
-    flex items-center rounded-[12px] bg-white overflow-hidden
-    border transition-all duration-200 ease-in-out
-
-    ${
-      hasError
-        ? "border-red-400 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-200"
-        : "border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200"
-    }
-
-    hover:border-gray-400 focus-within:shadow-sm
-  `;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] flex flex-col items-center justify-center px-4 font-sans">
-      <img src={image} alt="logo" className="h-40 w-40 mb-4" />
+    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] flex flex-col items-center justify-center px-4 font-body">
+      <div className="w-full max-w-[420px] text-center">
+        <div className="mx-auto mb-6 flex h-[110px] w-[110px] items-center justify-center rounded-[22px] bg-white shadow-md">
+          <img
+            src={WelcomeImg}
+            alt="logo"
+            className="h-[70px] w-[70px] object-contain"
+          />
+        </div>
 
-      <p className="text-lg tracking-[2px] text-[blue] mb-6">M-Guru Login</p>
+        <p className="text-[11px] tracking-[3px] uppercase text-[#1e3a8a] font-semibold mb-3">
+          INTERNSHIP PORTAL
+        </p>
 
-      <p className="text-md text-gray-700 mb-4">
-        Enter your registered credentials
-      </p>
+        <h1 className="font-heading text-[30px] font-bold text-[#0f172a] mb-2 leading-[1.3]">
+          Welcome to M-Guru
+        </h1>
+
+        <p className="text-[14px] text-[#64748b] mb-8">
+          by{" "}
+          <span className="text-[#4c1d95] font-semibold">
+            Velava Foundation
+          </span>
+        </p>
+
+        <div className="w-[60px] h-[2px] bg-gradient-to-r from-[#1e3a8a] to-[#4c1d95] rounded mb-8 mx-auto" />
+
+      </div>
 
       <Formik
         initialValues={{ identifier: "", password: "" }}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        {({ values, handleChange, errors, touched }) => (
+        {() => (
           <Form className="w-full max-w-[360px] space-y-4">
-            <div>
-              <div
-                className={inputWrapperClass(
-                  !!(errors.identifier && touched.identifier),
-                )}
+            <FormInput
+              label="EMAIL OR USERNAME"
+              name="identifier"
+              type="text"
+              placeholder="Email or username"
+            />
+
+            <FormInput
+              label="PASSWORD"
+              name="password"
+              type="password"
+              placeholder="Password"
+            />
+
+            <div className="flex justify-center pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-[180px] max-w-full py-[16px] 
+                bg-gradient-to-br from-[#1e3a8a] to-[#4c1d95]
+                text-white text-[14px] font-semibold uppercase tracking-[1.5px]
+                rounded-[12px]
+                shadow-[0_6px_20px_rgba(30,58,138,0.25)]
+                hover:-translate-y-[2px] hover:shadow-[0_10px_30px_rgba(30,58,138,0.35)]
+                active:scale-[0.97]
+                transition duration-200 disabled:opacity-70 disabled:hover:translate-y-0"
               >
-                <input
-                  name="identifier"
-                  value={values.identifier}
-                  onChange={handleChange}
-                  placeholder="Email or username"
-                  className="
-                    flex-1 px-4 py-3 text-sm bg-transparent
-                    outline-none border-none
-                    placeholder:text-gray-400
-                  "
-                />
-              </div>
-
-              {errors.identifier && touched.identifier && (
-                <p className="text-red-500 text-xs mt-1">{errors.identifier}</p>
-              )}
-            </div>
-
-            <div>
-              <div
-                className={inputWrapperClass(
-                  !!(errors.password && touched.password),
-                )}
-              >
-                <input
-                  name="password"
-                  type="password"
-                  value={values.password}
-                  onChange={handleChange}
-                  placeholder="Password"
-                  className="
-                    flex-1 px-4 py-3 text-sm bg-transparent
-                    outline-none border-none
-                    placeholder:text-gray-400
-                  "
-                />
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="
-                    w-[56px] py-3 text-blue-500 text-xl
-                    flex items-center justify-center
-                    transition-all duration-200
-                    hover:scale-110 active:scale-95
-                  "
-                >
-                  <span className="flex h-6 w-6 items-center justify-center">
-                    {loading ? <div className="loader-btn scale-75" /> : "->"}
-                  </span>
-                </button>
-              </div>
-
-              {errors.password && touched.password && (
-                <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-              )}
+                <span className="flex h-6 items-center justify-center">
+                  {loading ? <div className="loader-btn loader-btn-sm" /> : "Login"}
+                </span>
+              </button>
             </div>
           </Form>
         )}
       </Formik>
-
-      <div className="flex items-center gap-4 my-6 w-full max-w-[360px]">
-        <div className="flex-1 h-[1px] bg-gray-300" />
-        <span className="text-xs text-gray-400">OR</span>
-        <div className="flex-1 h-[1px] bg-gray-300" />
-      </div>
-
-      <p
-        onClick={() => navigate("/")}
-        className="text-sm text-gray-500 cursor-pointer hover:underline"
-      >
-        Back to Home
-      </p>
     </div>
   );
 };

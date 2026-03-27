@@ -27,3 +27,9 @@ export const getUserByBatchApi = (batchId: number | string) => {
 export const paymentEmailApi = (data: any) => {
   return API.post("/payment_email", data);
 };
+
+export const getDashboardApi = (batchId?: number | string) => {
+  return API.post("/dashboard", null, {
+    params: batchId ? { batch_id: batchId } : undefined,
+  });
+};

@@ -10,22 +10,24 @@ const user = {
 };
 
 interface AdminPortalShellProps {
-  title: string
-  subtitle?: string
-  children: ReactNode
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  hideNav?: boolean;
 }
 
 const NAV_ITEMS = [
   { to: "/admin/portals", label: "Portals" },
+  { to: "/admin/interview-dashboard", label: "Interview Dashboard" },
   { to: "/admin/user-dashboard", label: "User Dashboard" },
   { to: "/admin/attendance-dashboard", label: "Attendance Dashboard" },
-  { to: "/admin/exam-dashboard", label: "Exam Dashboard" },
 ];
 
 const AdminPortalShell = ({
   title,
   subtitle,
   children,
+  hideNav = false,
 }: AdminPortalShellProps) => {
   const navigate = useNavigate();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -53,8 +55,14 @@ const AdminPortalShell = ({
       <header className="border-b border-white/10 bg-[#111827]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight mt-1">{title}</h1>
-            {subtitle && <p className="text-sm text-slate-300 mt-1">{subtitle}</p>}
+            <h1 className="mt-1 text-[28px] font-extrabold tracking-[-0.02em] text-white lg:text-[32px]">
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="mt-1 text-sm leading-6 text-slate-300">
+                {subtitle}
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -77,7 +85,11 @@ const AdminPortalShell = ({
               className="px-4 py-2 rounded-xl border border-red-400/30 text-red-300 hover:bg-red-500/10 transition-colors text-sm font-semibold"
             >
               <span className="flex h-5 w-[72px] items-center justify-center">
-                {loggingOut ? <div className="loader-btn scale-[0.7]" /> : "Sign Out"}
+                {loggingOut ? (
+                  <div className="loader-btn loader-btn-sm" />
+                ) : (
+                  "Sign Out"
+                )}
               </span>
             </button>
           </div>
@@ -85,23 +97,25 @@ const AdminPortalShell = ({
       </header>
 
       <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-6">
-        <nav className="flex flex-wrap gap-2 mb-6">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                  isActive
-                    ? "bg-sky-500 text-yellow-400"
-                    : "bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10"
-                }`
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
+        {!hideNav && (
+          <nav className="flex flex-wrap gap-2 mb-6">
+            {NAV_ITEMS.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                    isActive
+                      ? "bg-sky-500 text-yellow-400"
+                      : "bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10"
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+        )}
 
         {children}
       </div>

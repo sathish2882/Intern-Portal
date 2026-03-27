@@ -6,12 +6,19 @@ interface FormInputProps {
   name: string;
   type?: "text" | "email" | "password" | "number";
   placeholder?: string;
+  variant?: "default" | "admin";
 }
 
-const commonClass =
+const baseClass =
   "!w-full !h-[46px] !rounded-[12px] " +
-  "!bg-transparent !border-2 !border-[#3b82f6] " +
-  "focus-within:!border-[#3b82f6] focus-within:!shadow-md";
+  "!bg-transparent !border transition-colors";
+
+const variantClass: Record<NonNullable<FormInputProps["variant"]>, string> = {
+  default:
+    "!border-[#3b82f6] focus-within:!border-[#3b82f6] focus-within:!shadow-md",
+  admin:
+    "!border-white/[0.12] hover:!border-white/[0.2] focus-within:!border-[#e9a628] focus-within:!shadow-none",
+};
 
 const inputClass =
   "!bg-transparent !text-slate-900 !px-4 !text-sm !font-body " +
@@ -22,7 +29,10 @@ function FormInput({
   name,
   type = "text",
   placeholder,
+  variant = "default",
 }: FormInputProps) {
+  const commonClass = `${baseClass} ${variantClass[variant]}`;
+
   return (
     <div>
       {/* LABEL */}

@@ -2,11 +2,15 @@
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
+    fontFamily: {
+      sans: ["Calibri", "system-ui", "sans-serif"],
+      body: ["Calibri", "system-ui", "sans-serif"],
+      heading: ["Calibri", "system-ui", "sans-serif"],
+      jakarta: ["Calibri", "system-ui", "sans-serif"],
+      syne: ["Calibri", "system-ui", "sans-serif"],
+      mono: ["Calibri", "system-ui", "sans-serif"],
+    },
     extend: {
-      fontFamily: {
-        body: ["Calibri", "system-ui", "sans-serif"],
-        heading: ["Calibri", "system-ui", "sans-serif"],
-      },
       colors: {
         /* User portal — light navy */
         navy: "#0d1b2e",

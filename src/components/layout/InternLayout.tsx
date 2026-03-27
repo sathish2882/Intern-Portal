@@ -63,7 +63,7 @@ const InternLayout = () => {
           >
             <span className="flex min-h-5 min-w-[72px] items-center justify-center gap-1.5">
               {loggingOut ? (
-                <div className="loader-btn scale-[0.7]" />
+                <div className="loader-btn loader-btn-sm" />
               ) : (
                 <>
                   <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24">

@@ -5,7 +5,7 @@ interface EmailItem {
   id: number
   receiver_name: string
   receiver_email: string
-  email_type: string
+  email_type: number | string
   amount: number
   created_at: string
   is_complete: boolean
@@ -23,6 +23,23 @@ const TYPE_CLASSES: Record<string, string> = {
   CONFIRMATION: 'bg-asuccess/10 text-asuccess',
   RENEWAL: 'bg-adanger/10 text-adanger',
 }
+
+const EMAIL_TYPE_LABEL: Record<string, string> = {
+  '1': 'INVOICE',
+  '2': 'REMAINDER',
+  '3': 'CONFIRMATION',
+}
+
+const getEmailTypeLabel = (value: number | string) => {
+  const rawValue = String(value)
+  return EMAIL_TYPE_LABEL[rawValue] ?? rawValue.toUpperCase()
+}
+
+const formatEmailType = (value: number | string) =>
+  getEmailTypeLabel(value)
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
 
 const EmailHistory = () => {
   const [search, setSearch] = useState('')
@@ -58,7 +75,7 @@ const EmailHistory = () => {
     (h) =>
       h.receiver_name?.toLowerCase().includes(search.toLowerCase()) ||
       h.receiver_email?.toLowerCase().includes(search.toLowerCase()) ||
-      h.email_type?.toLowerCase().includes(search.toLowerCase())
+      formatEmailType(h.email_type).toLowerCase().includes(search.toLowerCase())
   )
 
   const formatDate = (date: string) =>
@@ -132,8 +149,8 @@ const EmailHistory = () => {
                     </td>
 
                     <td className="px-5 py-3">
-                      <span className={`text-[11px] px-2 py-0.5 rounded-lg ${TYPE_CLASSES[row.email_type]}`}>
-                        {row.email_type}
+                      <span className={`text-[11px] px-2 py-0.5 rounded-lg ${TYPE_CLASSES[getEmailTypeLabel(row.email_type)] ?? 'bg-white/10 text-adark'}`}>
+                        {formatEmailType(row.email_type)}
                       </span>
                     </td>
 
