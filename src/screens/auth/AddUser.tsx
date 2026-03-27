@@ -104,7 +104,9 @@ const AddUser = () => {
                 hover:opacity-95 transition duration-200
                 flex items-center justify-center gap-2"
               >
-                {loading ? <div className="loader-btn" /> : "Add User"}
+                <span className="flex h-6 w-[88px] items-center justify-center">
+                  {loading ? <div className="loader-btn scale-75" /> : "Add User"}
+                </span>
               </button>
 
               <Button

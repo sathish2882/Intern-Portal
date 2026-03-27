@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'
 import {MailOutlined,} from "@ant-design/icons"
 import { IoTimeOutline } from "react-icons/io5";
 import { removeToken, removeUserType } from '../../utils/authCookies'
+import { logoutApi } from '../../services/authApi'
 
 const user = {
   name: "Sathish",
@@ -59,12 +60,24 @@ const AdminLayout = () => {
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
 
-  const handleLogout = () => {
-    removeToken()
-    removeUserType()
-    toast.success('Logged out successfully')
-    navigate('/login')
+  const handleLogout = async () => {
+    if (loggingOut) return
+
+    setLoggingOut(true)
+
+    try {
+      await logoutApi()
+    } catch (error) {
+      console.error('Logout failed:', error)
+    } finally {
+      removeToken()
+      removeUserType()
+      toast.success('Logged out successfully')
+      navigate('/login', { replace: true })
+      setLoggingOut(false)
+    }
   }
 
   const SidebarContent = () => (
@@ -120,13 +133,22 @@ const AdminLayout = () => {
         )}
         <button
           onClick={handleLogout}
+          disabled={loggingOut}
           title={collapsed ? 'Sign Out' : undefined}
           className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-lg font-medium text-adanger hover:bg-adanger/10 transition-all font-syne ${collapsed ? 'justify-center' : ''}`}
         >
-          <svg className="flex-shrink-0" width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
-          </svg>
-          {!collapsed && 'Sign Out'}
+          <span className="flex min-h-6 min-w-[88px] items-center justify-center gap-2.5">
+            {loggingOut ? (
+              <div className="loader-btn scale-75" />
+            ) : (
+              <>
+                <svg className="flex-shrink-0" width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+                </svg>
+                {!collapsed && 'Sign Out'}
+              </>
+            )}
+          </span>
         </button>
       </div>
     </>

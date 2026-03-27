@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { removeToken, removeUserType } from "../../utils/authCookies";
+import { logoutApi } from "../../services/authApi";
 
 const user = {
   name: "Sathish",
@@ -27,12 +28,24 @@ const AdminPortalShell = ({
   children,
 }: AdminPortalShellProps) => {
   const navigate = useNavigate();
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  const handleLogout = () => {
-    removeToken();
-    removeUserType();
-    toast.success("Logged out successfully");
-    navigate("/login");
+  const handleLogout = async () => {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    try {
+      await logoutApi();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      removeToken();
+      removeUserType();
+      toast.success("Logged out successfully");
+      navigate("/login", { replace: true });
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -65,9 +78,12 @@ const AdminPortalShell = ({
             </div>
             <button
               onClick={handleLogout}
+              disabled={loggingOut}
               className="px-4 py-2 rounded-xl border border-red-400/30 text-red-300 hover:bg-red-500/10 transition-colors text-sm font-semibold"
             >
-              Sign Out
+              <span className="flex h-5 w-[72px] items-center justify-center">
+                {loggingOut ? <div className="loader-btn scale-[0.7]" /> : "Sign Out"}
+              </span>
             </button>
           </div>
         </div>
