@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { removeToken, removeUserType } from "../../utils/authCookies";
 
 const user = {
   name: "Sathish",
@@ -28,6 +29,8 @@ const AdminPortalShell = ({
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    removeToken();
+    removeUserType();
     toast.success("Logged out successfully");
     navigate("/login");
   };

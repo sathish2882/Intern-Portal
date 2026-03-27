@@ -1,4 +1,4 @@
-import { createHashRouter, Navigate } from "react-router-dom";
+import { createHashRouter, Navigate, Outlet } from "react-router-dom";
 
 // Auth
 import WelcomeScreen from "../screens/auth/WelcomeScreen";
@@ -26,16 +26,36 @@ import UserLayout from "../components/layout/UserLayout";
 import UserDashboard from "../screens/user/UserDashboard";
 import TestPage from "../screens/user/TestPage";
 import ResultPage from "../screens/user/ResultPage";
+import ProtectedRoute from "../components/ui/ProtectedRoute";
 
 export const router = createHashRouter([
-  { path: "/", element: <WelcomeScreen /> },
-  { path: "/login", element: <LoginScreen /> },
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute guestOnly>
+        <WelcomeScreen />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/login",
+    element: (
+      <ProtectedRoute guestOnly>
+        <LoginScreen />
+      </ProtectedRoute>
+    ),
+  },
   { path: "/register", element: <AddUser /> },
   { path: "/add-user", element: <AddUser /> },
   { path: "/otp", element: <OtpScreen /> },
 
   {
     path: "/admin",
+    element: (
+      <ProtectedRoute role="1">
+        <Outlet />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="portals" replace /> },
       { path: "portals", element: <AdminPortalSelector /> },
@@ -58,7 +78,11 @@ export const router = createHashRouter([
 
   {
     path: "/intern",
-    element: <InternLayout />,
+    element: (
+      <ProtectedRoute role="2">
+        <InternLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <InternDashboard /> },
@@ -67,7 +91,11 @@ export const router = createHashRouter([
 
   {
     path: "/user",
-    element: <UserLayout />,
+    element: (
+      <ProtectedRoute role="3">
+        <UserLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <UserDashboard /> },

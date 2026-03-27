@@ -8,7 +8,7 @@ import { setToken, setUser } from "../../utils/authCookies";
 import image from "../../assets/images/png/loginplaceholder1.png";
 
 interface FormValues {
-  email: string;
+  identifier: string;
   password: string;
 }
 
@@ -55,7 +55,16 @@ const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
 
   const validationSchema = Yup.object({
-    email: Yup.string().email("Invalid email").required("Email is required"),
+    identifier: Yup.string()
+      .required("Email or Username is required")
+      .test("email-or-username", "Enter a valid email or username", (value) => {
+        if (!value) return false;
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const usernameRegex = /^[a-zA-Z0-9_.]{3,20}$/;
+
+        return emailRegex.test(value) || usernameRegex.test(value);
+      }),
     password: Yup.string().required("Password is required"),
   });
 
@@ -63,11 +72,12 @@ const LoginScreen = () => {
     try {
       setLoading(true);
 
-      const formData = new FormData();
-      formData.append("email", values.email);
-      formData.append("password", values.password);
+      const payload = {
+        email: values.identifier,
+        password: values.password,
+      };
 
-      const response = await loginApi(formData);
+      const response = await loginApi(payload);
       const { token, userType } = getAuthData(response?.data ?? {});
 
       if (token && !Number.isNaN(userType)) {
@@ -80,8 +90,7 @@ const LoginScreen = () => {
 
       toast.error("Invalid login response");
     } catch (error: any) {
-      const message =
-        error?.response?.data?.detail || "Something went wrong";
+      const message = error?.response?.data?.detail || "Something went wrong";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -104,32 +113,32 @@ const LoginScreen = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] flex flex-col items-center justify-center px-4 font-sans">
-
       {/* Logo */}
       <img src={image} alt="logo" className="h-40 w-40 mb-4" />
 
-      <p className="text-lg tracking-[2px] text-[blue] mb-6">
-        M-Guru Portal
-      </p>
+      <p className="text-lg tracking-[2px] text-[blue] mb-6">M-Guru Login</p>
 
       <p className="text-md text-gray-700 mb-4">
         Enter your registered credentials
       </p>
 
       <Formik
-        initialValues={{ email: "", password: "" }}
+        initialValues={{ identifier: "", password: "" }}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
         {({ values, handleChange, errors, touched }) => (
           <Form className="w-full max-w-[360px] space-y-4">
-
             {/* EMAIL */}
             <div>
-              <div className={inputWrapperClass(!!(errors.email && touched.email))}>
+              <div
+                className={inputWrapperClass(
+                  !!(errors.identifier && touched.identifier),
+                )}
+              >
                 <input
-                  name="email"
-                  value={values.email}
+                  name="identifier"
+                  value={values.identifier}
                   onChange={handleChange}
                   placeholder="Email address"
                   className="
@@ -140,16 +149,18 @@ const LoginScreen = () => {
                 />
               </div>
 
-              {errors.email && touched.email && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.email}
-                </p>
+              {errors.identifier && touched.identifier && (
+                <p className="text-red-500 text-xs mt-1">{errors.identifier}</p>
               )}
             </div>
 
             {/* PASSWORD */}
             <div>
-              <div className={inputWrapperClass(!!(errors.password && touched.password))}>
+              <div
+                className={inputWrapperClass(
+                  !!(errors.password && touched.password),
+                )}
+              >
                 <input
                   name="password"
                   type="password"
@@ -173,21 +184,14 @@ const LoginScreen = () => {
                     hover:scale-110 active:scale-95
                   "
                 >
-                  {loading ? (
-                    <div className="loader-btn" />
-                  ) : (
-                    "→"
-                  )}
+                  {loading ? <div className="loader-btn" /> : "→"}
                 </button>
               </div>
 
               {errors.password && touched.password && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.password}
-                </p>
+                <p className="text-red-500 text-xs mt-1">{errors.password}</p>
               )}
             </div>
-
           </Form>
         )}
       </Formik>

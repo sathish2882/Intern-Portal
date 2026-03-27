@@ -3,6 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import {MailOutlined,} from "@ant-design/icons"
 import { IoTimeOutline } from "react-icons/io5";
+import { removeToken, removeUserType } from '../../utils/authCookies'
 
 const user = {
   name: "Sathish",
@@ -60,6 +61,8 @@ const AdminLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleLogout = () => {
+    removeToken()
+    removeUserType()
     toast.success('Logged out successfully')
     navigate('/login')
   }

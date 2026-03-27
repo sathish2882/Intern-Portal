@@ -35,14 +35,15 @@ const AddUser = () => {
     try {
       setLoading(true);
 
-      const formData = new FormData();
-      formData.append("username", values.username);
-      formData.append("email", values.email);
-      formData.append("password", values.password);
-      formData.append("type", String(Number(values.userType)));
-      formData.append("batch", String(Number(values.batch)));
+      const payload = {
+        username: values.username,
+        email: values.email,
+        password: values.password,
+        type: Number(values.userType),
+        batch: Number(values.batch),
+      };
 
-      await signupApi(formData);
+      await signupApi(payload);
 
       toast.success("User Added successfully");
       navigate("/admin/user-dashboard", { replace: true });
