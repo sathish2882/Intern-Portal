@@ -9,7 +9,7 @@ import {
 
 const PORTALS = [
   {
-    title: 'Payment Dashboard',
+    title: 'Finance Dashboard',
     route: '/admin/payment/dashboard',
     accent: 'border-fuchsia-400/20 bg-fuchsia-500/10',
     icon: <CreditCardOutlined style={{ fontSize: 28, color: '#e879f9', marginBottom: 12 }} />,
