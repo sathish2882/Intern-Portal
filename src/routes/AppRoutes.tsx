@@ -91,8 +91,9 @@ export const router = createHashRouter([
     path: "/user",
     element: (
       <ProtectedRoute role="3">
-        <UserLayout />
+           <UserLayout />
       </ProtectedRoute>
+      
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
@@ -100,7 +101,7 @@ export const router = createHashRouter([
       { path: "test", element: <TestPage /> },
       { path: "result", element: <ResultPage /> },
       { path:"userDetails", element:<UserDetails/>}
-      
+
     ],
   },
 
