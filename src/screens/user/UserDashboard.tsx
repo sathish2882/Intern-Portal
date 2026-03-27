@@ -4,7 +4,6 @@ import { startTest } from '../../redux/slices/testSlice'
 import { TEST_CONFIG } from '../../utils/testData'
 import { TestType } from '../../types'
 
-
 const user = {
   name: "Sathish",
   email: "sathish19222978sk@gmail.com"
@@ -31,14 +30,25 @@ const UserDashboard = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
 
-  const { result, resultsByType } = useAppSelector((s) => s.test)
+  const { resultsByType } = useAppSelector((s) => s.test)
 
   const firstName = user?.name?.split(' ')[0] ?? 'Intern'
-  const completed = Object.keys(resultsByType).length
+
+  // ✅ Completed (safe)
+  const completed = Object.values(resultsByType).filter(Boolean).length
+
+  // ✅ Pending
+  const pending = ASSESSMENTS.length - completed
+
+  // ✅ Best Score
   const bestPct = Object.values(resultsByType).reduce((best, item) => {
     if (!item) return best
     return Math.max(best, Math.round((item.correct / item.total) * 100))
   }, 0)
+
+  // ✅ Recent Activity (last attempted test)
+  const recentResult =
+    Object.values(resultsByType).filter(Boolean).slice(-1)[0] || null
 
   const handleStart = (testType: TestType) => {
     dispatch(startTest(testType))
@@ -48,7 +58,7 @@ const UserDashboard = () => {
   const KPIS = [
     { icon: '📋', label: 'Tests Assigned', value: String(ASSESSMENTS.length), badgeClass: 'bg-sky text-blue', badge: 'Assigned' },
     { icon: '✅', label: 'Completed', value: String(completed), badgeClass: 'bg-[#ecfdf5] text-asuccess', badge: 'Done' },
-    { icon: '⏳', label: 'Pending', value: String(ASSESSMENTS.length - completed), badgeClass: 'bg-[#fff7ed] text-[#e07b00]', badge: 'Pending' },
+    { icon: '⏳', label: 'Pending', value: String(pending), badgeClass: 'bg-[#fff7ed] text-[#e07b00]', badge: 'Pending' },
     { icon: '🏆', label: 'Best Score', value: bestPct ? `${bestPct}%` : '—', badgeClass: 'bg-sky text-blue', badge: 'Best' },
   ]
 
@@ -122,6 +132,7 @@ const UserDashboard = () => {
                           </div>
                         </div>
                       </td>
+
                       <td className="px-5 py-3.5 align-middle">
                         {!a.active ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-lightbg text-mist">
@@ -138,16 +149,23 @@ const UserDashboard = () => {
                           </span>
                         )}
                       </td>
+
                       <td className="px-5 py-3.5 align-middle">
                         <div className="w-[72px] h-1 bg-line rounded-full overflow-hidden">
                           <div className={`h-full rounded-full transition-all duration-700 ${isDone ? 'bg-asuccess w-full' : 'bg-blue w-0'}`} />
                         </div>
                       </td>
+
                       <td className="px-5 py-3.5 align-middle">
-                        <span className={`text-[13px] font-bold ${isDone && isPassed ? 'text-asuccess' : isDone ? 'text-danger' : 'text-mist'}`}>
+                        <span className={`text-[13px] font-bold ${
+                          isDone && isPassed ? 'text-asuccess'
+                          : isDone ? 'text-danger'
+                          : 'text-mist'
+                        }`}>
                           {isDone && testResult ? `${testResult.correct}/${testResult.total}` : '—'}
                         </span>
                       </td>
+
                       <td className="px-5 py-3.5 align-middle">
                         {!a.active ? null : isDone ? (
                           <button
@@ -179,19 +197,19 @@ const UserDashboard = () => {
             <span className="text-sm font-extrabold text-navy">Recent Activity</span>
           </div>
           <div className="p-5">
-            {result ? (
+            {recentResult ? (
               <div className="flex gap-3">
-                <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${result.passed ? 'bg-asuccess' : 'bg-[#e07b00]'}`} />
+                <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${recentResult.passed ? 'bg-asuccess' : 'bg-[#e07b00]'}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-semibold text-navy">
-                    {TEST_CONFIG[result.testType].data.title} {result.passed ? 'Passed ✅' : 'Failed ❌'}
+                    {TEST_CONFIG[recentResult.testType].data.title} {recentResult.passed ? 'Passed ✅' : 'Failed ❌'}
                   </p>
                   <p className="text-[11px] text-mist mt-0.5">
-                    Score: {result.correct}/{result.total} ({Math.round((result.correct / result.total) * 100)}%)
+                    Score: {recentResult.correct}/{recentResult.total} ({Math.round((recentResult.correct / recentResult.total) * 100)}%)
                   </p>
                 </div>
-                <span className={`text-[13px] font-extrabold flex-shrink-0 ${result.passed ? 'text-asuccess' : 'text-danger'}`}>
-                  {result.passed ? 'PASS' : 'FAIL'}
+                <span className={`text-[13px] font-extrabold flex-shrink-0 ${recentResult.passed ? 'text-asuccess' : 'text-danger'}`}>
+                  {recentResult.passed ? 'PASS' : 'FAIL'}
                 </span>
               </div>
             ) : (

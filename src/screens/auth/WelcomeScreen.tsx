@@ -61,16 +61,6 @@ const WelcomeScreen = () => {
           SIGN IN
         </button>
 
-        {/* REGISTER */}
-        <p className="text-[13px] text-[#64748b] mt-6">
-          Don't have an account?{" "}
-          <span
-            onClick={() => navigate("/register")}
-            className="text-[#1e3a8a] font-semibold cursor-pointer hover:underline"
-          >
-            Register Now
-          </span>
-        </p>
       </div>
 
       {/* FOOTER */}

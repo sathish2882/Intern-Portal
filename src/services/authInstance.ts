@@ -3,9 +3,6 @@ import Cookies from "js-cookie";
 
 const API = axios.create({
   baseURL: window.appConfig.baseURL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 API.interceptors.request.use(
@@ -14,6 +11,13 @@ API.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (config.data instanceof FormData && config.headers) {
+      delete config.headers["Content-Type"];
+    } else if (config.headers && !config.headers["Content-Type"]) {
+      config.headers["Content-Type"] = "application/json";
+    }
+
     return config;
   },
 

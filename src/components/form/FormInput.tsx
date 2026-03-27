@@ -38,7 +38,11 @@ function FormInput({
         <Field name={name}>
           {({ field }: any) => (
             <Input.Password
-              {...field}
+              id={name}
+              name={field.name}
+              value={field.value ?? ""}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
               placeholder={placeholder}
               className={commonClass}
               classNames={{ input: inputClass }}
@@ -49,12 +53,18 @@ function FormInput({
         <Field name={name}>
           {({ field, form }: any) => (
             <InputNumber
-              value={field.value}
+              id={name}
+              value={field.value ?? null}
               placeholder={placeholder}
-              className={commonClass}
-              classNames={{ input: inputClass }}
               controls={false}
               onChange={(value) => form.setFieldValue(name, value)}
+              onBlur={() => form.setFieldTouched(name, true)}
+              className={`${commonClass} flex items-center 
+                [&_.ant-input-number-input]:!px-4 
+                [&_.ant-input-number-input]:!bg-transparent 
+                [&_.ant-input-number-input]:!text-slate-900 
+                [&_.ant-input-number-input]:!h-[46px] 
+                [&_.ant-input-number-input]:!text-sm`}
             />
           )}
         </Field>
@@ -62,7 +72,11 @@ function FormInput({
         <Field name={name}>
           {({ field }: any) => (
             <Input
-              {...field}
+              id={name}
+              name={field.name}
+              value={field.value ?? ""}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
               type={type}
               placeholder={placeholder}
               className={commonClass}

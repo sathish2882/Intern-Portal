@@ -1,29 +1,46 @@
-{/*import { Navigate } from "react-router-dom";
-import Cookies from "js-cookie";
-import { useAppSelector } from "../../redux/hooks";
+import { ReactNode } from "react";
+import { Navigate } from "react-router-dom";
+import { getToken, getUserType } from "../../utils/authCookies";
 
-const ProtectedRoute = ({ children, role }: any) => {
-  const { user } = useAppSelector((s) => s.auth);
+interface ProtectedRouteProps {
+  children: ReactNode;
+  role?: string;
+  guestOnly?: boolean;
+}
 
-  const token = Cookies.get("token");
-  const userTypeFromCookie = Cookies.get("userType");
+const getRedirectByUserType = (userType?: string) => {
+  if (userType === "1") return "/admin/portals";
+  if (userType === "2") return "/intern/dashboard";
+  if (userType === "3") return "/user/dashboard";
+  return "/";
+};
 
-  // No token → not logged in
-  if (!token) {
+const ProtectedRoute = ({
+  children,
+  role,
+  guestOnly = false,
+}: ProtectedRouteProps) => {
+  const token = getToken();
+  const userType = getUserType();
+  const isLoggedIn = Boolean(token);
+
+  if (guestOnly) {
+    return isLoggedIn ? (
+      <Navigate to={getRedirectByUserType(userType)} replace />
+    ) : (
+      <>{children}</>
+    );
+  }
+
+  if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
   }
 
-  // Role mismatch (check both Redux + cookie)
-  if (
-    role &&
-    user &&
-    user.user_type !== role &&
-    userTypeFromCookie !== role
-  ) {
-    return <Navigate to="/" replace />;
+  if (role && userType !== role) {
+    return <Navigate to={getRedirectByUserType(userType)} replace />;
   }
 
-  return children;
+  return <>{children}</>;
 };
 
-export default ProtectedRoute;*/}
+export default ProtectedRoute; 

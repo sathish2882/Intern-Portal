@@ -1,5 +1,6 @@
 import { Button } from 'antd'
 import AdminPortalShell from '../../components/layout/AdminPortalShell'
+import { useNavigate } from 'react-router-dom'
 
 const USER_STATS = [
   { label: 'Registered Users', value: '128', hint: 'Across all current batches' },
@@ -22,7 +23,10 @@ const STATUS_CLASSES: Record<string, string> = {
   Selected: 'bg-sky-500/15 text-sky-300 border border-sky-400/20',
 }
 
+
+
 const AdminUserDashboard = () => {
+  const navigate = useNavigate()
   return (
     <AdminPortalShell
       title="User Dashboard">
@@ -37,7 +41,7 @@ const AdminUserDashboard = () => {
         ))}
       </div>
 
-      <Button className='!my-5 self-end' type='primary'>
+      <Button onClick={()=> navigate("/add-user")} className='!my-5 self-end' type='primary'>
         Add User  
       </Button>
 
