@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { removeToken, removeUserType } from "../../utils/authCookies";
+import { logoutApi } from "../../services/authApi";
 
 const user = {
   name: "Sathish",
@@ -10,6 +11,7 @@ const user = {
 
 interface AdminPortalShellProps {
   title: string
+  subtitle?: string
   children: ReactNode
 }
 
@@ -22,15 +24,28 @@ const NAV_ITEMS = [
 
 const AdminPortalShell = ({
   title,
+  subtitle,
   children,
 }: AdminPortalShellProps) => {
   const navigate = useNavigate();
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  const handleLogout = () => {
-    removeToken();
-    removeUserType();
-    toast.success("Logged out successfully");
-    navigate("/login");
+  const handleLogout = async () => {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    try {
+      await logoutApi();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      removeToken();
+      removeUserType();
+      toast.success("Logged out successfully");
+      navigate("/login", { replace: true });
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -39,6 +54,7 @@ const AdminPortalShell = ({
         <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight mt-1">{title}</h1>
+            {subtitle && <p className="text-sm text-slate-300 mt-1">{subtitle}</p>}
           </div>
 
           <div className="flex items-center gap-3">
@@ -57,9 +73,12 @@ const AdminPortalShell = ({
             </div>
             <button
               onClick={handleLogout}
+              disabled={loggingOut}
               className="px-4 py-2 rounded-xl border border-red-400/30 text-red-300 hover:bg-red-500/10 transition-colors text-sm font-semibold"
             >
-              Sign Out
+              <span className="flex h-5 w-[72px] items-center justify-center">
+                {loggingOut ? <div className="loader-btn scale-[0.7]" /> : "Sign Out"}
+              </span>
             </button>
           </div>
         </div>

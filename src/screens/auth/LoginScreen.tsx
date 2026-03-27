@@ -74,6 +74,8 @@ const LoginScreen = () => {
 
       const payload = {
         email: values.identifier,
+        username: values.identifier,
+        login: values.identifier,
         password: values.password,
       };
 
@@ -97,7 +99,6 @@ const LoginScreen = () => {
     }
   };
 
-  // 🔥 Production Input Wrapper
   const inputWrapperClass = (hasError: boolean) => `
     flex items-center rounded-[12px] bg-white overflow-hidden
     border transition-all duration-200 ease-in-out
@@ -113,7 +114,6 @@ const LoginScreen = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] flex flex-col items-center justify-center px-4 font-sans">
-      {/* Logo */}
       <img src={image} alt="logo" className="h-40 w-40 mb-4" />
 
       <p className="text-lg tracking-[2px] text-[blue] mb-6">M-Guru Login</p>
@@ -129,7 +129,6 @@ const LoginScreen = () => {
       >
         {({ values, handleChange, errors, touched }) => (
           <Form className="w-full max-w-[360px] space-y-4">
-            {/* EMAIL */}
             <div>
               <div
                 className={inputWrapperClass(
@@ -140,7 +139,7 @@ const LoginScreen = () => {
                   name="identifier"
                   value={values.identifier}
                   onChange={handleChange}
-                  placeholder="Email address"
+                  placeholder="Email or username"
                   className="
                     flex-1 px-4 py-3 text-sm bg-transparent
                     outline-none border-none
@@ -154,7 +153,6 @@ const LoginScreen = () => {
               )}
             </div>
 
-            {/* PASSWORD */}
             <div>
               <div
                 className={inputWrapperClass(
@@ -178,13 +176,15 @@ const LoginScreen = () => {
                   type="submit"
                   disabled={loading}
                   className="
-                    px-4 py-3 text-blue-500 text-xl
+                    w-[56px] py-3 text-blue-500 text-xl
                     flex items-center justify-center
                     transition-all duration-200
                     hover:scale-110 active:scale-95
                   "
                 >
-                  {loading ? <div className="loader-btn" /> : "→"}
+                  <span className="flex h-6 w-6 items-center justify-center">
+                    {loading ? <div className="loader-btn scale-75" /> : "->"}
+                  </span>
                 </button>
               </div>
 
@@ -196,19 +196,17 @@ const LoginScreen = () => {
         )}
       </Formik>
 
-      {/* Divider */}
       <div className="flex items-center gap-4 my-6 w-full max-w-[360px]">
         <div className="flex-1 h-[1px] bg-gray-300" />
         <span className="text-xs text-gray-400">OR</span>
         <div className="flex-1 h-[1px] bg-gray-300" />
       </div>
 
-      {/* Back */}
       <p
         onClick={() => navigate("/")}
         className="text-sm text-gray-500 cursor-pointer hover:underline"
       >
-        ← Back to Home
+        Back to Home
       </p>
     </div>
   );
