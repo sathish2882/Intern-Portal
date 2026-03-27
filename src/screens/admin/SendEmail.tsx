@@ -100,7 +100,7 @@ const SendEmail = () => {
             </label>
             <select
               onChange={(e) => handleCustomer(e.target.value)}
-              className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-md text-amuted  outline-none focus:border-gold cursor-pointer"
+              className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-xs text-amuted  outline-none focus:border-gold cursor-pointer"
             >
               <option value="" className='text-base'>Choose existing customer...</option>
               {customers.map((c) => (

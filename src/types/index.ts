@@ -8,7 +8,7 @@ export interface AuthUser {
   id: string
   name: string
   email: string
-  user_type: 'admin' | 'user'
+  user_type: 1 | 2 | 3
   token: string
 }
 

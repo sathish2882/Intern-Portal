@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { useAppDispatch, useAppSelector } from '../../redux/hooks'
-import { logout } from '../../redux/slices/authSlice'
 import { toast } from 'react-toastify'
 import {MailOutlined,} from "@ant-design/icons"
 import { IoTimeOutline } from "react-icons/io5";
+
+const user = {
+  name: "Sathish",
+  email: "sathish19222978sk@gmail.com"
+}
 
 const NAV_ITEMS = [
   {
@@ -52,14 +55,11 @@ const NAV_ITEMS = [
 ]
 
 const AdminLayout = () => {
-  const dispatch = useAppDispatch()
   const navigate = useNavigate()
-  const { user } = useAppSelector((s) => s.auth)
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleLogout = () => {
-    dispatch(logout())
     toast.success('Logged out successfully')
     navigate('/login')
   }

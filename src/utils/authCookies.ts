@@ -1,25 +1,23 @@
-import Cookies from 'js-cookie'
-import { AuthUser } from '../types'
+import Cookies from "js-cookie";
 
-const TOKEN_KEY = 'mguru_token'
-const USER_KEY  = 'mguru_user'
+export const setToken = (token: string) => {
+  Cookies.set("token", token, { expires: 7 });
+};
 
-export const setAuthCookie = (user: AuthUser): void => {
-  Cookies.set(TOKEN_KEY, user.token, { expires: 7 })
-  Cookies.set(USER_KEY, JSON.stringify(user), { expires: 7 })
+export const getToken = () => {
+  return Cookies.get("token")
+}
+export const removeToken = () => {
+  Cookies.remove("token")
 }
 
-export const getAuthToken = (): string | undefined => Cookies.get(TOKEN_KEY)
+export const setUser = (userType: string) => {
+  Cookies.set("userType", userType, { expires: 7 });
+};
 
-export const getAuthUser = (): AuthUser | null => {
-  const raw = Cookies.get(USER_KEY)
-  if (!raw) return null
-  try { return JSON.parse(raw) as AuthUser } catch { return null }
+export const getUserType = () => {
+  return Cookies.get("userType")
 }
-
-export const removeAuthCookie = (): void => {
-  Cookies.remove(TOKEN_KEY)
-  Cookies.remove(USER_KEY)
+export const removeUserType = () => {
+  Cookies.remove("userType")
 }
-
-export const isAuthenticated = (): boolean => !!getAuthToken()

@@ -1,3 +1,4 @@
+import { Button } from 'antd'
 import AdminPortalShell from '../../components/layout/AdminPortalShell'
 
 const USER_STATS = [
@@ -24,9 +25,8 @@ const STATUS_CLASSES: Record<string, string> = {
 const AdminUserDashboard = () => {
   return (
     <AdminPortalShell
-      title="User Dashboard"
-      subtitle="Overview of registered interns, current progress, and engagement status."
-    >
+      title="User Dashboard">
+      <div className='flex flex-col'>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {USER_STATS.map((card) => (
           <div key={card.label} className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -36,6 +36,10 @@ const AdminUserDashboard = () => {
           </div>
         ))}
       </div>
+
+      <Button className='!my-5 self-end' type='primary'>
+        Add User  
+      </Button>
 
       <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10">
@@ -68,6 +72,7 @@ const AdminUserDashboard = () => {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </AdminPortalShell>
   )

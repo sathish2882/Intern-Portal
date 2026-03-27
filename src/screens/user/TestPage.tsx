@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../redux/hooks'
 import {
@@ -7,11 +7,11 @@ import {
 } from '../../redux/slices/testSlice'
 import { TEST_CONFIG } from '../../utils/testData'
 import { TestResult } from '../../types'
-
 const TestPage = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
-  const { user } = useAppSelector((s) => s.auth)
+  const violationsRef = useRef(0)
+
   const { activeTestType, currentQuestion, answers, testStarted, timeLeft } = useAppSelector((s) => s.test)
   const activeTest = TEST_CONFIG[activeTestType].data
   const durationSeconds = TEST_CONFIG[activeTestType].durationSeconds
@@ -51,6 +51,32 @@ const TestPage = () => {
     }
   }, [timeLeft, testStarted, handleSubmit])
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!testStarted) return
+
+      if (document.hidden) {
+        violationsRef.current += 1
+
+        if (violationsRef.current >= 2) {
+          sessionStorage.setItem(
+            'test_alert_message',
+            'You switched tabs multiple times. Your test was submitted automatically.',
+          )
+          handleSubmit()
+        }
+      } else if (violationsRef.current > 0 && violationsRef.current < 2) {
+        alert(`Warning ${violationsRef.current}/2: Do not switch tabs!`)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [handleSubmit, testStarted])
+
   const confirmSubmit = () => {
     const unanswered = answers.filter((a) => a === null).length
     if (unanswered > 0 && !window.confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)) return
@@ -64,18 +90,13 @@ const TestPage = () => {
   const isLow = timeLeft < 300
   const q = questions[currentQuestion]
   const isLast = currentQuestion === questions.length - 1
-  const initials = user?.name?.charAt(0).toUpperCase() ?? 'U'
-  const firstName = user?.name?.split(' ')[0] ?? 'User'
 
   return (
     <div className="min-h-screen flex flex-col bg-lightbg font-jakarta text-navy">
 
       {/* Topbar */}
       <nav className="bg-white border-b border-line flex items-center justify-between px-4 lg:px-8 h-[60px] sticky top-0 z-50">
-        <div className="flex items-center gap-2.5">
-          <div className="w-[34px] h-[34px] bg-blue rounded-lg flex items-center justify-center text-base">🎯</div>
-          <span className="text-[17px] font-extrabold text-navy hidden sm:block">Aptitude Portal</span>
-        </div>
+        
         <span className="text-[13px] text-slate font-mono hidden md:block">{activeTest.title}</span>
         <div className="flex items-center gap-2 lg:gap-3">
           <div className={`flex items-center gap-2 px-3 py-2 border rounded-[9px] font-mono text-[18px] font-bold
@@ -83,12 +104,7 @@ const TestPage = () => {
             <span>⏱</span>
             <span>{fmt(timeLeft)}</span>
           </div>
-          <div className="hidden sm:flex items-center gap-2 py-[5px] pl-[5px] pr-3 border border-line rounded-[9px]">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue to-[#6b49e8] flex items-center justify-center text-[13px] font-extrabold text-white">
-              {initials}
-            </div>
-            <span className="text-[13px] font-bold text-navy">{firstName}</span>
-          </div>
+          
         </div>
       </nav>
 

@@ -1,47 +1,42 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-
 const user = {
-  name: "Sathish",
-  email: "sathish19222978sk@gmail.com"
+  name: 'Sathish',
+  email: 'sathish19222978sk@gmail.com',
 }
 
-const UserLayout = () => {
+const InternLayout = () => {
   const navigate = useNavigate()
 
-
   const handleLogout = () => {
-
     toast.success('Logged out successfully')
     navigate('/login')
   }
 
   return (
     <div className="min-h-screen bg-lightbg font-jakarta text-navy">
-      {/* Topbar */}
       <nav className="bg-white border-b border-line flex items-center justify-between px-4 lg:px-8 h-[60px] sticky top-0 z-50">
-        {/* Brand */}
         <div className="flex items-center gap-2.5">
           <div className="w-[34px] h-[34px] bg-blue rounded-lg flex items-center justify-center text-base">
-            🎯
+            IN
           </div>
           <span className="text-[17px] font-extrabold text-navy hidden sm:block">
-            Aptitude Portal
+            Intern Portal
           </span>
           <span className="text-[17px] font-extrabold text-navy sm:hidden">
-            M-Guru
+            Intern
           </span>
         </div>
 
-        {/* Right */}
+
         <div className="flex items-center gap-2 lg:gap-3">
           <div className="flex items-center gap-2 py-[5px] pl-[5px] pr-3 border border-line rounded-[9px]">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue to-[#6b49e8] flex items-center justify-center text-[13px] font-extrabold text-white">
-              {user?.name?.charAt(0).toUpperCase() ?? 'U'}
+              {user.name.charAt(0).toUpperCase()}
             </div>
             <span className="text-[13px] font-bold text-navy hidden sm:block">
-              {user?.name?.split(' ')[0] ?? 'User'}
+              {user.name.split(' ')[0]}
             </span>
           </div>
           <button
@@ -63,4 +58,4 @@ const UserLayout = () => {
   )
 }
 
-export default UserLayout
+export default InternLayout
