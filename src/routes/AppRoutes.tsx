@@ -14,7 +14,7 @@ import UserAttendanceDashboard from "../screens/admin/UserAttendanceDashboard";
 import UserExamMarksDashboard from "../screens/admin/UserExamMarksDashboard";
 import AdminDashboard from "../screens/admin/AdminDashboard";
 import SendEmail from "../screens/admin/SendEmail";
-import Customers from "../screens/admin/Customers";
+import Customers from "../screens/admin/User";
 import EmailHistory from "../screens/admin/EmailHistory";
 
 // Intern
@@ -94,8 +94,9 @@ export const router = createHashRouter([
     path: "/user",
     element: (
       <ProtectedRoute role="3">
-        <UserLayout />
+           <UserLayout />
       </ProtectedRoute>
+      
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
@@ -103,7 +104,7 @@ export const router = createHashRouter([
       { path: "test", element: <TestPage /> },
       { path: "result", element: <ResultPage /> },
       { path:"userDetails", element:<UserDetails/>}
-      
+
     ],
   },
 

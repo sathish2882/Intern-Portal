@@ -21,22 +21,25 @@ export interface AuthState {
 
 
 // ── Customer ──────────────────────────────────────
-export type PlanType = 'Basic' | 'Pro' | 'Enterprise';
-export type CustomerStatus = 'Active' | 'Inactive' | 'Pending';
 
+// Role options
+export type RoleType = 'Frontend' | 'Backend' | 'Others';
+
+// Customer Interface
 export interface Customer {
   id: number;
   name: string;
   email: string;
   phone: string;
-  plan: PlanType;
-  status: CustomerStatus;
+
+  role: string;       
+  customRole?: string; 
+  fees: string; 
 }
 
 export interface CustomerState {
   customers: Customer[];
 }
-
 
 // ── Email ──────────────────────────────────────────
 export type EmailType =

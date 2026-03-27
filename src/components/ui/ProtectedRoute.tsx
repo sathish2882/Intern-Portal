@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+ import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { getToken, getUserType } from "../../utils/authCookies";
 
@@ -44,3 +44,4 @@ const ProtectedRoute = ({
 };
 
 export default ProtectedRoute; 
+ 
