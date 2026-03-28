@@ -44,7 +44,6 @@ const EMAIL_TYPE_COLOR: Record<string, string> = {
   INVOICE: 'bg-gold',
   REMAINDER: 'bg-ainfo',
   CONFIRMATION: 'bg-asuccess',
-  RENEWAL: 'bg-adanger',
 }
 
 const EMAIL_TYPE_LABEL: Record<string, string> = {

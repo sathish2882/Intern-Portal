@@ -25,7 +25,7 @@ import UserLayout from "../components/layout/UserLayout";
 import UserDashboard from "../screens/user/UserDashboard";
 import TestPage from "../screens/user/TestPage";
 import ResultPage from "../screens/user/ResultPage";
-import ProtectedRoute from "../components/ui/ProtectedRoute";
+import ProtectedRoute from "../components/ui/ProtectedRoute"; 
 import UserDetails from "../screens/auth/userDetails";
 
 export const router = createHashRouter([
@@ -33,16 +33,18 @@ export const router = createHashRouter([
     path: "/",
     element: (
       <ProtectedRoute guestOnly>
-        <WelcomeScreen />
+           <WelcomeScreen />
       </ProtectedRoute>
+     
     ),
   },
   {
     path: "/login",
     element: (
-      <ProtectedRoute guestOnly>
-        <LoginScreen />
-      </ProtectedRoute>
+       <ProtectedRoute guestOnly>
+           <LoginScreen />
+      </ProtectedRoute> 
+     
     ),
   },
   { path: "/add-user", element: <AddUser /> },
@@ -51,8 +53,9 @@ export const router = createHashRouter([
     path: "/admin",
     element: (
       <ProtectedRoute role="1">
-        <Outlet />
+          <Outlet />
       </ProtectedRoute>
+      
     ),
     children: [
       { index: true, element: <Navigate to="portals" replace /> },
@@ -78,8 +81,9 @@ export const router = createHashRouter([
     path: "/intern",
     element: (
       <ProtectedRoute role="2">
-        <InternLayout />
+          <InternLayout />
       </ProtectedRoute>
+      
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
@@ -100,11 +104,16 @@ export const router = createHashRouter([
       { path: "dashboard", element: <UserDashboard /> },
       { path: "test", element: <TestPage /> },
       { path: "result", element: <ResultPage /> },
-      { path:"userDetails", element:<UserDetails/>}
-
+       { 
+    path:"userDetails", 
+    element:<UserDetails/>
+  },
     ],
+    
+
   },
 
+ 
   {
     path: "*",
     element: <Navigate to="/" replace />,

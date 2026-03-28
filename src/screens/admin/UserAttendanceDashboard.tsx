@@ -212,6 +212,7 @@ const UserAttendanceDashboard = () => {
       setDetailsPage(1)
 
       const response = await viewAttendanceByAdminApi(userId)
+      console.log(response)
       setAttendanceDetails(Array.isArray(response.data) ? response.data : [])
     } catch (error) {
       console.error(error)

@@ -9,5 +9,15 @@ export const store = configureStore({
   },
 })
 
+// 🔥 Save test state to localStorage whenever it changes
+store.subscribe(() => {
+  try {
+    const state = store.getState();
+    localStorage.setItem('redux-test-state', JSON.stringify(state.test));
+  } catch (e) {
+    console.error('Failed to save test state to localStorage:', e);
+  }
+});
+
 export type RootState   = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch

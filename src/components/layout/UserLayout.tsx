@@ -3,7 +3,9 @@ import { ReadOutlined } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { getUserByIdApi, logoutApi } from '../../services/authApi'
+import { useAppDispatch } from '../../redux/hooks'
+import { clearTestData, setCurrentUser } from '../../redux/slices/testSlice'
+import { getUserByIdApi } from '../../services/authApi'
 
 import {
   getUserId,
@@ -16,6 +18,7 @@ import {
 const UserLayout = () => {
   const location = useLocation()
   const navigate = useNavigate()
+  const dispatch = useAppDispatch()
 
   const [loggingOut, setLoggingOut] = useState(false)
   const [user, setUser] = useState({ name: 'User', email: '' })
@@ -41,10 +44,16 @@ const UserLayout = () => {
 
       const payload = response?.data ?? {}
 
+      const userName = String(payload.name ?? payload.username ?? 'User')
+      const userEmail = String(payload.email ?? '')
+
       setUser({
-        name: String(payload.name ?? payload.username ?? 'User'),
-        email: String(payload.email ?? ''),
+        name: userName,
+        email: userEmail,
       })
+
+      // 🔥 Store user info in Redux for access in UserDashboard
+      dispatch(setCurrentUser({ name: userName, email: userEmail }))
     } catch (error) {
       console.error('Failed to load user:', error)
     }
@@ -64,6 +73,13 @@ const UserLayout = () => {
     } catch (error) {
       console.error('Logout failed:', error)
     } finally {
+      // 🔥 Clear test data from Redux
+      dispatch(clearTestData())
+      
+      // 🔥 Clear test data from localStorage
+      localStorage.removeItem('redux-test-state')
+      console.log("🧹 Cleared test data on logout")
+
       removeToken()
       removeUserType()
       removeUserId()

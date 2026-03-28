@@ -139,6 +139,44 @@ footer {
   background-color: transparent !important;
 }
 
+/* Only applies inside this page */
+.user-form .ant-input,
+.user-form .ant-input-password input {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+}
+
+/* Wrapper (important for prefix inputs) */
+.user-form .ant-input-affix-wrapper {
+  background-color: #1a1a1a !important;
+  border: 1px solid #4b5563 !important;
+}
+
+/* Fix inner input inside wrapper */
+.user-form .ant-input-affix-wrapper input {
+  background: transparent !important;
+  color: #ffffff !important;
+}
+
+/* Placeholder */
+.user-form .ant-input::placeholder,
+.user-form .ant-input-affix-wrapper input::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Prefix icon */
+.user-form .ant-input-prefix {
+  color: #9ca3af !important;
+}
+
+/* Focus */
+.user-form .ant-input-affix-wrapper:focus-within,
+.user-form .ant-input:focus,
+.user-form .ant-input-focused {
+  border-color: #6366f1 !important;
+  box-shadow: none !important;
+}
+
 /* ─────────────────────────────────────────────
    Ant Design — ADMIN (Dark Theme)
 ───────────────────────────────────────────── */
@@ -244,5 +282,22 @@ footer {
   display: flex !important;
   flex-direction: column !important;
   height: 100% !important;
+}
+
+.role-dropdown .ant-select-item {
+  width: 100%;
+  display: inline-block;
+}
+.role-dropdown .ant-select-item-group-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+.role-dropdown .ant-select-item-option:hover {
+  background-color: #e6f4ff; /* light blue */
+  color: #1677ff;
+}
+.role-dropdown {
+  width: 100px !important; /* control dropdown width */
 }
 

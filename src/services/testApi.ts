@@ -1,9 +1,14 @@
 import API from "./authInstance";
+import { getUserId } from "../utils/authCookies";
 
-export const submitResultApi = (data: any) => {
-  return API.post("/submit-test", data);
+export const submitResultApi = ( data: any) => {
+  const userId = getUserId()
+  return API.post(`/submit-final-result/${userId}`, data);
 };
 
-export const getResultsApi = () => {
-  return API.get("/get-results");
-};
+export const getTestStatusApi = async () => {
+  const userId = getUserId();
+  return await API.get(`/users/${userId}/test-status`)
+ 
+}
+
