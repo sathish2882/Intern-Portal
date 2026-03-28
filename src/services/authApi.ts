@@ -12,6 +12,10 @@ export const logoutApi = () => {
   return API.post("/logout");
 };
 
+export const getMeApi = () => {
+  return API.get("/me");
+};
+
 export const submitTestApi = (data: any) => {
   return API.post("/submit-test", data);
 };

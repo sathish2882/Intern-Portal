@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { MailOutlined } from '@ant-design/icons'
 import { IoTimeOutline } from 'react-icons/io5'
 import { removeToken, removeUserType } from '../../utils/authCookies'
-import { logoutApi } from '../../services/authApi'
+import { getMeApi, logoutApi } from '../../services/authApi'
+import { CurrentUserProfile } from '../../types'
 
-const user = {
-  name: 'Sathish',
-  email: 'sathish19222978sk@gmail.com',
+const FALLBACK_USER = {
+  name: 'Admin',
+  email: '',
 }
 
 const NAV_ITEMS = [
@@ -24,9 +25,7 @@ const NAV_ITEMS = [
   {
     to: '/admin/payment/send-email',
     label: ' email',
-    icon: (
-     <MailOutlined />
-    ),
+    icon: <MailOutlined />,
   },
   {
     to: '/admin/payment/users',
@@ -40,9 +39,7 @@ const NAV_ITEMS = [
   {
     to: '/admin/payment/email-history',
     label: 'history',
-    icon: (
-     <IoTimeOutline />
-    ),
+    icon: <IoTimeOutline />,
   },
 ]
 
@@ -51,9 +48,42 @@ const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [loadingProfile, setLoadingProfile] = useState(true)
+  const [profile, setProfile] = useState<CurrentUserProfile | null>(null)
 
+  useEffect(() => {
+    let mounted = true
 
+    const loadProfile = async () => {
+      try {
+        const response = await getMeApi()
+        if (mounted) {
+          setProfile(response.data)
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error)
+      } finally {
+        if (mounted) {
+          setLoadingProfile(false)
+        }
+      }
+    }
 
+    void loadProfile()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const user = useMemo(() => {
+    if (!profile) return FALLBACK_USER
+
+    return {
+      name: profile.username || FALLBACK_USER.name,
+      email: profile.email || FALLBACK_USER.email,
+    }
+  }, [profile])
 
   const handleLogout = async () => {
     if (loggingOut) return
@@ -117,15 +147,23 @@ const AdminLayout = () => {
       </nav>
 
       <div className="border-t border-white/[0.07] p-3 space-y-2">
-        {!collapsed && user && (
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.04]">
-            <div className="w-8 h-8 rounded-full bg-asuccess flex items-center justify-center text-xs font-bold text-abg flex-shrink-0 shadow-[0_0_6px_#3dba78]">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-adark font-syne truncate">{user.name}</p>
-              <p className="text-xs text-amuted font-mono truncate">{user.email}</p>
-            </div>
+        {!collapsed && (
+          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.04] min-h-[52px]">
+            {loadingProfile ? (
+              <div className="flex w-full items-center justify-center">
+                <div className="loader-btn loader-btn-sm" />
+              </div>
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-full bg-asuccess flex items-center justify-center text-xs font-bold text-abg flex-shrink-0 shadow-[0_0_6px_#3dba78]">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-adark font-syne truncate">{user.name}</p>
+                  <p className="text-xs text-amuted font-mono truncate">{user.email}</p>
+                </div>
+              </>
+            )}
           </div>
         )}
         <button
@@ -203,3 +241,4 @@ const AdminLayout = () => {
 }
 
 export default AdminLayout
+
