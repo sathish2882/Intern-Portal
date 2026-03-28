@@ -330,7 +330,7 @@ const SendEmail = () => {
                       value={values.dueDate}
                       onChange={(e) => setFieldValue('dueDate', e.target.value)}
                       onBlur={() => setFieldTouched('dueDate', true)}
-                      className="w-full h-[46px] rounded-[12px] bg-transparent border border-white/[0.12] px-4 text-sm text-adark outline-none transition-colors focus:border-gold [color-scheme:dark]"
+                      className="w-full h-[46px]  rounded-[12px] bg-transparent border border-white/[0.12] px-4 text-sm text-adark outline-none transition-colors focus:border-gold [color-scheme:dark]"
                     />
                     {errors.dueDate && touched.dueDate && (
                       <p className="text-red-400 text-[11px] mt-1">{errors.dueDate}</p>
@@ -340,7 +340,7 @@ const SendEmail = () => {
                 </div>
 
                 <div className="mb-5">
-                  <label className="block text-xs text-adark uppercase tracking-[0.06em] mb-1.5">
+                  <label className="block text-[11px] text-[#8a8aa3] uppercase tracking-[0.06em] mb-1.5">
                     Custom Note (optional)
                   </label>
                   <textarea

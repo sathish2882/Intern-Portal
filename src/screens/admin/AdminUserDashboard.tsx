@@ -438,7 +438,7 @@ const AdminUserDashboard = () => {
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-400">User Details</p>
                 <h3 className="mt-2 text-2xl font-extrabold text-white">{selectedUser.name}</h3>
-                <p className="mt-1 text-sm text-slate-400">{selectedUser.email} · {selectedUser.batch}</p>
+                <p className="mt-1 text-sm text-slate-400">{selectedUser.email} ï¿½ {selectedUser.batch}</p>
               </div>
               <button type="button" onClick={() => setSelectedUser(null)} className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-semibold text-slate-300 transition-colors hover:text-white">
                 Close

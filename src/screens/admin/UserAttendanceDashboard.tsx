@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import AdminPortalShell from '../../components/layout/AdminPortalShell'
 import { getBatchesApi, getUserByBatchApi } from '../../services/authApi'
-import { viewAttendanceByAdminApi } from '../../services/adminApi'
+import { viewAttendanceByAdminApi, getAllUsers } from '../../services/adminApi'
 
 interface BatchOption {
   id: number
@@ -30,7 +30,7 @@ const STATUS_CLASSES: Record<string, string> = {
 }
 
 const DETAILS_PER_PAGE = 10
-const DEFAULT_BATCH_ID = '4'
+const PAGE_SIZE = 10
 
 const toArray = (value: unknown) => {
   if (Array.isArray(value)) return value
@@ -45,64 +45,45 @@ const toArray = (value: unknown) => {
   return []
 }
 
-const normalizeBatches = (payload: unknown): BatchOption[] => {
-  return toArray(payload).map((item, index) => {
+const normalizeBatches = (payload: unknown): BatchOption[] =>
+  toArray(payload).map((item, index) => {
     if (typeof item === 'object' && item !== null) {
-      const batch = item as Record<string, unknown>
-      const rawId = Number(batch.id ?? batch.batch_id ?? batch.value ?? index + 1)
-      const rawLabel =
-        batch.name ??
-        batch.batch_name ??
-        batch.label ??
-        batch.title ??
-        `Batch ${rawId}`
-
+      const b = item as Record<string, unknown>
       return {
-        id: rawId,
-        label: String(rawLabel),
+        id: Number(b.id ?? b.batch_id ?? index + 1),
+        label: String(b.name ?? b.batch_name ?? `Batch ${index + 1}`),
       }
     }
-
-    const rawId = Number(item)
-    return {
-      id: Number.isFinite(rawId) ? rawId : index + 1,
-      label: `Batch ${String(item)}`,
-    }
+    return { id: index + 1, label: `Batch ${String(item)}` }
   })
-}
 
-const normalizeUsers = (payload: unknown): BatchUser[] => {
-  return toArray(payload)
+const normalizeUsers = (payload: unknown): BatchUser[] =>
+  toArray(payload)
     .map((item) => {
       if (typeof item !== 'object' || item === null) return null
+      const u = item as Record<string, unknown>
 
-      const user = item as Record<string, unknown>
-      const rawId = Number(user.id ?? user.user_id)
-      const name = user.name ?? user.username ?? user.full_name ?? user.fullName
-      const email = user.email
-      const phone = user.phone ?? user.mobile ?? user.contact_no ?? user.contact ?? '-'
-      const status = user.status ?? user.user_status ?? 'Active'
+      const id = Number(u.id ?? u.user_id)
+      const name = u.name ?? u.username
+      const email = u.email
 
-      if (!Number.isFinite(rawId) || !name || !email) return null
+      if (!id || !name || !email) return null
 
       return {
-        id: rawId,
+        id,
         name: String(name),
         email: String(email),
-        phone: String(phone),
-        status: String(status),
+        phone: String(u.phone ?? u.mobile ?? '-'),
+        status: String(u.status ?? 'Active'),
       }
     })
-    .filter((user): user is BatchUser => Boolean(user))
-}
+    .filter((u): u is BatchUser => Boolean(u))
 
 const formatDateTime = (value: string | null) => {
   if (!value) return '-'
-
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return value
-
-  return parsed.toLocaleString('en-IN', {
+  const d = new Date(value)
+  if (isNaN(d.getTime())) return value
+  return d.toLocaleString('en-IN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -131,64 +112,67 @@ const EyeIcon = () => (
 
 const UserAttendanceDashboard = () => {
   const [batches, setBatches] = useState<BatchOption[]>([])
-  const [selectedBatchId, setSelectedBatchId] = useState('')
+  const [selectedBatchId, setSelectedBatchId] = useState('all')
   const [users, setUsers] = useState<BatchUser[]>([])
-  const [loadingBatches, setLoadingBatches] = useState(false)
   const [loadingUsers, setLoadingUsers] = useState(false)
+
+  const [page, setPage] = useState(1)
+  const [totalPagesUsers, setTotalPagesUsers] = useState(1)
+
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
   const [selectedUserName, setSelectedUserName] = useState('')
   const [attendanceDetails, setAttendanceDetails] = useState<AttendanceDetail[]>([])
   const [loadingDetails, setLoadingDetails] = useState(false)
   const [detailsPage, setDetailsPage] = useState(1)
 
+  // Load batches
   useEffect(() => {
-    const loadBatches = async () => {
+    const load = async () => {
       try {
-        setLoadingBatches(true)
-        const response = await getBatchesApi()
-        const payload = response?.data?.data ?? response?.data?.batches ?? response?.data
-        const normalizedBatches = normalizeBatches(payload)
-        setBatches(normalizedBatches)
-
-        const hasDefaultBatch = normalizedBatches.some((batch) => String(batch.id) === DEFAULT_BATCH_ID)
-        if (hasDefaultBatch) {
-          await handleBatchChange(DEFAULT_BATCH_ID)
-        }
-      } catch (error) {
-        console.error(error)
+        const res = await getBatchesApi()
+        setBatches(normalizeBatches(res?.data?.data ?? res?.data))
+      } catch {
         toast.error('Failed to load batches')
+      }
+    }
+    load()
+  }, [])
+
+  // Load users
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoadingUsers(true)
+
+        if (selectedBatchId === 'all') {
+          const res = await getAllUsers({ page_no: page, page_size: PAGE_SIZE })
+          const payload = res?.data ?? {}
+          const list = payload.data ?? payload.users ?? []
+
+          setUsers(normalizeUsers(list))
+          setTotalPagesUsers(payload.total_pages ?? 1)
+        } else {
+          const res = await getUserByBatchApi(selectedBatchId)
+          const payload = res?.data?.data ?? res?.data
+
+          setUsers(normalizeUsers(payload))
+          setTotalPagesUsers(1)
+        }
+      } catch {
+        toast.error('Failed to load users')
       } finally {
-        setLoadingBatches(false)
+        setLoadingUsers(false)
       }
     }
 
-    void loadBatches()
-  }, [])
+    load()
+  }, [selectedBatchId, page])
 
-  const handleBatchChange = async (batchId: string) => {
-    setSelectedBatchId(batchId)
-    setUsers([])
-    closeDetails()
-
-    if (!batchId) return
-
-    try {
-      setLoadingUsers(true)
-      const response = await getUserByBatchApi(batchId)
-      const payload = response?.data?.data ?? response?.data?.users ?? response?.data
-      setUsers(normalizeUsers(payload))
-    } catch (error) {
-      console.error(error)
-      toast.error('Failed to load users for batch')
-    } finally {
-      setLoadingUsers(false)
-    }
-  }
-
+  // Stats
   const totalUsers = users.length
-  const activeUsers = users.filter((user) => user.status === 'Active').length
-  const pendingUsers = users.filter((user) => user.status === 'Pending').length
-  const inactiveUsers = users.filter((user) => user.status === 'Inactive').length
+  const activeUsers = users.filter((u) => u.status === 'Active').length
+  const pendingUsers = users.filter((u) => u.status === 'Pending').length
+  const inactiveUsers = users.filter((u) => u.status === 'Inactive').length
 
   const attendanceStats = [
     { label: 'Total Users', value: totalUsers, hint: 'Available in table', valueClass: 'text-ainfo' },
@@ -197,33 +181,46 @@ const UserAttendanceDashboard = () => {
     { label: 'Inactive Users', value: inactiveUsers, hint: 'Not currently active', valueClass: 'text-adanger' },
   ]
 
+  // SAFE pagination
   const paginatedDetails = useMemo(() => {
-    const startIndex = (detailsPage - 1) * DETAILS_PER_PAGE
-    return attendanceDetails.slice(startIndex, startIndex + DETAILS_PER_PAGE)
+    if (!Array.isArray(attendanceDetails)) return []
+    const start = (detailsPage - 1) * DETAILS_PER_PAGE
+    return attendanceDetails.slice(start, start + DETAILS_PER_PAGE)
   }, [attendanceDetails, detailsPage])
 
-  const totalPages = Math.max(1, Math.ceil(attendanceDetails.length / DETAILS_PER_PAGE))
+  // View attendance (FIXED)
+ const handleViewAttendance = async (id: number, name: string) => {
+  try {
+    setSelectedUserId(id)
+    setSelectedUserName(name)
+    setDetailsPage(1)
+    setLoadingDetails(true)
 
-  const handleViewAttendance = async (userId: number, userName: string) => {
-    try {
-      setLoadingDetails(true)
-      setSelectedUserId(userId)
-      setSelectedUserName(userName)
-      setDetailsPage(1)
+    const res = await viewAttendanceByAdminApi(id)
 
-      const response = await viewAttendanceByAdminApi(userId)
-      console.log(response)
-      setAttendanceDetails(Array.isArray(response.data) ? response.data : [])
-    } catch (error) {
-      console.error(error)
-      toast.error('Failed to load attendance details')
-      setSelectedUserId(null)
-      setSelectedUserName('')
-      setAttendanceDetails([])
-    } finally {
-      setLoadingDetails(false)
-    }
+    const payload =
+      res?.data?.data ??
+      res?.data?.attendance ??
+      res?.data
+
+    // ✅ TRANSFORM BACKEND → UI FORMAT
+    const normalized = Array.isArray(payload)
+      ? payload.map((item: any) => ({
+          login: item.first_login ?? null,
+          logout: item.last_logout ?? null,
+          ideal_time: item.productive_minutes ?? null,
+        }))
+      : []
+
+    setAttendanceDetails(normalized)
+  } catch (error) {
+    console.error(error)
+    toast.error('Failed to load attendance details')
+    setAttendanceDetails([])
+  } finally {
+    setLoadingDetails(false)
   }
+}
 
   const closeDetails = () => {
     setSelectedUserId(null)
@@ -234,28 +231,27 @@ const UserAttendanceDashboard = () => {
 
   return (
     <AdminPortalShell title="User Attendance Dashboard">
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-end">
-        <div className="w-full max-w-[260px]">
-          <label className="mb-1.5 block text-xs uppercase tracking-[0.06em] text-adark">
-            Filter By Batch
-          </label>
-          <select
-            value={selectedBatchId}
-            onChange={(event) => void handleBatchChange(event.target.value)}
-            className="w-full cursor-pointer rounded-[10px] border border-white/[0.12] bg-abg3 px-3.5 py-2.5 text-xs text-adark outline-none transition-colors focus:border-gold"
-          >
-            <option value="">
-              {loadingBatches ? 'Loading batches...' : 'Choose batch...'}
+
+      {/* FILTER */}
+      <div className="mb-6 flex justify-end">
+        <select
+          value={selectedBatchId}
+          onChange={(e) => {
+            setSelectedBatchId(e.target.value)
+            setPage(1)
+          }}
+          className="w-[260px] rounded-[10px] border border-white/[0.12] bg-abg3 px-3.5 py-2.5 text-xs"
+        >
+          <option value="all">All</option>
+          {batches.map((b) => (
+            <option key={b.id} value={String(b.id)}>
+              {b.label}
             </option>
-            {batches.map((batch) => (
-              <option key={batch.id} value={batch.id}>
-                {batch.label}
-              </option>
-            ))}
-          </select>
-        </div>
+          ))}
+        </select>
       </div>
 
+      {/* CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {attendanceStats.map((stat) => (
           <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -266,79 +262,69 @@ const UserAttendanceDashboard = () => {
         ))}
       </div>
 
+      {/* TABLE */}
       <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10">
-          <h2 className="text-sm font-bold">Attendance Overview</h2>
-        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/10">
-                {['Id', 'Name', 'Email', 'Phone', 'Status', 'Action'].map((heading) => (
-                  <th key={heading} className="text-left px-5 py-3 text-[11px] uppercase tracking-[0.14em] text-slate-400 font-medium">
-                    {heading}
-                  </th>
+                {['Id','Name','Email','Phone','Status','Action'].map(h => (
+                  <th key={h} className="px-5 py-3 text-left text-xs text-slate-400">{h}</th>
                 ))}
               </tr>
             </thead>
+
             <tbody>
-              {!selectedBatchId && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-slate-400">
-                    Select a batch to view users.
-                  </td>
-                </tr>
-              )}
-              {selectedBatchId && loadingUsers && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-slate-400">
-                    Loading users...
-                  </td>
-                </tr>
-              )}
-              {selectedBatchId && !loadingUsers && users.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-slate-400">
-                    No users found for this batch.
-                  </td>
-                </tr>
-              )}
-              {!loadingUsers && users.map((customer) => (
-                  <tr key={customer.id} className="border-b border-white/5 last:border-b-0">
-                    <td className="px-5 py-4 font-mono text-slate-300">#{customer.id}</td>
-                    <td className="px-5 py-4 font-semibold">{customer.name}</td>
-                    <td className="px-5 py-4 text-slate-300">{customer.email}</td>
-                    <td className="px-5 py-4 text-slate-300">{customer.phone}</td>
+              {loadingUsers ? (
+                <tr><td colSpan={6} className="px-5 py-8 text-center text-slate-400">Loading users...</td></tr>
+              ) : users.length === 0 ? (
+                <tr><td colSpan={6} className="px-5 py-8 text-center text-slate-400">No users found</td></tr>
+              ) : (
+                users.map(u => (
+                  <tr key={u.id} className="border-b border-white/5 last:border-b-0">
+                    <td className="px-5 py-4 font-mono text-slate-300">#{u.id}</td>
+                    <td className="px-5 py-4 font-semibold">{u.name}</td>
+                    <td className="px-5 py-4 text-slate-300">{u.email}</td>
+                    <td className="px-5 py-4 text-slate-300">{u.phone}</td>
                     <td className="px-5 py-4">
-                      <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${STATUS_CLASSES[customer.status]}`}>
-                        {customer.status}
+                      <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${STATUS_CLASSES[u.status]}`}>
+                        {u.status}
                       </span>
                     </td>
                     <td className="px-5 py-4">
                       <button
-                        type="button"
-                        onClick={() => void handleViewAttendance(customer.id, customer.name)}
-                        className="inline-flex items-center gap-2 rounded-lg border border-ainfo/25 bg-ainfo/10 px-3 py-1.5 text-xs font-bold text-ainfo transition-colors hover:bg-ainfo/20"
+                        onClick={() => handleViewAttendance(u.id, u.name)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-ainfo/25 bg-ainfo/10 px-3 py-1.5 text-xs font-bold text-ainfo hover:bg-ainfo/20"
                       >
                         <EyeIcon />
                         View
                       </button>
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
+
+        {selectedBatchId === 'all' && (
+          <div className="px-5 py-3 border-t border-white/10 flex justify-between">
+            <p className="text-xs text-slate-400">Page {page} of {totalPagesUsers}</p>
+            <div className="flex gap-2">
+              <button disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</button>
+              <button disabled={page === totalPagesUsers} onClick={() => setPage(p => p + 1)}>Next</button>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/*  MODAL  */}
       {selectedUserId !== null && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) closeDetails()
-          }}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) closeDetails() }}>
+          
           <div className="w-full max-w-5xl rounded-2xl border border-white/10 bg-abg2 p-6 max-h-[90vh] overflow-y-auto">
+
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-bold text-adark">Attendance Details</h3>
@@ -347,9 +333,8 @@ const UserAttendanceDashboard = () => {
                 </p>
               </div>
               <button
-                type="button"
                 onClick={closeDetails}
-                className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-semibold text-amuted transition-colors hover:text-adark"
+                className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-semibold text-amuted hover:text-adark"
               >
                 Close
               </button>
@@ -360,74 +345,38 @@ const UserAttendanceDashboard = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/10">
-                      {['Login', 'Logout', 'Idle Time'].map((heading) => (
-                        <th key={heading} className="text-left px-5 py-3 text-[11px] uppercase tracking-[0.14em] text-slate-400 font-medium">
-                          {heading}
-                        </th>
+                      {['Login','Logout','Idle Time'].map(h => (
+                        <th key={h} className="px-5 py-3 text-xs text-slate-400">{h}</th>
                       ))}
                     </tr>
                   </thead>
+
                   <tbody>
                     {loadingDetails && (
-                      <tr>
-                        <td colSpan={3} className="px-5 py-8 text-center text-sm text-slate-400">
-                          Loading attendance details...
-                        </td>
-                      </tr>
+                      <tr><td colSpan={3} className="px-5 py-8 text-center text-slate-400">Loading attendance details...</td></tr>
                     )}
 
-                    {!loadingDetails && attendanceDetails.length === 0 && (
-                      <tr>
-                        <td colSpan={3} className="px-5 py-8 text-center text-sm text-slate-400">
-                          No attendance details found.
-                        </td>
-                      </tr>
+                    {!loadingDetails && paginatedDetails.length === 0 && (
+                      <tr><td colSpan={3} className="px-5 py-8 text-center text-slate-400">No attendance details found.</td></tr>
                     )}
 
-                    {!loadingDetails && paginatedDetails.map((detail, index) => (
-                      <tr key={`${detail.login}-${index}`} className="border-b border-white/5 last:border-b-0">
-                        <td className="px-5 py-4 text-slate-200">{formatDateTime(detail.login)}</td>
-                        <td className="px-5 py-4 text-slate-300">{formatDateTime(detail.logout)}</td>
-                        <td className="px-5 py-4 font-mono text-slate-200">{formatHours(detail.ideal_time)}</td>
+                    {!loadingDetails && paginatedDetails.map((d, i) => (
+                      <tr key={i} className="border-b border-white/5 last:border-b-0">
+                        <td className="px-5 py-4 text-center text-slate-200">{formatDateTime(d.login)}</td>
+                        <td className="px-5 py-4 text-center text-slate-300">{formatDateTime(d.logout)}</td>
+                        <td className="px-5 py-4 text-center text-slate-200">{formatHours(d.ideal_time)}</td>
                       </tr>
                     ))}
                   </tbody>
+
                 </table>
               </div>
             </div>
 
-            {!loadingDetails && attendanceDetails.length > DETAILS_PER_PAGE && (
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-amuted">
-                  Showing {(detailsPage - 1) * DETAILS_PER_PAGE + 1}-
-                  {Math.min(detailsPage * DETAILS_PER_PAGE, attendanceDetails.length)} of {attendanceDetails.length}
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={detailsPage === 1}
-                    onClick={() => setDetailsPage((page) => Math.max(1, page - 1))}
-                    className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-semibold text-adark disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-sm text-amuted">
-                    Page {detailsPage} of {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={detailsPage === totalPages}
-                    onClick={() => setDetailsPage((page) => Math.min(totalPages, page + 1))}
-                    className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-semibold text-adark disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
+
     </AdminPortalShell>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getAllEmails, batchemailHistory } from '../../services/adminApi'
+import { getBatchesApi } from '../../services/authApi'
 
 interface EmailItem {
   id: number
@@ -10,10 +11,44 @@ interface EmailItem {
   is_complete: boolean
 }
 
+interface BatchOption {
+  id: number
+  label: string
+}
+
 const STATUS_CLASSES: Record<string, string> = {
   Sent: 'bg-asuccess/10 text-asuccess border border-asuccess/25',
   Pending: 'bg-gold/10 text-gold border border-gold/25',
   Failed: 'bg-adanger/10 text-adanger border border-adanger/25',
+}
+
+const toArray = (value: unknown) => {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+const normalizeBatches = (payload: unknown): BatchOption[] => {
+  return toArray(payload).map((item, index) => {
+    if (typeof item === 'object' && item !== null) {
+      const b = item as Record<string, unknown>
+      return {
+        id: Number(b.id ?? b.batch_id ?? index + 1),
+        label: String(b.name ?? b.batch_name ?? `Batch ${index + 1}`),
+      }
+    }
+    return {
+      id: index + 1,
+      label: `Batch ${String(item)}`,
+    }
+  })
 }
 
 const EmailHistory = () => {
@@ -22,7 +57,28 @@ const EmailHistory = () => {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
+
   const [batchId, setBatchId] = useState<number | 'all'>('all')
+  const [batches, setBatches] = useState<BatchOption[]>([])
+
+  // ✅ LOAD BATCHES FROM API
+  useEffect(() => {
+    const loadBatches = async () => {
+      try {
+        const res = await getBatchesApi()
+        const payload =
+          res?.data?.data ??
+          res?.data?.batches ??
+          res?.data
+
+        setBatches(normalizeBatches(payload))
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    loadBatches()
+  }, [])
 
   const fetchEmails = async (pageNo = 1) => {
     try {
@@ -44,9 +100,9 @@ const EmailHistory = () => {
 
       const result = res.data
 
-      setData(result.data)
-      setTotalPages(result.total_pages)
-      setPage(result.current_page)
+      setData(result?.data ?? [])
+      setTotalPages(result?.total_pages ?? 1)
+      setPage(result?.current_page ?? pageNo)
     } catch (err) {
       console.error(err)
     } finally {
@@ -93,7 +149,7 @@ const EmailHistory = () => {
           />
         </div>
 
-        {/* Dropdown */}
+        {/* ✅ DYNAMIC DROPDOWN (UI SAME) */}
         <select
           value={batchId}
           onChange={(e) => {
@@ -104,14 +160,16 @@ const EmailHistory = () => {
           className="bg-abg2 border border-white/[0.07] rounded-[10px] px-3 py-2 text-sm text-adark"
         >
           <option value="all">All</option>
-          <option value={1}>Batch 1</option>
-          <option value={2}>Batch 2</option>
-          <option value={3}>Batch 3</option>
-          <option value={4}>Batch 4</option>
+
+          {batches.map((batch) => (
+            <option key={batch.id} value={batch.id}>
+              {batch.label}
+            </option>
+          ))}
         </select>
       </div>
 
-      {/* Table */}
+      {/* TABLE + PAGINATION (UNCHANGED UI) */}
       <div className="bg-abg2 border border-white/[0.07] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -188,20 +246,6 @@ const EmailHistory = () => {
             >
               Prev
             </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`px-3 py-1 text-xs rounded ${
-                  page === p
-                    ? 'bg-gold text-black'
-                    : 'bg-abg3 hover:bg-abg4'
-                }`}
-              >
-                {p}
-              </button>
-            ))}
 
             <button
               disabled={page === totalPages}
