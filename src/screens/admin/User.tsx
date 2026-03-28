@@ -1,103 +1,152 @@
-import { useState, useEffect } from 'react'
-import { useFormik } from 'formik'
-import * as Yup from 'yup'
+import { useState, useEffect, useMemo } from 'react'
 import { toast } from 'react-toastify'
+import { getBatchesApi } from '../../services/authApi'
 import { getAllUsers, getBatchUsers } from '../../services/adminApi'
 
-const schema = Yup.object({
-  name: Yup.string().required('Name is required'),
-  email: Yup.string().email('Enter valid email').required('Email is required'),
-  phone: Yup.string().required('Phone is required'),
-})
-
-interface ModalInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface BatchOption {
+  id: number
   label: string
-  error?: string
-  touched?: boolean
 }
 
-const ModalInput = ({ label, error, touched, ...props }: ModalInputProps) => (
-  <div>
-    <label className="block text-[11px] text-amuted uppercase tracking-[0.06em] mb-1.5">{label}</label>
-    <input
-      {...props}
-      className={`w-full bg-abg4 border rounded-[10px] px-3.5 py-2.5 text-sm text-adark outline-none
-      ${touched && error ? 'border-adanger' : 'border-white/[0.12]'}`}
-    />
-    {touched && error && <p className="text-[11px] text-adanger mt-1">{error}</p>}
-  </div>
-)
+interface PaymentUser {
+  id: number
+  username: string
+  email: string
+  phone: string
+  batch: string
+  totalFee: number
+  paidAmount: number
+  dueAmount: number
+}
+
+const toArray = (value: unknown) => {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+const normalizeBatches = (payload: unknown): BatchOption[] => {
+  return toArray(payload).map((item, index) => {
+    if (typeof item === 'object' && item !== null) {
+      const batch = item as Record<string, unknown>
+      const rawId = Number(batch.id ?? batch.batch_id ?? batch.value ?? index + 1)
+      const rawLabel = batch.name ?? batch.batch_name ?? batch.label ?? batch.title ?? `Batch ${rawId}`
+      return { id: rawId, label: String(rawLabel) }
+    }
+
+    const rawId = Number(item)
+    return {
+      id: Number.isFinite(rawId) ? rawId : index + 1,
+      label: `Batch ${String(item)}`,
+    }
+  })
+}
+
+const normalizePaymentUsers = (payload: unknown, batchLabel?: string): PaymentUser[] => {
+  return toArray(payload)
+    .map((item) => {
+      if (typeof item !== 'object' || item === null) return null
+
+      const user = item as Record<string, unknown>
+      const rawId = Number(user.id ?? user.user_id)
+      const username = String(user.username ?? user.name ?? '').trim()
+
+      if (!Number.isFinite(rawId) || !username) return null
+
+      return {
+        id: rawId,
+        username,
+        email: String(user.email ?? '-'),
+        phone: String(user.phone ?? user.phno ?? user.mobile ?? '-'),
+        batch: String(user.batch ?? user.batch_name ?? batchLabel ?? 'N/A'),
+        totalFee: Number(user.total_fee ?? user.fees ?? 0),
+        paidAmount: Number(user.paid_amount ?? 0),
+        dueAmount: Number(user.due_amount ?? 0),
+      }
+    })
+    .filter((user): user is PaymentUser => Boolean(user))
+}
+
+const formatCurrency = (value: number) => `Rs.${value.toLocaleString('en-IN')}`
 
 const User = () => {
-
-  const [customers, setCustomers] = useState<any[]>([])
+  const [customers, setCustomers] = useState<PaymentUser[]>([])
   const [search, setSearch] = useState('')
   const [batch, setBatch] = useState('all')
+  const [batches, setBatches] = useState<BatchOption[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const [modalOpen, setModalOpen] = useState(false)
+  const loadBatches = async () => {
+    try {
+      const response = await getBatchesApi()
+      const payload = response?.data?.data ?? response?.data?.batches ?? response?.data
+      setBatches(normalizeBatches(payload))
+    } catch (error) {
+      console.error(error)
+      toast.error('Failed to load batches')
+    }
+  }
 
-  // 🔥 API Calls
   const fetchAll = async () => {
     try {
-      const res = await getAllUsers()
-      setCustomers(res.data.data)
+      setLoading(true)
+      const res = await getAllUsers({ page_no: 1, page_size: 100 })
+      const payload = res?.data?.data ?? res?.data?.users ?? res?.data
+      setCustomers(normalizePaymentUsers(payload, 'All'))
     } catch (err) {
       console.error(err)
+      toast.error('Failed to load users')
+    } finally {
+      setLoading(false)
     }
   }
 
   const fetchBatch = async (id: number) => {
     try {
+      setLoading(true)
       const res = await getBatchUsers(id)
-      setCustomers(res.data)
+      const payload = res?.data?.data ?? res?.data?.users ?? res?.data
+      const batchLabel = batches.find((item) => item.id === id)?.label ?? `Batch ${id}`
+      setCustomers(normalizePaymentUsers(payload, batchLabel))
     } catch (err) {
       console.error(err)
+      toast.error('Failed to load users')
+    } finally {
+      setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchAll()
+    void loadBatches()
+    void fetchAll()
   }, [])
 
-  // 🔍 Search
-  const filtered = customers.filter(
-    (c) =>
-      c.username?.toLowerCase().includes(search.toLowerCase()) ||
-      c.email?.toLowerCase().includes(search.toLowerCase())
+  const filtered = useMemo(
+    () =>
+      customers.filter(
+        (c) =>
+          c.username?.toLowerCase().includes(search.toLowerCase()) ||
+          c.email?.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [customers, search],
   )
-
-  const formik = useFormik({
-    initialValues: {
-      name: '',
-      email: '',
-      phone: '',
-    },
-    validationSchema: schema,
-    onSubmit: () => {
-      toast.success('Customer added (UI only)')
-      setModalOpen(false)
-    },
-  })
 
   return (
     <div className="text-adark">
-
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <div>
           <h1 className="text-2xl font-extrabold text-adark mb-1">Users</h1>
-          <p className="text-sm text-amuted">Manage your User database.</p>
+          <p className="text-sm text-amuted">PayDesk Users shows only payment-related information.</p>
         </div>
-
-        <button
-          onClick={() => setModalOpen(true)}
-          className="px-4 py-2.5 bg-gold text-abg font-bold text-sm rounded-[10px]"
-        >
-          + Add User
-        </button>
       </div>
 
-      {/* 🔥 Search + Batch Dropdown */}
       <div className="flex gap-3 mb-4 justify-between">
         <div className="relative max-w-sm w-full">
           <input
@@ -114,28 +163,26 @@ const User = () => {
             const val = e.target.value
             setBatch(val)
 
-            if (val === 'all') fetchAll()
-            else fetchBatch(Number(val))
+            if (val === 'all') void fetchAll()
+            else void fetchBatch(Number(val))
           }}
           className="bg-abg2 border border-white/[0.07] rounded-[10px] px-3 py-2.5 text-sm text-adark"
         >
           <option value="all">All</option>
-          <option value="1">Batch 1</option>
-          <option value="2">Batch 2</option>
-          <option value="3">Batch 2</option>
-          <option value="4">Batch 4</option>
-          <option value="2">Batch 5</option>
-          <option value="6">Batch 6</option>
+          {batches.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
         </select>
       </div>
 
-      {/* Table */}
       <div className="bg-abg2 border border-white/[0.07] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/[0.07]">
-                {['Name', 'Phone', 'Batch', 'Fees', 'Actions'].map((h) => (
+                {['Name', 'Phone', 'Batch', 'Total Fee', 'Paid', 'Due'].map((h) => (
                   <th key={h} className="text-left px-5 py-3 text-[11px] text-amuted">
                     {h}
                   </th>
@@ -144,46 +191,26 @@ const User = () => {
             </thead>
 
             <tbody>
-              {filtered.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-10 text-center text-amuted">
-                    No customers found.
-                  </td>
+                  <td colSpan={6} className="px-5 py-10 text-center text-amuted">Loading users...</td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-10 text-center text-amuted">No users found.</td>
                 </tr>
               ) : (
                 filtered.map((c) => (
-                  <tr key={c.user_id} className="border-b border-white/[0.04]">
-
+                  <tr key={c.id} className="border-b border-white/[0.04]">
                     <td className="px-5 py-3.5">
                       <p className="font-semibold">{c.username}</p>
                       <p className="text-xs text-amuted">{c.email}</p>
                     </td>
-
-                    <td className="px-5 py-3.5 text-amuted">
-                      N/A
-                    </td>
-
-                    <td className="px-5 py-3.5">
-                      {c.batch ?? 'N/A'}
-                    </td>
-
-                    <td className="px-5 py-3.5">
-                      <input
-                        type="number"
-                        placeholder="Fees"
-                        className="w-20 bg-abg4 border border-white/[0.12] rounded px-2 py-1 text-sm"
-                      />
-                    </td>
-
-                    <td className="flex px-5 py-3.5 gap-5">
-                      <button className="px-3 py-1 text-xs bg-ainfo/10 text-ainfo rounded">
-                        Edit
-                      </button>
-                      <button className="px-3 py-1 text-xs bg-ainfo/10 text-adanger rounded">
-                        Delete
-                      </button>
-                    </td>
-
+                    <td className="px-5 py-3.5 text-amuted">{c.phone}</td>
+                    <td className="px-5 py-3.5">{c.batch}</td>
+                    <td className="px-5 py-3.5 text-ainfo font-semibold">{formatCurrency(c.totalFee)}</td>
+                    <td className="px-5 py-3.5 text-asuccess font-semibold">{formatCurrency(c.paidAmount)}</td>
+                    <td className="px-5 py-3.5 text-adanger font-semibold">{formatCurrency(c.dueAmount)}</td>
                   </tr>
                 ))
               )}
@@ -191,43 +218,8 @@ const User = () => {
           </table>
         </div>
       </div>
-
-      {/* Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center">
-          <div className="bg-abg3 p-6 rounded-xl w-full max-w-lg">
-
-            <h2 className="mb-4 font-bold">Add Customer</h2>
-
-            <form onSubmit={formik.handleSubmit} className="space-y-4">
-
-              <ModalInput label="Name" {...formik.getFieldProps('name')} />
-              <ModalInput label="Email" {...formik.getFieldProps('email')} />
-              <ModalInput label="Phone" {...formik.getFieldProps('phone')} />
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="flex-1 border px-3 py-2 rounded"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  className="flex-1 bg-gold px-3 py-2 rounded"
-                >
-                  Save
-                </button>
-              </div>
-
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
 
-export default User;
+export default User

@@ -1,17 +1,54 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { removeToken, removeUserType } from '../../utils/authCookies'
-import { logoutApi } from '../../services/authApi'
+import { getMeApi, logoutApi } from '../../services/authApi'
+import { CurrentUserProfile } from '../../types'
 
-const user = {
-  name: 'Sathish',
-  email: 'sathish19222978sk@gmail.com',
+const FALLBACK_USER = {
+  name: 'Intern',
+  email: '',
 }
 
 const InternLayout = () => {
   const navigate = useNavigate()
   const [loggingOut, setLoggingOut] = useState(false)
+  const [loadingProfile, setLoadingProfile] = useState(true)
+  const [profile, setProfile] = useState<CurrentUserProfile | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadProfile = async () => {
+      try {
+        const response = await getMeApi()
+        if (mounted) {
+          setProfile(response.data)
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error)
+      } finally {
+        if (mounted) {
+          setLoadingProfile(false)
+        }
+      }
+    }
+
+    void loadProfile()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const user = useMemo(() => {
+    if (!profile) return FALLBACK_USER
+
+    return {
+      name: profile.username || FALLBACK_USER.name,
+      email: profile.email || FALLBACK_USER.email,
+    }
+  }, [profile])
 
   const handleLogout = async () => {
     if (loggingOut) return
@@ -46,15 +83,22 @@ const InternLayout = () => {
           </span>
         </div>
 
-
         <div className="flex items-center gap-2 lg:gap-3">
-          <div className="flex items-center gap-2 py-[5px] pl-[5px] pr-3 border border-line rounded-[9px]">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue to-[#6b49e8] flex items-center justify-center text-[13px] font-extrabold text-white">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-            <span className="text-[13px] font-bold text-navy hidden sm:block">
-              {user.name.split(' ')[0]}
-            </span>
+          <div className="flex min-w-[108px] items-center gap-2 py-[5px] pl-[5px] pr-3 border border-line rounded-[9px]">
+            {loadingProfile ? (
+              <div className="flex h-8 w-full items-center justify-center">
+                <div className="loader-btn loader-btn-sm" />
+              </div>
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue to-[#6b49e8] flex items-center justify-center text-[13px] font-extrabold text-white">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-[13px] font-bold text-navy hidden sm:block">
+                  {user.name.split(' ')[0]}
+                </span>
+              </>
+            )}
           </div>
           <button
             onClick={handleLogout}

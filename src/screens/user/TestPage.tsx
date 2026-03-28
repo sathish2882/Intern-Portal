@@ -2,39 +2,53 @@ import { useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../redux/hooks'
 import {
-  selectAnswer, goToQuestion, nextQuestion,
-  prevQuestion, tickTimer, submitTest, resetTest,
+  selectAnswer,
+  goToQuestion,
+  nextQuestion,
+  prevQuestion,
+  tickTimer,
+  submitTest,
+  resetTest,
 } from '../../redux/slices/testSlice'
 import { TEST_CONFIG } from '../../utils/testData'
 import { TestResult } from '../../types'
 import { submitResultApi } from '../../services/testApi'
 
-
-
 const TestPage = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const violationsRef = useRef(0)
+  const isSubmittingRef = useRef(false)
 
-  const { activeTestType, currentQuestion, answers, testStarted, timeLeft } =
-    useAppSelector((s) => s.test)
+  const {
+    activeTestType,
+    currentQuestion,
+    answers,
+    testStarted,
+    testSubmitted,
+    timeLeft,
+  } = useAppSelector((s) => s.test)
 
   const activeTest = TEST_CONFIG[activeTestType].data
   const durationSeconds = TEST_CONFIG[activeTestType].durationSeconds
   const questions = activeTest.questions
 
-  // ✅ UPDATED SUBMIT FUNCTION
   const handleSubmit = useCallback(async () => {
-    let correct = 0, wrong = 0, skipped = 0
+    if (isSubmittingRef.current || !testStarted) return
+
+    isSubmittingRef.current = true
+
+    let correct = 0
+    let wrong = 0
+    let skipped = 0
 
     answers.forEach((ans, i) => {
-      if (ans === null) skipped++
-      else if (ans === questions[i].ans) correct++
-      else wrong++
+      if (ans === null) skipped += 1
+      else if (ans === questions[i].ans) correct += 1
+      else wrong += 1
     })
 
     const elapsed = durationSeconds - timeLeft
-
     const m = Math.floor(Math.abs(elapsed) / 60)
       .toString()
       .padStart(2, '0')
@@ -53,8 +67,7 @@ const TestPage = () => {
     }
 
     try {
-      // ✅ BACKEND PAYLOAD
-      const payload = {
+      await submitResultApi({
         test_type: activeTestType,
         correct_answers: correct,
         wrong_answers: wrong,
@@ -62,17 +75,13 @@ const TestPage = () => {
         total_questions: questions.length,
         score: correct,
         time_taken: elapsed,
-      }
-
-      await submitResultApi(payload)
+      })
     } catch (error) {
-      console.log("Result API error:", error)
+      console.log('Result API error:', error)
     }
 
-    // ✅ KEEP EXISTING FLOW
     dispatch(submitTest(result))
-    navigate('/user/result')
-
+    navigate('/user/result', { replace: true })
   }, [
     activeTest.pass,
     activeTestType,
@@ -81,41 +90,50 @@ const TestPage = () => {
     durationSeconds,
     navigate,
     questions,
+    testStarted,
     timeLeft,
   ])
 
   useEffect(() => {
-    if (!testStarted) {
-      navigate('/user/dashboard')
+    if (!testStarted && !isSubmittingRef.current && !testSubmitted) {
+      navigate('/user/dashboard', { replace: true })
       return
     }
-    const t = setInterval(() => dispatch(tickTimer()), 1000)
-    return () => clearInterval(t)
-  }, [testStarted, dispatch, navigate])
+
+    if (!testStarted) return
+
+    const timer = setInterval(() => dispatch(tickTimer()), 1000)
+    return () => clearInterval(timer)
+  }, [dispatch, navigate, testStarted, testSubmitted])
 
   useEffect(() => {
     if (timeLeft === 0 && testStarted) {
       alert('Time is up! Submitting your test.')
-      handleSubmit()
+      void handleSubmit()
     }
   }, [timeLeft, testStarted, handleSubmit])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!testStarted) return
+      if (!testStarted || isSubmittingRef.current) return
 
       if (document.hidden) {
         violationsRef.current += 1
 
-        if (violationsRef.current >= 2) {
-          sessionStorage.setItem(
-            'test_alert_message',
-            'You switched tabs multiple times. Your test was submitted automatically.',
-          )
-          handleSubmit()
+        if (violationsRef.current === 1) {
+          return
         }
-      } else if (violationsRef.current > 0 && violationsRef.current < 2) {
-        alert(`Warning ${violationsRef.current}/2: Do not switch tabs!`)
+
+        sessionStorage.setItem(
+          'test_alert_message',
+          'You switched tabs multiple times. Your test was submitted automatically.',
+        )
+        void handleSubmit()
+        return
+      }
+
+      if (violationsRef.current === 1) {
+        alert('Warning 1/2: Do not switch tabs! Next time your test will be submitted automatically.')
       }
     }
 
@@ -127,14 +145,17 @@ const TestPage = () => {
   }, [handleSubmit, testStarted])
 
   const confirmSubmit = () => {
+    if (isSubmittingRef.current) return
+
     const unanswered = answers.filter((a) => a === null).length
     if (
       unanswered > 0 &&
       !window.confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)
-    )
+    ) {
       return
+    }
 
-    handleSubmit()
+    void handleSubmit()
   }
 
   const fmt = (sec: number) =>
@@ -146,27 +167,24 @@ const TestPage = () => {
   const isLow = timeLeft < 300
   const q = questions[currentQuestion]
   const isLast = currentQuestion === questions.length - 1
-  return (
-    <div className="min-h-screen flex flex-col bg-lightbg font-jakarta text-navy">
 
-      {/* Topbar */}
+  return (
+    <div className="h-screen flex flex-col overflow-hidden bg-lightbg font-jakarta text-navy">
       <nav className="bg-white border-b border-line flex items-center justify-between px-4 lg:px-8 h-[60px] sticky top-0 z-50">
-        
         <span className="text-[13px] text-slate font-mono hidden md:block">{activeTest.title}</span>
         <div className="flex items-center gap-2 lg:gap-3">
-          <div className={`flex items-center gap-2 px-3 py-2 border rounded-[9px] font-mono text-[18px] font-bold
-            ${isLow ? 'border-danger text-danger animate-blink' : 'border-line text-navy'}`}>
-            <span>⏱</span>
+          <div
+            className={`flex items-center gap-2 px-3 py-2 border rounded-[9px] font-mono text-[18px] font-bold
+            ${isLow ? 'border-danger text-danger animate-blink' : 'border-line text-navy'}`}
+          >
+            <span>Time</span>
             <span>{fmt(timeLeft)}</span>
           </div>
-          
         </div>
       </nav>
 
       <div className="flex flex-1 overflow-hidden">
-
-        {/* Sidebar — hidden on mobile */}
-        <aside className="hidden md:flex w-[260px] bg-white border-r border-line flex-col gap-5 p-5 flex-shrink-0 sticky top-[60px] h-[calc(100vh-60px)] overflow-y-auto">
+        <aside className="hidden md:flex w-[260px] bg-white border-r border-line flex-col gap-5 p-5 flex-shrink-0 h-[calc(100vh-60px)] overflow-y-auto">
           <div>
             <p className="text-[13px] font-extrabold text-navy mb-3">Question Navigator</p>
             <div className="grid grid-cols-5 gap-1.5">
@@ -178,9 +196,11 @@ const TestPage = () => {
                     key={i}
                     onClick={() => dispatch(goToQuestion(i))}
                     className={`aspect-square rounded-lg text-xs font-bold transition-all
-                      ${isCur  ? 'bg-sky border-[1.5px] border-blue text-blue'
-                      : isAns  ? 'bg-blue border-[1.5px] border-blue text-white'
-                      : 'bg-white border-[1.5px] border-line text-slate hover:border-blue hover:text-blue'}`}
+                      ${isCur
+                        ? 'bg-sky border-[1.5px] border-blue text-blue'
+                        : isAns
+                          ? 'bg-blue border-[1.5px] border-blue text-white'
+                          : 'bg-white border-[1.5px] border-line text-slate hover:border-blue hover:text-blue'}`}
                   >
                     {i + 1}
                   </button>
@@ -189,12 +209,11 @@ const TestPage = () => {
             </div>
           </div>
 
-          {/* Legend */}
           <div className="flex flex-col gap-1.5">
             {[
-              { cls: 'bg-blue border-blue', label: 'Answered'   },
-              { cls: 'bg-sky border-blue',  label: 'Current'    },
-              { cls: 'bg-white border-line',label: 'Unanswered' },
+              { cls: 'bg-blue border-blue', label: 'Answered' },
+              { cls: 'bg-sky border-blue', label: 'Current' },
+              { cls: 'bg-white border-line', label: 'Unanswered' },
             ].map((l) => (
               <div key={l.label} className="flex items-center gap-2 text-xs text-slate">
                 <div className={`w-2.5 h-2.5 rounded border-[1.5px] flex-shrink-0 ${l.cls}`} />
@@ -203,7 +222,7 @@ const TestPage = () => {
             ))}
           </div>
 
-          <div className="mt-auto">
+          <div className="mt-auto sticky bottom-0 bg-white pt-3">
             <div className="flex justify-between text-xs font-semibold text-slate mb-1.5">
               <span>Progress</span>
               <span>{answered}/{questions.length}</span>
@@ -223,23 +242,18 @@ const TestPage = () => {
           </div>
         </aside>
 
-        {/* Main content */}
         <main className="flex-1 p-4 lg:p-9 overflow-y-auto max-h-[calc(100vh-60px)]">
           <div className="max-w-2xl mx-auto">
-
-            {/* Section badge */}
             <div className="inline-flex items-center gap-1.5 bg-sky text-blue border border-[#ccdff8] rounded-lg px-3 py-1.5 text-xs font-bold mb-4">
               {q.section}
             </div>
 
-            {/* Question card */}
             <div className="bg-white border border-line rounded-[13px] p-5 lg:p-7 mb-4">
               <p className="text-[11px] font-bold text-mist uppercase tracking-[0.5px] mb-2.5">
                 Question {currentQuestion + 1} of {questions.length}
               </p>
               <p className="text-[15px] font-semibold text-navy leading-relaxed mb-6">{q.q}</p>
 
-              {/* Options */}
               <div className="flex flex-col gap-2.5">
                 {q.opts.map((opt, i) => {
                   const sel = answers[currentQuestion] === i
@@ -250,11 +264,12 @@ const TestPage = () => {
                       className={`flex items-start gap-3 w-full text-left px-4 py-3.5 border-[1.5px] rounded-[10px] transition-all
                         ${sel
                           ? 'border-blue bg-sky'
-                          : 'border-line bg-white hover:border-blue hover:bg-sky'
-                        }`}
+                          : 'border-line bg-white hover:border-blue hover:bg-sky'}`}
                     >
-                      <div className={`w-[26px] h-[26px] rounded-lg border-[1.5px] flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all
-                        ${sel ? 'bg-blue border-blue text-white' : 'border-line text-slate'}`}>
+                      <div
+                        className={`w-[26px] h-[26px] rounded-lg border-[1.5px] flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all
+                        ${sel ? 'bg-blue border-blue text-white' : 'border-line text-slate'}`}
+                      >
                         {['A', 'B', 'C', 'D'][i]}
                       </div>
                       <span className="text-sm text-navy leading-relaxed pt-0.5">{opt}</span>
@@ -264,14 +279,13 @@ const TestPage = () => {
               </div>
             </div>
 
-            {/* Nav row */}
             <div className="flex items-center justify-between">
               <button
                 onClick={() => dispatch(prevQuestion())}
                 disabled={currentQuestion === 0}
                 className="px-5 py-2.5 bg-white border border-line rounded-[9px] text-[13px] font-bold text-slate hover:border-blue hover:text-blue disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
-                ← Previous
+                Previous
               </button>
               <span className="text-[13px] text-mist font-mono">
                 {currentQuestion + 1} / {questions.length}
@@ -280,11 +294,10 @@ const TestPage = () => {
                 onClick={isLast ? confirmSubmit : () => dispatch(nextQuestion())}
                 className="px-5 py-2.5 bg-blue hover:bg-bluelt text-white font-bold text-[13px] rounded-[9px] shadow-[0_3px_10px_rgba(29,110,222,0.25)] hover:shadow-[0_5px_16px_rgba(29,110,222,0.35)] transition-all"
               >
-                {isLast ? 'Submit Test ✓' : 'Next →'}
+                {isLast ? 'Submit Test' : 'Next'}
               </button>
             </div>
 
-            {/* Mobile submit */}
             <div className="mt-5 md:hidden">
               <button
                 onClick={confirmSubmit}
@@ -296,7 +309,10 @@ const TestPage = () => {
 
             <div className="mt-4 text-center">
               <button
-                onClick={() => { dispatch(resetTest()); navigate('/user/dashboard') }}
+                onClick={() => {
+                  dispatch(resetTest())
+                  navigate('/user/dashboard')
+                }}
                 className="text-xs text-mist hover:text-slate transition-colors underline underline-offset-2"
               >
                 Exit without submitting

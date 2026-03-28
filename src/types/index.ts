@@ -19,6 +19,25 @@ export interface AuthState {
   error: string | null;
 }
 
+export interface CurrentUserProfile {
+  user_id: number;
+  username: string;
+  email: string;
+  phno?: string | null;
+  phone?: string | null;
+  batch: number | string | null;
+  tech_stack: string | null;
+  total_fee?: number;
+  paid_amount?: number;
+  due_amount?: number;
+  type?: 1 | 2 | 3;
+  status?: number;
+  is2FA?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+}
+
 
 // ── Customer ──────────────────────────────────────
 
