@@ -226,7 +226,6 @@ const User = () => {
           </div>
         </div>
       )}
-
     </div>
   )
 }

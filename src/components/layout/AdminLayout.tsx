@@ -1,32 +1,23 @@
 import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import {MailOutlined,} from "@ant-design/icons"
-import { IoTimeOutline } from "react-icons/io5";
+import { MailOutlined } from '@ant-design/icons'
+import { IoTimeOutline } from 'react-icons/io5'
 import { removeToken, removeUserType } from '../../utils/authCookies'
 import { logoutApi } from '../../services/authApi'
 
 const user = {
-  name: "Sathish",
-  email: "sathish19222978sk@gmail.com"
+  name: 'Sathish',
+  email: 'sathish19222978sk@gmail.com',
 }
 
 const NAV_ITEMS = [
   {
-    to: '/admin/portals',
-    label: 'Dashboards',
-    icon: (
-      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M4 5h7v6H4V5zm9 0h7v4h-7V5zM4 13h7v6H4v-6zm9-2h7v8h-7v-8z" />
-      </svg>
-    ),
-  },
-  {
     to: '/admin/payment/dashboard',
-    label: 'Main Dashboard',
+    label: 'Dashboard',
     icon: (
       <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
       </svg>
     ),
   },
@@ -53,7 +44,6 @@ const NAV_ITEMS = [
      <IoTimeOutline />
     ),
   },
-  
 ]
 
 const AdminLayout = () => {
@@ -61,6 +51,9 @@ const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+
+
+
 
   const handleLogout = async () => {
     if (loggingOut) return
@@ -82,21 +75,27 @@ const AdminLayout = () => {
 
   const SidebarContent = () => (
     <>
-      {/* Brand */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/[0.07]">
-        <span className="text-2xl text-gold flex-shrink-0"></span>
-        {!collapsed && (
-          <div className='flex gap-5 items-center justify-start'>
-            <span className="text-gold text-2xl">◈</span>
-          <span className="font-syne font-extrabold text-2xl text-adark tracking-wide whitespace-nowrap overflow-hidden">
-              PayMail
+      <div className="border-b border-white/[0.07] px-3 py-5">
+        <NavLink
+          to="/admin/portals"
+          onClick={() => setMobileOpen(false)}
+          title="PayDesk"
+          className={`flex items-center ${collapsed ? 'justify-center' : 'gap-4 px-1'}`}
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-golddim text-gold">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M6 4h9a5 5 0 0 1 0 10H9v6H6V4Zm3 3v4h6a2 2 0 1 0 0-4H9Z" />
+            </svg>
           </span>
-          </div>
-        )}
+          {!collapsed && (
+            <span className="font-syne font-extrabold text-2xl text-adark tracking-wide whitespace-nowrap overflow-hidden">
+              PayDesk
+            </span>
+          )}
+        </NavLink>
       </div>
 
-      {/* Nav */}
-      <nav className="flex flex-col gap-0.5 p-2.5 flex-1">
+      <nav className="flex flex-1 flex-col gap-0.5 p-2.5">
         {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}
@@ -104,21 +103,19 @@ const AdminLayout = () => {
             onClick={() => setMobileOpen(false)}
             title={collapsed ? item.label : undefined}
             className={({ isActive }) =>
-              `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-lg font-medium transition-all duration-150 font-syne
-               ${isActive
-                 ? 'bg-golddim text-goldtxt'
-                 : 'text-amuted hover:bg-abg3 hover:text-adark'
-               }
-               ${collapsed ? 'justify-center' : ''}`
+              `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-lg font-medium transition-all duration-150 font-syne ${
+                isActive
+                  ? 'bg-golddim text-goldtxt'
+                  : 'text-amuted hover:bg-abg3 hover:text-adark'
+              } ${collapsed ? 'justify-center' : ''}`
             }
           >
-            <span className="flex-shrink-0 w-5 text-center">{item.icon}</span>
+            <span className="w-5 flex-shrink-0 text-center">{item.icon}</span>
             {!collapsed && <span>{item.label}</span>}
           </NavLink>
         ))}
       </nav>
 
-      {/* Footer */}
       <div className="border-t border-white/[0.07] p-3 space-y-2">
         {!collapsed && user && (
           <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.04]">
@@ -139,7 +136,7 @@ const AdminLayout = () => {
         >
           <span className="flex min-h-6 min-w-[88px] items-center justify-center gap-2.5">
             {loggingOut ? (
-              <div className="loader-btn scale-75" />
+              <div className="loader-btn loader-btn-sm" />
             ) : (
               <>
                 <svg className="flex-shrink-0" width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
@@ -156,8 +153,6 @@ const AdminLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-abg font-syne text-adark admin-scroll">
-
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black/60 z-40 lg:hidden"
@@ -165,26 +160,21 @@ const AdminLayout = () => {
         />
       )}
 
-      {/* Desktop Sidebar */}
       <aside
         className={`hidden lg:flex flex-col flex-shrink-0 bg-abg2 border-r border-white/[0.07] min-h-screen transition-all duration-300 ${collapsed ? 'w-16' : 'w-56'}`}
       >
         <SidebarContent />
       </aside>
 
-      {/* Mobile Sidebar */}
       <aside
         className={`fixed top-0 left-0 h-full w-64 bg-abg2 border-r border-white/[0.07] z-50 flex flex-col transition-transform duration-300 lg:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <SidebarContent />
       </aside>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Topbar */}
         <header className="h-14 flex items-center justify-between px-4 lg:px-6 bg-abg2 border-b border-white/[0.07] flex-shrink-0">
           <div className="flex items-center gap-3">
-            {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileOpen(true)}
               className="lg:hidden p-2 rounded-lg text-amuted hover:bg-abg3 transition-colors"
@@ -193,7 +183,6 @@ const AdminLayout = () => {
                 <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
               </svg>
             </button>
-            {/* Desktop collapse */}
             <button
               onClick={() => setCollapsed(!collapsed)}
               className="hidden lg:flex p-2 rounded-lg text-amuted hover:bg-abg3 transition-colors"
@@ -203,13 +192,8 @@ const AdminLayout = () => {
               </svg>
             </button>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-asuccess shadow-[0_0_6px_#3dba78]" />
-            <span className="text-xs text-amuted font-mono">Admin Panel</span>
-          </div>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 p-4 lg:p-7 overflow-auto bg-abg">
           <Outlet />
         </main>
