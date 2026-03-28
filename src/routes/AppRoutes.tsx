@@ -91,7 +91,7 @@ export const router = createHashRouter([
     path: "/user",
     element: (
       <ProtectedRoute role="3">
-           <UserLayout />
+           <UserLayout key={window.location.pathname} />
       </ProtectedRoute>
       
     ),
