@@ -3,16 +3,21 @@ import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { Button } from "antd";
+import { Button, Select } from "antd";
 import FormInput from "../../components/form/FormInput";
 import { signupApi } from "../../services/authApi";
+
+const { Option } = Select;
 
 interface SignupFormValues {
   username: string;
   email: string;
   password: string;
-  userType: number | null;
+  roleType: string;
+  customRole?: string;
+  phone: number | null;
   batch: number | null;
+  fees: number | null;
 }
 
 const AddUser = () => {
@@ -25,10 +30,14 @@ const AddUser = () => {
     password: Yup.string()
       .min(6, "Min 6 characters")
       .required("Enter password"),
-    userType: Yup.number()
-      .oneOf([1, 2, 3], "User type must be 1, 2, or 3")
-      .required("Enter user type"),
+    roleType: Yup.string().required("Select role type"),
+    customRole: Yup.string().when("roleType", {
+      is: "Others",
+      then: (schema) => schema.required("Enter custom role"),
+    }),
+    phone: Yup.number().typeError("Enter batch").required("Enter number"),
     batch: Yup.number().typeError("Enter batch").required("Enter batch"),
+    fees: Yup.number().typeError("Enter fees").required("Enter fees"),
   });
 
   const handleSubmit = async (values: SignupFormValues) => {
@@ -39,8 +48,14 @@ const AddUser = () => {
         username: values.username,
         email: values.email,
         password: values.password,
-        type: Number(values.userType),
+        type: 2,
         batch: Number(values.batch),
+        total_fee: Number(values.fees),
+        phone: String(values.phone),
+        tech_stack:
+          values.roleType === "Others"
+            ? values.customRole
+            : values.roleType,
       };
 
       await signupApi(payload);
@@ -76,14 +91,18 @@ const AddUser = () => {
             username: "",
             email: "",
             password: "",
-            userType: null,
+            roleType: "",
+            customRole: "",
+            phone: null,
             batch: null,
+            fees: null,
           }}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
         >
-          {() => (
+          {({ values, setFieldValue }) => (
             <Form className="space-y-5 flex flex-col">
+
               <FormInput label="USER NAME" name="username" type="text" />
 
               <FormInput label="EMAIL ADDRESS" name="email" type="email" />
@@ -91,8 +110,38 @@ const AddUser = () => {
               <FormInput label="PASSWORD" name="password" type="password" />
 
               <div className="grid grid-cols-2 gap-4">
-                <FormInput label="USER TYPE" name="userType" type="number" />
+                <FormInput label="PHONE" name="phone" type="number" />
                 <FormInput label="BATCH" name="batch" type="number" />
+              </div>
+
+
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* ROLE TYPE DROPDOWN */}
+                <div>
+                  <label className="text-[11px] text-[#8a8aa3] font-medium">ROLE TYPE</label>
+                  <Select
+                    className="w-full mt-1"
+                    placeholder="Select role"
+                    value={values.roleType || undefined}
+                    onChange={(value) => setFieldValue("roleType", value)}
+                    classNames={{ popup: { root: "role-dropdown" } }}
+                  >
+                    <Option value="Frontend">Frontend</Option>
+                    <Option value="Backend">Backend</Option>
+                    <Option value="Others">Others</Option>
+                  </Select>
+                </div>
+
+                {/* SHOW ONLY IF OTHERS */}
+                {values.roleType === "Others" && (
+                  <FormInput
+                    label="CUSTOM ROLE"
+                    name="customRole"
+                    type="text"
+                  />
+                )}
+                <FormInput label="FEES" name="fees" type="number" />
               </div>
 
               <button

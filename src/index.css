@@ -199,3 +199,20 @@ footer {
   height: 100% !important;
 }
 
+.role-dropdown .ant-select-item {
+  width: 100%;
+  display: inline-block;
+}
+.role-dropdown .ant-select-item-group-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+.role-dropdown .ant-select-item-option:hover {
+  background-color: #e6f4ff; /* light blue */
+  color: #1677ff;
+}
+.role-dropdown {
+  width: 100px !important; /* control dropdown width */
+}
+
