@@ -138,6 +138,29 @@ const TestPage = () => {
     navigate,
   ]);
 
+  // ✅ FULLSCREEN ON TEST PAGE
+  useEffect(() => {
+    if (!testStarted) return;
+
+    const enterFullscreen = async () => {
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        }
+      } catch (err) {
+        console.log("Fullscreen request failed:", err);
+      }
+    };
+
+    enterFullscreen();
+
+    return () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+  }, [testStarted]);
+
   // ✅ TIMER
   useEffect(() => {
     if (!testStarted && !isSubmittingRef.current && !testSubmitted) {

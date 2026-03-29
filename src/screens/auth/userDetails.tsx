@@ -49,6 +49,18 @@ function UserDetails() {
     loadUser();
   }, []);
 
+  // Block browser back button — keep user on this page until form is submitted
+  useEffect(() => {
+    window.history.pushState(null, "", window.location.href);
+
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
       <div className="flex flex-col md:flex-row w-full max-w-[900px] md:h-[540px] rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_rgba(0,0,0,0.15)] transition-all duration-300">
