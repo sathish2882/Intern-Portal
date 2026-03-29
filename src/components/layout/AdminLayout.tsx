@@ -60,8 +60,9 @@ const AdminLayout = () => {
         if (mounted) {
           setProfile(response.data)
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to load profile:', error)
+        toast.error(error?.response?.data?.detail || 'Failed to load profile')
       } finally {
         if (mounted) {
           setLoadingProfile(false)
@@ -92,8 +93,9 @@ const AdminLayout = () => {
 
     try {
       await logoutApi()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logout failed:', error)
+      toast.error(error?.response?.data?.detail || 'Logout failed')
     } finally {
       removeToken()
       removeUserType()

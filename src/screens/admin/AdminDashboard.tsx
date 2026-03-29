@@ -194,9 +194,9 @@ const AdminDashboard = () => {
       const response = await getDashboardApi(batchId || undefined)
       const payload = response?.data?.data ?? response?.data?.dashboard ?? response?.data
       setDashboard(normalizeDashboard(payload))
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      toast.error('Failed to load dashboard')
+      toast.error(error?.response?.data?.detail || 'Failed to load dashboard')
       setDashboard(EMPTY_DASHBOARD)
     } finally {
       setLoadingDashboard(false)
@@ -204,24 +204,27 @@ const AdminDashboard = () => {
   }
 
   useEffect(() => {
-    const loadInitialData = async () => {
+    const loadBatches = async () => {
       try {
         setLoadingBatches(true)
         const response = await getBatchesApi()
         const payload = response?.data?.data ?? response?.data?.batches ?? response?.data
         setBatches(normalizeBatches(payload))
-      } catch (error) {
+      } catch (error: any) {
         console.error(error)
-        toast.error('Failed to load batches')
+        toast.error(error?.response?.data?.detail || 'Failed to load batches')
       } finally {
         setLoadingBatches(false)
       }
-
-      await loadDashboard()
     }
 
-    void loadInitialData()
+    void loadBatches()
   }, [])
+
+  // Reload dashboard when batch changes
+  useEffect(() => {
+    void loadDashboard(selectedBatchId || undefined)
+  }, [selectedBatchId])
 
   const totalTypeCount =
     dashboard?.email_type_count.reduce((sum, item) => sum + item.count, 0) ?? 0
@@ -249,11 +252,7 @@ const AdminDashboard = () => {
           </label>
           <select
             value={selectedBatchId}
-            onChange={(e) => {
-              const batchId = e.target.value
-              setSelectedBatchId(batchId)
-              void loadDashboard(batchId)
-            }}
+            onChange={(e) => setSelectedBatchId(e.target.value)}
             className="w-full bg-abg3 border border-white/[0.12] rounded-[10px] px-3.5 py-2.5 text-xs text-adark outline-none transition-colors focus:border-gold cursor-pointer"
           >
             <option value="">

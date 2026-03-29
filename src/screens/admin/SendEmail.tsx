@@ -146,9 +146,9 @@ const SendEmail = () => {
         const response = await getBatchesApi()
         const payload = response?.data?.data ?? response?.data?.batches ?? response?.data
         setBatches(normalizeBatches(payload))
-      } catch (error) {
+      } catch (error: any) {
         console.error(error)
-        toast.error('Failed to load batches')
+        toast.error(error?.response?.data?.detail || 'Failed to load batches')
       } finally {
         setLoadingBatches(false)
       }
@@ -192,9 +192,9 @@ const SendEmail = () => {
 
           await paymentEmailApi(payload)
           toast.success(`Email sent to ${values.email}`)
-        } catch (error) {
+        } catch (error: any) {
           console.error(error)
-          toast.error('Failed to send payment email')
+          toast.error(error?.response?.data?.detail || 'Failed to send payment email')
         } finally {
           setSending(false)
         }
@@ -215,9 +215,9 @@ const SendEmail = () => {
             const response = await getUserByBatchApi(batchId)
             const payload = response?.data?.data ?? response?.data?.users ?? response?.data
             setUsers(normalizeUsers(payload))
-          } catch (error) {
+          } catch (error: any) {
             console.error(error)
-            toast.error('Failed to load batch users')
+            toast.error(error?.response?.data?.detail || 'Failed to load batch users')
           } finally {
             setLoadingUsers(false)
           }

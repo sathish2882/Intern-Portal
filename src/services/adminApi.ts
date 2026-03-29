@@ -27,6 +27,10 @@ export const viewAttendanceByAdminApi = (userId: number | string) => {
   })
 }
 
+export const viewAttendanceByUserApi = () => {
+  return API.post('/viewbyuser')
+}
+
 export const deleteUser = (userId: number | string) => {
   return API.delete(`/users/${userId}`)
 }

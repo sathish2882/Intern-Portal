@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ReadOutlined } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -24,9 +24,6 @@ const UserLayout = () => {
   const [user, setUser] = useState({ name: 'User', email: '' })
 
   const showAssessmentHeader = location.pathname === '/user/dashboard'
-
-  // 🔥 prevent multiple API calls (React Strict Mode fix)
-  const hasFetched = useRef(false)
 
   // 🔥 LOAD USER (ONLY EXAM USER FLOW)
   useEffect(() => {
@@ -54,8 +51,9 @@ const UserLayout = () => {
 
       // 🔥 Store user info in Redux for access in UserDashboard
       dispatch(setCurrentUser({ name: userName, email: userEmail }))
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load user:', error)
+      toast.error(error?.response?.data?.detail || 'Failed to load user')
     }
   }
 

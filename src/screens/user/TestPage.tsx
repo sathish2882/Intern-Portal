@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import {
   selectAnswer,
@@ -104,8 +105,9 @@ const TestPage = () => {
       } else {
         navigate("/user/dashboard", { replace: true });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log("❌ Submit error:", error);
+      toast.error(error?.response?.data?.detail || "Failed to submit test");
 
       // fallback
       dispatch(
@@ -219,6 +221,15 @@ const TestPage = () => {
   const isLow = timeLeft < 300;
   const q = questions[currentQuestion];
   const isLast = currentQuestion === questions.length - 1;
+
+  if (submitting) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-lightbg font-jakarta text-navy gap-5">
+        <div className="loader" />
+        <p className="text-sm font-semibold text-slate animate-pulse">Submitting your test…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-lightbg font-jakarta text-navy">

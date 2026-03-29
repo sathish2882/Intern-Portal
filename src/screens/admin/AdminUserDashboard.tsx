@@ -177,9 +177,9 @@ const AdminUserDashboard = () => {
         const response = await getBatchesApi()
         const payload = response?.data?.data ?? response?.data?.batches ?? response?.data
         setBatches(normalizeBatches(payload))
-      } catch (error) {
+      } catch (error: any) {
         console.error(error)
-        toast.error('Failed to load batches')
+        toast.error(error?.response?.data?.detail || 'Failed to load batches')
       } finally {
         setLoadingBatches(false)
       }
@@ -213,9 +213,9 @@ const AdminUserDashboard = () => {
         setUsers(normalized)
         setTotalPages(1)
         setTotalUsers(normalized.length)
-      } catch (error) {
+      } catch (error: any) {
         console.error(error)
-        toast.error('Failed to load users')
+        toast.error(error?.response?.data?.detail || 'Failed to load users')
       } finally {
         setLoadingUsers(false)
       }
@@ -270,9 +270,9 @@ const AdminUserDashboard = () => {
       if (selectedUser?.id === user.id) {
         setSelectedUser(null)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      toast.error('Failed to delete user')
+      toast.error(error?.response?.data?.detail || 'Failed to delete user')
     } finally {
       setDeletingUserId(null)
     }

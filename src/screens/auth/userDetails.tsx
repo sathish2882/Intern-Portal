@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Input, Button } from "antd";
-import { UserOutlined, MailOutlined } from "@ant-design/icons";
 import students from "../../assets/images/png/student-illustration (2).png";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -10,45 +9,68 @@ import { toast } from "react-toastify";
 import { getUserByIdApi, saveUserDetailsApi } from "../../services/authApi";
 import { getUserId, isExamUser } from "../../utils/authCookies";
 
-const inputClass =
-  "!w-full !h-[46px] !rounded-xl !bg-transparent";
-
 function UserDetails() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
   const userId = getUserId();
 
-  const validationSchema = Yup.object({
-    name: Yup.string()
-      .required("Name is required")
-      .min(3, "Minimum 3 characters"),
-    email: Yup.string()
-      .email("Invalid email format")
-      .required("Email is required"),
-  });
-
-  const initialValues = {
+  const [initialValues, setInitialValues] = useState({
     name: "",
     email: "",
-  };
+  });
+
+  const validationSchema = Yup.object({
+    name: Yup.string().required("Name is required").min(3),
+    email: Yup.string().email().required("Email is required"),
+  });
+
+  useEffect(() => {
+    const loadUser = async () => {
+      if (!isExamUser() || !userId) {
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      try {
+        const response = await getUserByIdApi(userId as string);
+        const payload = response?.data ?? {};
+
+        setInitialValues({
+          name: String(payload.name ?? payload.username ?? ""),
+          email: String(payload.email ?? ""),
+        });
+      } catch (error: any) {
+        console.error(error);
+        toast.error(error?.response?.data?.detail || "Failed to load user details");
+      }
+    };
+
+    loadUser();
+  }, []);
 
   return (
-    <div className="h-screen flex items-center justify-center bg-[#e5e7eb]">
-      <div className="flex w-[900px] h-[520px] rounded-2xl overflow-hidden shadow-[0_4px_14px_0_rgba(99,102,241,0.4)]">
-
+    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+      <div className="flex w-[900px] h-[540px] rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_rgba(0,0,0,0.15)] transition-all duration-300">
         {/* LEFT */}
-        <div className="w-1/2 bg-[#0f0f0f] flex flex-col justify-center px-12 py-10 text-white user-form">
-          
-          <h1 className="text-3xl font-bold mb-2">Student Details</h1>
-          <p className="text-gray-400 mb-6">Enter your details</p>
+        <div className="w-1/2 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex flex-col justify-center px-12 py-10 text-white user-form">
+          <div className="mb-8">
+            <h1 className="text-4xl font-extrabold tracking-tight mb-3">
+              Student Details
+            </h1>
+            <div className="h-1 w-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full mb-3"></div>
+            <p className="text-gray-400 text-sm">
+              Complete your profile to continue
+            </p>
+          </div>
 
           <Formik
             initialValues={initialValues}
             validationSchema={validationSchema}
+            enableReinitialize
             onSubmit={async (values) => {
               if (!userId) {
-                toast.error("User not found. Please login again.");
+                toast.error("User not found");
                 navigate("/login");
                 return;
               }
@@ -56,98 +78,71 @@ function UserDetails() {
               try {
                 setLoading(true);
                 await saveUserDetailsApi(userId as string, values);
-                toast.success("Details saved successfully");
-                navigate("/user/dashboard", { replace: true });
+                toast.success("Saved successfully");
+                navigate("/user/dashboard");
               } catch (error: any) {
-                const message =
-                  error?.response?.data?.detail || "Failed to save details";
-                toast.error(message);
+                toast.error(error?.response?.data?.detail || "Error");
               } finally {
                 setLoading(false);
               }
             }}
           >
-            {({ handleSubmit, handleChange, values, setValues }) => {
-
-              useEffect(() => {
-                const loadUser = async () => {
-                  if (!isExamUser() || !userId) {
-                    navigate("/login", { replace: true });
-                    return;
-                  }
-
-                  try {
-                    const response = await getUserByIdApi(userId as string);
-                    const payload = response?.data ?? {};
-
-                    setValues({
-                      name: String(payload.name ?? payload.username ?? ""),
-                      email: String(payload.email ?? ""),
-                    });
-                  } catch (error) {
-                    console.error(error);
-                  }
-                };
-
-                loadUser();
-              }, []);
-
-              return (
-                <Form onSubmit={handleSubmit} className="space-y-5">
-
-                  {/* NAME */}
-                  <div>
-                    <Input
-                      size="large"
-                      name="name"
-                      placeholder="Username / Name"
-                      prefix={<UserOutlined />}
-                      value={values.name}
-                      onChange={handleChange}
-                      className={inputClass}
-                    />
-                    <p className="text-red-400 text-xs mt-1">
-                      <ErrorMessage name="name" />
-                    </p>
-                  </div>
-
-                  {/* EMAIL */}
-                  <div>
-                    <Input
-                      size="large"
-                      name="email"
-                      placeholder="Email"
-                      prefix={<MailOutlined />}
-                      value={values.email}
-                      onChange={handleChange}
-                      className={inputClass}
-                    />
-                    <p className="text-red-400 text-xs mt-1">
-                      <ErrorMessage name="email" />
-                    </p>
-                  </div>
-
-                  {/* BUTTON */}
-                  <Button
-                    type="primary"
-                    htmlType="submit"
+            {({ handleSubmit, handleChange, values }) => (
+              <Form onSubmit={handleSubmit} className="space-y-6">
+                {/* NAME */}
+                <div>
+                  <label className="block text-xs text-gray-300 font-semibold mb-2.5 uppercase tracking-wide">
+                    Full Name
+                  </label>
+                  <Input
+                    name="name"
+                    placeholder="Enter your full name"
+                    value={values.name}
+                    onChange={handleChange}
                     size="large"
-                    loading={loading}
-                    className="w-full h-[46px] rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 border-none"
-                  >
-                    Submit
-                  </Button>
+                  />
+                  <p className="text-red-400 text-xs mt-2 min-h-[16px] font-medium">
+                    <ErrorMessage name="name" />
+                  </p>
+                </div>
 
-                </Form>
-              );
-            }}
+                {/* EMAIL */}
+                <div>
+                  <label className="block text-xs text-gray-300 font-semibold mb-2.5 uppercase tracking-wide">
+                    Email Address
+                  </label>
+                  <Input
+                    name="email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={values.email}
+                    onChange={handleChange}
+                    size="large"
+                  />
+                  <p className="text-red-400 text-xs mt-2 min-h-[16px] font-medium">
+                    <ErrorMessage name="email" />
+                  </p>
+                </div>
+
+                {/* BUTTON */}
+                <Button
+                  htmlType="submit"
+                  loading={loading}
+                  type="primary"
+                  size="large"
+                  className="w-full h-[46px] mt-8 bg-gradient-to-r from-indigo-500 to-purple-500 border-none font-semibold rounded-lg"
+                >
+                  {loading ? "Saving..." : "Continue to Dashboard"}
+                </Button>
+              </Form>
+            )}
           </Formik>
         </div>
 
         {/* RIGHT */}
         <img
           src={students}
-          alt="student"
+          alt="student illustration"
           className="w-1/2 h-full object-cover"
         />
       </div>

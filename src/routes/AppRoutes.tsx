@@ -26,7 +26,7 @@ import UserDashboard from "../screens/user/UserDashboard";
 import TestPage from "../screens/user/TestPage";
 import ResultPage from "../screens/user/ResultPage";
 import ProtectedRoute from "../components/ui/ProtectedRoute"; 
-import UserDetails from "../screens/auth/userDetails";
+import UserDetails from "../screens/auth/UserDetails";
 
 export const router = createHashRouter([
   {

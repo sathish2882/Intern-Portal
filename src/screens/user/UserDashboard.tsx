@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaCalculator, FaCode, FaClipboardList, FaCheckCircle, FaClock, FaTrophy } from "react-icons/fa";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { startTest, getResult } from "../../redux/slices/testSlice";
 import { TEST_CONFIG } from "../../utils/testData";
@@ -9,21 +10,21 @@ const ASSESSMENTS: {
   id: TestType;
   name: string;
   meta: string;
-  icon: string;
+  icon: JSX.Element;
   active: boolean;
 }[] = [
   {
     id: "aptitude",
     name: TEST_CONFIG.aptitude.data.title,
     meta: `${TEST_CONFIG.aptitude.data.total} Qs · 45 min · Above Medium`,
-    icon: "📐",
+    icon: <FaCalculator className="w-5 h-5 text-blue" />,
     active: true,
   },
   {
     id: "technical",
     name: TEST_CONFIG.technical.data.title,
     meta: `${TEST_CONFIG.technical.data.total} Qs · 30 min · Medium`,
-    icon: "💻",
+    icon: <FaCode className="w-5 h-5 text-blue" />,
     active: true,
   },
 ];
@@ -45,7 +46,7 @@ const UserDashboard = () => {
     backendResult,
   });
 
-  // ✅ Calculate best percentage
+  // ✅ Calculate best percentage (only when both tests are completed)
   let bestPct = 0;
   if (completed === ASSESSMENTS.length && backendResult) {
     // Both tests done: calculate from actual scores, not backend percentage (backend calculation may be wrong)
@@ -60,12 +61,6 @@ const UserDashboard = () => {
       aptitude_score: backendResult.aptitude_score,
       technical_score: backendResult.technical_score,
     });
-  } else if (completed === 1 && Object.values(resultsByType)[0]) {
-    // One test done: calculate from Redux result
-    const firstTest = Object.values(resultsByType)[0];
-    bestPct = firstTest
-      ? Math.round((firstTest.correct / firstTest.total) * 100)
-      : 0;
   }
 
   // ✅ Fetch backend results when dashboard mounts
@@ -88,28 +83,28 @@ const UserDashboard = () => {
   // ✅ KPI Data
   const KPIS = [
     {
-      icon: "📋",
+      icon: <FaClipboardList className="w-5 h-5 text-blue" />,
       label: "Tests Assigned",
       value: String(ASSESSMENTS.length),
       badgeClass: "bg-sky text-blue",
       badge: "Assigned",
     },
     {
-      icon: "✅",
+      icon: <FaCheckCircle className="w-5 h-5 text-asuccess" />,
       label: "Completed",
       value: String(completed),
       badgeClass: "bg-[#ecfdf5] text-asuccess",
       badge: "Done",
     },
     {
-      icon: "⏳",
+      icon: <FaClock className="w-5 h-5 text-[#e07b00]" />,
       label: "Pending",
       value: String(pending),
       badgeClass: "bg-[#fff7ed] text-[#e07b00]",
       badge: "Pending",
     },
     {
-      icon: "🏆",
+      icon: <FaTrophy className="w-5 h-5 text-blue" />,
       label: "Best Score",
       value: bestPct ? `${bestPct}%` : "—",
       badgeClass: "bg-sky text-blue",
@@ -221,7 +216,9 @@ const UserDashboard = () => {
                     >
                       <td className="px-5 py-3.5 align-middle">
                         <div className="flex items-center gap-2.5">
-                          <span className="text-lg">{a.icon}</span>
+                          <div className="w-8 h-8 bg-sky rounded-lg flex items-center justify-center flex-shrink-0">
+                            {a.icon}
+                          </div>
                           <div>
                             <p className="text-[13px] font-bold text-navy">
                               {a.name}

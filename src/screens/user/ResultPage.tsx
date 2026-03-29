@@ -75,7 +75,7 @@ const ResultPage = () => {
   const totalScore = backendResult?.total_score ?? 0;
   const totalATotalQuestions = TEST_CONFIG.aptitude.data.total + TEST_CONFIG.technical.data.total;
   const totalPercentage = totalATotalQuestions > 0 ? Math.round((totalScore / totalATotalQuestions) * 100) : 0;
-  const cumulativePassed = totalPercentage >= 60;
+  const cumulativePassed = totalScore >= 27;
 
   console.log("📊 ResultPage - Calculated Percentage:", {
     totalScore,
@@ -89,96 +89,93 @@ const ResultPage = () => {
   // =========================
 
   return (
-    <div className="min-h-screen flex flex-col bg-lightbg font-jakarta text-navy p-4 lg:p-8">
-      <div className="max-w-[900px] mx-auto w-full">
+    <div className="h-screen flex flex-col bg-lightbg font-jakarta text-navy overflow-y-auto">
+      <div className="max-w-[900px] mx-auto w-full flex-1 flex flex-col justify-center px-4 lg:px-8 py-6">
         {/* Header */}
-        <div className="mb-8 text-center">
-          <p className="text-xs text-mist font-mono mb-4">
+        <div className="mb-4 text-center">
+          <p className="text-sm text-mist font-mono mb-2">
             Aptitude Portal › <span className="text-blue">Results</span>
           </p>
-          <h1 className="text-3xl font-extrabold text-navy mb-2">Assessment Results</h1>
+          <h1 className="text-2xl font-extrabold text-navy mb-1">Assessment Results</h1>
           <p className="text-sm text-slate">Your complete performance summary across all tests</p>
         </div>
 
         {/* Cumulative Summary Card */}
         <div
-          className={`rounded-[16px] border border-line p-8 mb-8 text-center ${
+          className={`rounded-[16px] border border-line p-5 mb-4 text-center ${
             cumulativePassed
               ? "bg-gradient-to-br from-[#ecfdf5] to-[#d1fae5]"
               : "bg-gradient-to-br from-[#fef2f2] to-[#fee2e2]"
           }`}
         >
-          <p className="text-xs font-mono text-mist mb-4 uppercase">Overall Result</p>
+          <p className="text-sm font-mono text-mist mb-2 uppercase">Overall Result</p>
           <h2
-            className={`text-3xl font-extrabold mb-3 ${
+            className={`text-2xl font-extrabold mb-1 ${
               cumulativePassed ? "text-[#065f46]" : "text-[#991b1b]"
             }`}
           >
-            {cumulativePassed ? "✅ ASSESSMENT PASSED" : "❌ ASSESSMENT NOT PASSED"}
+            {cumulativePassed ? "🎉 CONGRATULATIONS! YOU PASSED" : "❌ ASSESSMENT NOT PASSED"}
           </h2>
-          <div className="inline-flex items-center gap-6 bg-white rounded-xl px-8 py-6 shadow-[0_4px_16px_rgba(0,0,0,0.08)] mb-4">
-            <div>
-              <p className="text-5xl font-extrabold text-navy">{totalPercentage}%</p>
-              <p className="text-xs text-mist mt-1">Overall Score</p>
-            </div>
-            <div className="text-left">
-              <p className="text-2xl font-bold text-navy">{totalScore} / 50</p>
-              <p className="text-xs text-slate mt-1">Questions Correct</p>
-            </div>
-          </div>
           <p
-            className={`text-sm font-semibold ${
+            className={`text-sm font-bold mb-4 ${
               cumulativePassed ? "text-[#047857]" : "text-[#b91c1c]"
             }`}
           >
             {cumulativePassed
-              ? `Great job! You scored ${totalPercentage}% and qualified for the sponsorship.`
-              : `You scored ${totalPercentage}%. You need 60% to pass.`}
+              ? "This is a limited Maestro benefit that's only available via M-Guru"
+              : "You're not eligible for the sponsorship benefit."}
           </p>
+          <div className="inline-flex items-center gap-6 bg-white rounded-xl px-6 py-4 shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
+            <div>
+              <p className="text-4xl font-extrabold text-navy">{totalPercentage}%</p>
+              <p className="text-xs text-mist mt-1">Overall Score</p>
+            </div>
+            <div className="text-left">
+              <p className="text-xl font-bold text-navy">{totalScore} / 50</p>
+              <p className="text-xs text-slate mt-1">Questions Correct</p>
+            </div>
+          </div>
         </div>
 
         {/* Individual Test Results Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           {[aptitudeResult, technicalResult].map((testResult) => {
-            const testPassed = testResult.percentage >= 60;
+            const passThreshold = testResult.testType === "aptitude" ? 14 : 13;
+            const testPassed = testResult.score >= passThreshold;
             return (
               <div
                 key={testResult.testType}
                 className="bg-white border border-line rounded-[13px] overflow-hidden"
               >
-                {/* Test Header */}
                 <div
-                  className={`px-6 py-4 border-b border-line ${
+                  className={`px-5 py-3 border-b border-line ${
                     testPassed ? "bg-[#ecfdf5]" : "bg-[#fef2f2]"
                   }`}
                 >
                   <h3
-                    className={`text-lg font-extrabold ${
+                    className={`text-base font-extrabold ${
                       testPassed ? "text-[#065f46]" : "text-[#991b1b]"
                     }`}
                   >
                     {testResult.name}
                   </h3>
                   <p
-                    className={`text-xs mt-1 font-semibold ${
+                    className={`text-xs mt-0.5 font-semibold ${
                       testPassed ? "text-[#047857]" : "text-[#b91c1c]"
                     }`}
                   >
                     {testPassed ? "✓ Passed" : "✗ Did not pass"}
                   </p>
                 </div>
-
-                {/* Test Body */}
-                <div className="p-6">
-                  {/* Score & Percentage */}
-                  <div className="flex items-center justify-between mb-6">
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-3xl font-extrabold text-navy">{testResult.percentage}%</p>
-                      <p className="text-xs text-mist mt-1">Score %</p>
+                      <p className="text-2xl font-extrabold text-navy">{testResult.percentage}%</p>
+                      <p className="text-xs text-mist mt-0.5">Score %</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-navy">{testResult.score} / {testResult.total}</p>
-                      <p className="text-xs text-slate mt-1">Questions</p>
+                      <p className="text-lg font-bold text-navy">{testResult.score} / {testResult.total}</p>
+                      <p className="text-xs text-slate mt-0.5">Questions</p>
                     </div>
                   </div>
                 </div>
@@ -188,18 +185,18 @@ const ResultPage = () => {
         </div>
 
         {/* Pass Mark Info */}
-        <div className="bg-sky border border-[#ccdff8] rounded-[9px] px-6 py-4 text-center mb-8">
+        <div className="bg-sky border border-[#ccdff8] rounded-[9px] px-5 py-3 text-center mb-4">
           <p className="text-xs font-bold text-blue uppercase">Pass Criteria</p>
-          <p className="text-sm text-navy font-semibold mt-2">
-            Score 60% or above to qualify for the sponsorship benefit
+          <p className="text-sm text-navy font-semibold mt-1">
+            Minimum 27 correct answers (out of 50) to qualify for the sponsorship benefit
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => navigate("/user/dashboard")}
-            className="flex-1 bg-blue text-white py-3 rounded-lg text-sm font-bold hover:bg-bluelt transition-all"
+            className="flex-1 bg-blue text-white py-2.5 rounded-lg text-sm font-bold hover:bg-bluelt transition-all"
           >
             Back to Dashboard
           </button>

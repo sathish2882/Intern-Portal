@@ -213,9 +213,9 @@ const UserAttendanceDashboard = () => {
       : []
 
     setAttendanceDetails(normalized)
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
-    toast.error('Failed to load attendance details')
+    toast.error(error?.response?.data?.detail || 'Failed to load attendance details')
     setAttendanceDetails([])
   } finally {
     setLoadingDetails(false)
