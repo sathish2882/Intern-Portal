@@ -38,19 +38,31 @@ const AddUser = () => {
   const { roleType: initialRole, customRole: initialCustom } = resolveRoleType(editUser?.techStack);
 
   const validationSchema = Yup.object({
-    username: Yup.string().required("Enter your name"),
-    email: Yup.string().email("Invalid email").required("Enter email"),
+    username: isEdit
+      ? Yup.string()
+      : Yup.string().required("Enter your name"),
+    email: isEdit
+      ? Yup.string().email("Invalid email")
+      : Yup.string().email("Invalid email").required("Enter email"),
     password: isEdit
       ? Yup.string()
       : Yup.string().min(6, "Min 6 characters").required("Enter password"),
-    roleType: Yup.string().required("Select role type"),
+    roleType: isEdit
+      ? Yup.string()
+      : Yup.string().required("Select role type"),
     customRole: Yup.string().when("roleType", {
       is: "Others",
-      then: (schema) => schema.required("Enter custom role"),
+      then: (schema) => isEdit ? schema : schema.required("Enter custom role"),
     }),
-    phone: Yup.number().typeError("Enter phone").required("Enter number"),
-    batch: Yup.number().typeError("Enter batch").required("Enter batch"),
-    fees: Yup.number().typeError("Enter fees").required("Enter fees"),
+    phone: isEdit
+      ? Yup.number().nullable().notRequired()
+      : Yup.number().typeError("Enter phone").required("Enter number"),
+    batch: isEdit
+      ? Yup.number().nullable().notRequired()
+      : Yup.number().typeError("Enter batch").required("Enter batch"),
+    fees: isEdit
+      ? Yup.number().nullable().notRequired()
+      : Yup.number().typeError("Enter fees").required("Enter fees"),
   });
 
   const handleSubmit = async (values: SignupFormValues) => {
@@ -61,16 +73,28 @@ const AddUser = () => {
         values.roleType === "Others" ? values.customRole : values.roleType;
 
       if (isEdit) {
-        const payload: Record<string, unknown> = {
-          username: values.username,
-          email: values.email,
-          batch: Number(values.batch),
-          total_fee: Number(values.fees),
-          phone: String(values.phone),
-          tech_stack: techStack,
-        };
-        if (values.password) {
-          payload.password = values.password;
+        const initialTechStack =
+          initialRole === "Others" ? initialCustom : initialRole;
+        const payload: Record<string, unknown> = {};
+
+        if (values.username && values.username !== (editUser?.username ?? ""))
+          payload.username = values.username;
+        if (values.email && values.email !== (editUser?.email ?? ""))
+          payload.email = values.email;
+        if (values.password) payload.password = values.password;
+        if (values.batch != null && Number(values.batch) !== (editUser?.batch ? Number(editUser.batch) : null))
+          payload.batch = Number(values.batch);
+        if (values.fees != null && Number(values.fees) !== (editUser?.fees ?? null))
+          payload.total_fee = Number(values.fees);
+        if (values.phone != null && String(values.phone) !== (editUser?.phone ?? ""))
+          payload.phone = String(values.phone);
+        if (techStack && techStack !== initialTechStack)
+          payload.tech_stack = techStack;
+
+        if (Object.keys(payload).length === 0) {
+          toast.info("No changes to update");
+          setLoading(false);
+          return;
         }
 
         await updateUserApi(editUser!.id, payload);

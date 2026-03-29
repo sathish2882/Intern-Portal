@@ -70,7 +70,7 @@ function FormInput({
                     name: field.name,
                     value: field.value ?? "",
                     onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                      const val = e.target.value;
+                      const val = e.target.value.replace(/[^0-9]/g, "");
                       form.setFieldValue(name, val === "" ? null : Number(val));
                     },
                     onBlur: () => form.setFieldTouched(name, true),

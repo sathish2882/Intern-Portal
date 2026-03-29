@@ -50,12 +50,12 @@ function UserDetails() {
   }, []);
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-      <div className="flex w-[900px] h-[540px] rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_rgba(0,0,0,0.15)] transition-all duration-300">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
+      <div className="flex flex-col md:flex-row w-full max-w-[900px] md:h-[540px] rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_rgba(0,0,0,0.15)] transition-all duration-300">
         {/* LEFT */}
-        <div className="w-1/2 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex flex-col justify-center px-12 py-10 text-white user-form">
-          <div className="mb-8">
-            <h1 className="text-4xl font-extrabold tracking-tight mb-3">
+        <div className="w-full md:w-1/2 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex flex-col justify-center px-6 sm:px-12 py-8 sm:py-10 text-white user-form">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-3">
               Student Details
             </h1>
             <div className="h-1 w-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full mb-3"></div>
@@ -88,7 +88,7 @@ function UserDetails() {
             }}
           >
             {({ handleSubmit, handleChange, values }) => (
-              <Form onSubmit={handleSubmit} className="space-y-6">
+              <Form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 {/* NAME */}
                 <div>
                   <label className="block text-xs text-gray-300 font-semibold mb-2.5 uppercase tracking-wide">
@@ -130,7 +130,7 @@ function UserDetails() {
                   loading={loading}
                   type="primary"
                   size="large"
-                  className="w-full h-[46px] mt-8 bg-gradient-to-r from-indigo-500 to-purple-500 border-none font-semibold rounded-lg"
+                  className="w-full h-[46px] mt-6 sm:mt-8 bg-gradient-to-r from-indigo-500 to-purple-500 border-none font-semibold rounded-lg"
                 >
                   {loading ? "Saving..." : "Continue to Dashboard"}
                 </Button>
@@ -143,7 +143,7 @@ function UserDetails() {
         <img
           src={students}
           alt="student illustration"
-          className="w-1/2 h-full object-cover"
+          className="hidden md:block w-full md:w-1/2 h-48 md:h-full object-cover"
         />
       </div>
     </div>

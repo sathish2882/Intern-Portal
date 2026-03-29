@@ -54,9 +54,13 @@ interface SendEmailFormValues {
   name: string
   email: string
   amount: number | null
+  invoiceNo: string
   dueDate: string
-  upiId: string
   note: string
+  accountName: string
+  accountNo: string
+  ifsc: string
+  bankName: string
 }
 
 const toArray = (value: unknown) => {
@@ -126,9 +130,13 @@ const validationSchema = Yup.object({
   name: Yup.string().required('Enter name'),
   email: Yup.string().email('Invalid email').required('Enter email'),
   amount: Yup.number().typeError('Enter amount').positive('Amount must be greater than 0').required('Enter amount'),
+  invoiceNo: Yup.string().required('Enter invoice number'),
   dueDate: Yup.string().required('Select due date'),
-  upiId: Yup.string().required('Enter UPI ID'),
   note: Yup.string(),
+  accountName: Yup.string().required('Enter account name'),
+  accountNo: Yup.string().required('Enter account number'),
+  ifsc: Yup.string().required('Enter IFSC code'),
+  bankName: Yup.string().required('Enter bank name'),
 })
 
 const SendEmail = () => {
@@ -172,9 +180,13 @@ const SendEmail = () => {
         name: '',
         email: '',
         amount: null,
+        invoiceNo: '',
         dueDate: '',
-        upiId: 'business@upi',
         note: '',
+        accountName: '',
+        accountNo: '',
+        ifsc: '',
+        bankName: '',
       }}
       validationSchema={validationSchema}
       onSubmit={async (values) => {
@@ -184,10 +196,14 @@ const SendEmail = () => {
           const payload = {
             user_id: Number(values.userId),
             amount: Number(values.amount),
+            invoice_no: values.invoiceNo,
             due_date: values.dueDate,
             note: values.note || '',
             email_type: EMAIL_TYPE_ID[emailType],
-            upi_id: values.upiId,
+            account_name: values.accountName,
+            account_no: values.accountNo,
+            ifsc: values.ifsc,
+            bank_name: values.bankName,
           }
 
           await paymentEmailApi(payload)
@@ -321,6 +337,7 @@ const SendEmail = () => {
                   <FormInput label="NAME" name="name" placeholder="Customer name" variant="admin" />
                   <FormInput label="EMAIL" name="email" type="email" placeholder="customer@example.com" variant="admin" />
                   <FormInput label="AMOUNT (Rs)" name="amount" type="number" placeholder="0" variant="admin" />
+                  <FormInput label="INVOICE NO" name="invoiceNo" placeholder="INV-001" variant="admin" />
                   <div>
                     <label className="text-[11px] tracking-[1px] text-[#8a8aa3] mb-2 block">
                       DUE DATE
@@ -336,7 +353,10 @@ const SendEmail = () => {
                       <p className="text-red-400 text-[11px] mt-1">{errors.dueDate}</p>
                     )}
                   </div>
-                  <FormInput label="UPI ID" name="upiId" placeholder="business@upi" variant="admin" />
+                  <FormInput label="ACCOUNT NAME" name="accountName" placeholder="Account holder name" variant="admin" />
+                  <FormInput label="ACCOUNT NO" name="accountNo" placeholder="Account number" variant="admin" />
+                  <FormInput label="IFSC CODE" name="ifsc" placeholder="IFSC code" variant="admin" />
+                  <FormInput label="BANK NAME" name="bankName" placeholder="Bank name" variant="admin" />
                 </div>
 
                 <div className="mb-5">
@@ -386,8 +406,18 @@ const SendEmail = () => {
                   <div className={`rounded-[10px] p-3 mb-3 text-center border ${TYPE_COLOR[emailType]}`}>
                     <p className="text-sm text-amuted mb-0.5">Amount Due</p>
                     <p className="text-3xl font-bold">Rs {values.amount ?? 0}</p>
+                    {values.invoiceNo && <p className="text-xs text-amuted mt-1">Invoice: {values.invoiceNo}</p>}
                     {values.dueDate && <p className="text-xs text-amuted mt-1">Due by {values.dueDate}</p>}
                   </div>
+                  {(values.accountName || values.accountNo || values.ifsc || values.bankName) && (
+                    <div className="text-xs text-amuted bg-white/[0.03] rounded-lg p-2.5 mb-3 space-y-1">
+                      <p className="text-[11px] font-bold text-adark uppercase tracking-wide mb-1">Bank Details</p>
+                      {values.bankName && <p>Bank: <span className="text-adark">{values.bankName}</span></p>}
+                      {values.accountName && <p>Name: <span className="text-adark">{values.accountName}</span></p>}
+                      {values.accountNo && <p>A/C No: <span className="text-adark">{values.accountNo}</span></p>}
+                      {values.ifsc && <p>IFSC: <span className="text-adark">{values.ifsc}</span></p>}
+                    </div>
+                  )}
                   {values.note && (
                     <p className="text-sm text-amuted bg-white/[0.03] rounded-lg p-2.5">{values.note}</p>
                   )}

@@ -82,7 +82,7 @@ const InterviewDashboard = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10">
-                    {['#', 'Name', 'Email', 'Aptitude', 'Technical', 'Total', 'Result'].map((heading) => (
+                    {['Username', 'Name', 'Email', 'Aptitude', 'Technical', 'Total', 'Result'].map((heading) => (
                       <th key={heading} className="text-left px-5 py-3 text-[11px] uppercase tracking-[0.14em] text-slate-400 font-medium">
                         {heading}
                       </th>
@@ -99,11 +99,8 @@ const InterviewDashboard = () => {
                   )}
                   {data.map((user) => (
                     <tr key={user.user_id} className="border-b border-white/5 last:border-b-0 hover:bg-white/[0.03] transition-colors">
-                      <td className="px-5 py-4 text-slate-400">{user.user_id}</td>
-                      <td className="px-5 py-4">
-                        <p className="font-semibold">{user.name}</p>
-                        <p className="text-xs text-slate-400">@{user.username}</p>
-                      </td>
+                      <td className="px-5 py-4 text-slate-400">{user.username}</td>
+                      <td className="px-5 py-4 font-semibold">{user.name}</td>
                       <td className="px-5 py-4 text-slate-300 text-xs">{user.email}</td>
                       <td className="px-5 py-4 font-mono">
                         <span>{user.aptitude_score}/30</span>
