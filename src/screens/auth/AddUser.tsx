@@ -1,13 +1,10 @@
-import { Formik, Form } from "formik";
-import { useNavigate } from "react-router-dom";
+import { Formik, Form, ErrorMessage } from "formik";
+import { useNavigate, useLocation } from "react-router-dom";
 import * as Yup from "yup";
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { Button, Select } from "antd";
 import FormInput from "../../components/form/FormInput";
-import { signupApi } from "../../services/authApi";
-
-const { Option } = Select;
+import { signupApi, updateUserApi } from "../../services/authApi";
 
 interface SignupFormValues {
   username: string;
@@ -20,22 +17,38 @@ interface SignupFormValues {
   fees: number | null;
 }
 
+const ROLE_OPTIONS = ["Frontend", "Backend", "Others"];
+
 const AddUser = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const editUser = location.state?.user as
+    | { id: number; username: string; email: string; phone: string; batch: string; techStack: string; fees?: number }
+    | undefined;
+  const isEdit = Boolean(editUser);
+
+  const resolveRoleType = (techStack?: string) => {
+    if (!techStack) return { roleType: "", customRole: "" };
+    if (ROLE_OPTIONS.includes(techStack)) return { roleType: techStack, customRole: "" };
+    return { roleType: "Others", customRole: techStack };
+  };
+
+  const { roleType: initialRole, customRole: initialCustom } = resolveRoleType(editUser?.techStack);
 
   const validationSchema = Yup.object({
     username: Yup.string().required("Enter your name"),
     email: Yup.string().email("Invalid email").required("Enter email"),
-    password: Yup.string()
-      .min(6, "Min 6 characters")
-      .required("Enter password"),
+    password: isEdit
+      ? Yup.string()
+      : Yup.string().min(6, "Min 6 characters").required("Enter password"),
     roleType: Yup.string().required("Select role type"),
     customRole: Yup.string().when("roleType", {
       is: "Others",
       then: (schema) => schema.required("Enter custom role"),
     }),
-    phone: Yup.number().typeError("Enter batch").required("Enter number"),
+    phone: Yup.number().typeError("Enter phone").required("Enter number"),
     batch: Yup.number().typeError("Enter batch").required("Enter batch"),
     fees: Yup.number().typeError("Enter fees").required("Enter fees"),
   });
@@ -44,23 +57,40 @@ const AddUser = () => {
     try {
       setLoading(true);
 
-      const payload = {
-        username: values.username,
-        email: values.email,
-        password: values.password,
-        type: 2,
-        batch: Number(values.batch),
-        total_fee: Number(values.fees),
-        phone: String(values.phone),
-        tech_stack:
-          values.roleType === "Others"
-            ? values.customRole
-            : values.roleType,
-      };
+      const techStack =
+        values.roleType === "Others" ? values.customRole : values.roleType;
 
-      await signupApi(payload);
+      if (isEdit) {
+        const payload: Record<string, unknown> = {
+          username: values.username,
+          email: values.email,
+          batch: Number(values.batch),
+          total_fee: Number(values.fees),
+          phone: String(values.phone),
+          tech_stack: techStack,
+        };
+        if (values.password) {
+          payload.password = values.password;
+        }
 
-      toast.success("User Added successfully");
+        await updateUserApi(editUser!.id, payload);
+        toast.success("User updated successfully");
+      } else {
+        const payload = {
+          username: values.username,
+          email: values.email,
+          password: values.password,
+          type: 2,
+          batch: Number(values.batch),
+          total_fee: Number(values.fees),
+          phone: String(values.phone),
+          tech_stack: techStack,
+        };
+
+        await signupApi(payload);
+        toast.success("User added successfully");
+      }
+
       navigate("/admin/user-dashboard", { replace: true });
     } catch (error: any) {
       const message = error?.response?.data?.detail || "Something went wrong";
@@ -83,19 +113,19 @@ const AddUser = () => {
         shadow-[0_20px_60px_rgba(15,23,42,0.12)]"
       >
         <h2 className="text-[26px] font-heading font-semibold text-slate-900 mb-5">
-          Add <span className="text-[#2563eb]">User</span>
+          {isEdit ? "Edit" : "Add"} <span className="text-[#2563eb]">User</span>
         </h2>
 
         <Formik
           initialValues={{
-            username: "",
-            email: "",
+            username: editUser?.username ?? "",
+            email: editUser?.email ?? "",
             password: "",
-            roleType: "",
-            customRole: "",
-            phone: null,
-            batch: null,
-            fees: null,
+            roleType: initialRole,
+            customRole: initialCustom,
+            phone: editUser?.phone ? Number(editUser.phone) : null,
+            batch: editUser?.batch ? Number(editUser.batch) : null,
+            fees: editUser?.fees ?? null,
           }}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
@@ -107,42 +137,42 @@ const AddUser = () => {
 
               <FormInput label="EMAIL ADDRESS" name="email" type="email" />
 
-              <FormInput label="PASSWORD" name="password" type="password" />
+              <FormInput
+                label={isEdit ? "PASSWORD (leave blank to keep)" : "PASSWORD"}
+                name="password"
+                type="password"
+                placeholder={isEdit ? "Leave blank to keep current" : undefined}
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <FormInput label="PHONE" name="phone" type="number" />
                 <FormInput label="BATCH" name="batch" type="number" />
               </div>
 
-
-
               <div className="grid grid-cols-2 gap-4">
-                {/* ROLE TYPE DROPDOWN */}
                 <div>
-                  <label className="text-[11px] text-[#8a8aa3] font-medium">ROLE TYPE</label>
-                  <Select
-                    className="w-full mt-1"
-                    placeholder="Select role"
-                    value={values.roleType || undefined}
-                    onChange={(value) => setFieldValue("roleType", value)}
-                    classNames={{ popup: { root: "role-dropdown" } }}
+                  <label className="text-[11px] tracking-[1px] text-[#8a8aa3] mb-2 block">ROLE TYPE</label>
+                  <select
+                    value={values.roleType}
+                    onChange={(e) => {
+                      setFieldValue("roleType", e.target.value)
+                      if (e.target.value !== "Others") setFieldValue("customRole", "")
+                    }}
+                    className="w-full h-[46px] rounded-[12px] bg-transparent border border-[#3b82f6] px-4 text-sm text-slate-900 outline-none transition-colors focus:border-[#3b82f6] focus:shadow-md cursor-pointer"
                   >
-                    <Option value="Frontend">Frontend</Option>
-                    <Option value="Backend">Backend</Option>
-                    <Option value="Others">Others</Option>
-                  </Select>
+                    <option value="" disabled>Select role</option>
+                    <option value="Frontend">Frontend</option>
+                    <option value="Backend">Backend</option>
+                    <option value="Others">Others</option>
+                  </select>
+                  <ErrorMessage name="roleType" component="p" className="text-red-400 text-[11px] mt-1" />
                 </div>
-
-                {/* SHOW ONLY IF OTHERS */}
-                {values.roleType === "Others" && (
-                  <FormInput
-                    label="CUSTOM ROLE"
-                    name="customRole"
-                    type="text"
-                  />
-                )}
                 <FormInput label="FEES" name="fees" type="number" />
               </div>
+
+              {values.roleType === "Others" && (
+                <FormInput label="CUSTOM ROLE" name="customRole" type="text" />
+              )}
 
               <button
                 type="submit"
@@ -153,17 +183,18 @@ const AddUser = () => {
                 hover:opacity-95 transition duration-200
                 flex items-center justify-center gap-2"
               >
-                <span className="flex h-6 w-[88px] items-center justify-center">
-                  {loading ? <div className="loader-btn loader-btn-sm" /> : "Add User"}
+                <span className="flex h-6 w-[120px] items-center justify-center">
+                  {loading ? <div className="loader-btn loader-btn-sm" /> : isEdit ? "Update User" : "Add User"}
                 </span>
               </button>
 
-              <Button
+              <button
+                type="button"
                 onClick={() => navigate("/admin/user-dashboard")}
-                type="link"
+                className="text-[#2563eb] text-sm hover:underline mx-auto"
               >
                 Back
-              </Button>
+              </button>
             </Form>
           )}
         </Formik>

@@ -147,6 +147,13 @@ const EyeIcon = () => (
   </svg>
 )
 
+const EditIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
 const DeleteIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0">
     <path d="M4 7h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -336,7 +343,7 @@ const AdminUserDashboard = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  {['Id', 'Name', 'Email', 'Phone', 'Tech Stack', 'Status', 'View', 'Delete'].map((heading) => (
+                  {['Id', 'Name', 'Email', 'Phone', 'Tech Stack', 'Status', 'View', 'Edit', 'Delete'].map((heading) => (
                     <th key={heading} className="text-left px-5 py-3 text-[11px] uppercase tracking-[0.14em] text-slate-400 font-medium">
                       {heading}
                     </th>
@@ -346,11 +353,11 @@ const AdminUserDashboard = () => {
               <tbody>
                 {loadingUsers ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-8 text-center text-sm text-slate-400">Loading users...</td>
+                    <td colSpan={9} className="px-5 py-8 text-center text-sm text-slate-400">Loading users...</td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-8 text-center text-sm text-slate-400">No users found.</td>
+                    <td colSpan={9} className="px-5 py-8 text-center text-sm text-slate-400">No users found.</td>
                   </tr>
                 ) : (
                   users.map((user) => {
@@ -382,6 +389,16 @@ const AdminUserDashboard = () => {
                           >
                             <EyeIcon />
                             View
+                          </button>
+                        </td>
+                        <td className="px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={() => navigate('/edit-user', { state: { user } })}
+                            className="inline-flex items-center gap-2 rounded-lg border border-amber-400/25 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 transition-colors hover:bg-amber-500/20"
+                          >
+                            <EditIcon />
+                            Edit
                           </button>
                         </td>
                         <td className="px-5 py-4">

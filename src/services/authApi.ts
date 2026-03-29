@@ -63,3 +63,11 @@ export const getUserByBatchApi = (batchId: number | string) => {
 export const paymentEmailApi = (data: any) => {
   return API.post('/payment_email', data)
 }
+
+export const getExamSummaryApi = () => {
+  return API.get('/exam-summary')
+}
+
+export const updateUserApi = (userId: number | string, data: any) => {
+  return API.put(`/update_users/${userId}`, data)
+}

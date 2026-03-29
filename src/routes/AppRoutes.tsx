@@ -48,6 +48,7 @@ export const router = createHashRouter([
     ),
   },
   { path: "/add-user", element: <AddUser /> },
+  { path: "/edit-user", element: <AddUser /> },
 
   {
     path: "/admin",
