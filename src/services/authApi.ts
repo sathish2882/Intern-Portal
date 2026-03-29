@@ -13,6 +13,10 @@ export const logoutApi = () => {
   return API.post('/logout')
 }
 
+export const examLogoutApi = (userId: number) => {
+  return API.post('/exam/logout', null, { params: { user_id: userId } })
+}
+
 // 🔹 NORMAL USER (TOKEN BASED)
 export const getMeApi = () => {
   return API.get('/me')

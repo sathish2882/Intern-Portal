@@ -5,7 +5,7 @@ import { toast } from 'react-toastify'
 
 import { useAppDispatch } from '../../redux/hooks'
 import { clearTestData, setCurrentUser } from '../../redux/slices/testSlice'
-import { getUserByIdApi } from '../../services/authApi'
+import { getUserByIdApi, examLogoutApi } from '../../services/authApi'
 
 import {
   getUserId,
@@ -19,6 +19,11 @@ const UserLayout = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
+
+  // ✅ Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
 
   const [loggingOut, setLoggingOut] = useState(false)
   const [user, setUser] = useState({ name: 'User', email: '' })
@@ -66,10 +71,13 @@ const UserLayout = () => {
     setLoggingOut(true)
 
     try {
-      // 🔵 Exam user → no backend logout needed
-      // (skip logoutApi)
-    } catch (error) {
+      const userId = getUserId()
+      if (userId) {
+        await examLogoutApi(Number(userId))
+      }
+    } catch (error: any) {
       console.error('Logout failed:', error)
+      toast.error(error?.response?.data?.detail || 'Logout failed')
     } finally {
       // 🔥 Clear test data from Redux
       dispatch(clearTestData())

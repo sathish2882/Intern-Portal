@@ -34,6 +34,14 @@ API.interceptors.request.use(
 API.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 🔴 Unauthorized / Token expired → redirect to login
+    if (error.response?.status === 401) {
+      Cookies.remove("token");
+      Cookies.remove("userType");
+      window.location.hash = "#/login";
+      return Promise.reject(error);
+    }
+
     // 🔴 Server error
     if (error.response?.status === 500) {
       return Promise.reject(error);

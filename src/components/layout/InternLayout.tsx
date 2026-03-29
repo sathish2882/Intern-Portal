@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { removeToken, removeUserType } from '../../utils/authCookies'
 import { getMeApi, logoutApi } from '../../services/authApi'
@@ -12,7 +12,13 @@ const FALLBACK_USER = {
 
 const InternLayout = () => {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [loggingOut, setLoggingOut] = useState(false)
+
+  // ✅ Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [profile, setProfile] = useState<CurrentUserProfile | null>(null)
 

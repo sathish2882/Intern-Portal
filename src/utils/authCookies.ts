@@ -41,6 +41,20 @@ export const removeUserId = () => {
 
 // 🔥 IMPORTANT HELPERS
 
+// ✅ Check if JWT token is expired
+export const isTokenExpired = (): boolean => {
+  const token = getToken()
+  if (!token) return true
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    if (!payload.exp) return true
+    return Date.now() >= payload.exp * 1000
+  } catch {
+    return true
+  }
+}
+
 // ✅ Exam user → has userId but NO token
 export const isExamUser = () => {
   const userId = getUserId()
