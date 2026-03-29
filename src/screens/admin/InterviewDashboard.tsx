@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import AdminPortalShell from '../../components/layout/AdminPortalShell'
-import { getExamSummaryApi } from '../../services/authApi'
+import { getExamSummaryApi, resetExamDataApi } from '../../services/authApi'
 
 interface ExamUser {
   user_id: number
@@ -25,6 +25,7 @@ const STATUS_CLASSES: Record<string, string> = {
 const InterviewDashboard = () => {
   const [data, setData] = useState<ExamUser[]>([])
   const [loading, setLoading] = useState(true)
+  const [resetting, setResetting] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -56,6 +57,23 @@ const InterviewDashboard = () => {
     { label: 'Top Score', value: `${topScore}/50`, hint: `${passCount} passed out of ${totalUsers}`, valueClass: 'text-amber-300' },
   ]
 
+  const handleResetExam = async () => {
+    const confirmed = window.confirm('Are you sure you want to reset all exam data? This action cannot be undone.')
+    if (!confirmed) return
+
+    try {
+      setResetting(true)
+      await resetExamDataApi()
+      toast.success('Exam data reset successfully')
+      setData([])
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error?.response?.data?.detail || 'Failed to reset exam data')
+    } finally {
+      setResetting(false)
+    }
+  }
+
   return (
     <AdminPortalShell title="Interview Dashboard">
       {loading ? (
@@ -72,6 +90,17 @@ const InterviewDashboard = () => {
                 <p className="text-xs text-slate-400 mt-2">{stat.hint}</p>
               </div>
             ))}
+          </div>
+
+          <div className="flex justify-end mb-4">
+            <button
+              type="button"
+              disabled={resetting}
+              onClick={() => void handleResetExam()}
+              className="inline-flex items-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-3.5 py-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {resetting ? 'Resetting...' : 'Reset Exam Data'}
+            </button>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">

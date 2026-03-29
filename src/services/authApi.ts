@@ -68,6 +68,10 @@ export const getExamSummaryApi = () => {
   return API.get('/exam-summary')
 }
 
+export const resetExamDataApi = () => {
+  return API.delete('/truncate-exam-users')
+}
+
 export const updateUserApi = (userId: number | string, data: any) => {
   return API.put(`/update_users/${userId}`, data)
 }
