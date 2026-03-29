@@ -1,29 +1,61 @@
-{/*import { Navigate } from "react-router-dom";
-import Cookies from "js-cookie";
-import { useAppSelector } from "../../redux/hooks";
+import { ReactNode } from 'react'
+import { Navigate } from 'react-router-dom'
 
-const ProtectedRoute = ({ children, role }: any) => {
-  const { user } = useAppSelector((s) => s.auth);
+import {
+  getToken,
+  getUserId,
+  getUserType,
+} from '../../utils/authCookies'
 
-  const token = Cookies.get("token");
-  const userTypeFromCookie = Cookies.get("userType");
+interface ProtectedRouteProps {
+  children: ReactNode
+  role?: string
+  guestOnly?: boolean
+}
 
-  // No token → not logged in
-  if (!token) {
-    return <Navigate to="/login" replace />;
+const getRedirectByUserType = (userType?: string) => {
+  if (userType === '1') return '/admin/portals'
+  if (userType === '2') return '/intern/dashboard'
+  if (userType === '3') return '/user/dashboard'
+  return '/login'
+}
+
+const ProtectedRoute = ({
+  children,
+  role,
+  guestOnly = false,
+}: ProtectedRouteProps) => {
+  const token = getToken()
+  const userType = getUserType()
+  const userId = getUserId()
+
+  // 🔥 EXAM USER CHECK
+  const isExamUserLoggedIn =
+    userType === '3' && Boolean(userId)
+
+  // 🔥 FINAL LOGIN CHECK
+  const isLoggedIn = Boolean(token) || isExamUserLoggedIn
+
+  // 🔹 GUEST ONLY ROUTES (login page)
+  if (guestOnly) {
+    return isLoggedIn ? (
+      <Navigate to={getRedirectByUserType(userType ?? undefined)} replace />
+    ) : (
+      <>{children}</>
+    )
   }
 
-  // Role mismatch (check both Redux + cookie)
-  if (
-    role &&
-    user &&
-    user.user_type !== role &&
-    userTypeFromCookie !== role
-  ) {
-    return <Navigate to="/" replace />;
+  // 🔹 NOT LOGGED IN
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />
   }
 
-  return children;
-};
+  // 🔹 ROLE CHECK
+  if (role && userType !== role) {
+    return <Navigate to={getRedirectByUserType(userType ?? undefined)} replace />
+  }
 
-export default ProtectedRoute;*/}
+  return <>{children}</>
+}
+
+export default ProtectedRoute

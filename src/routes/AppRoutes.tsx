@@ -1,82 +1,122 @@
-import { createHashRouter, Navigate } from "react-router-dom";
-import { store } from "../redux/store";
-
-// Route Guard
-//import ProtectedRoute from "../components/ui/ProtectedRoute";
+import { createHashRouter, Navigate, Outlet } from "react-router-dom";
 
 // Auth
 import WelcomeScreen from "../screens/auth/WelcomeScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
-import RegisterScreen from "../screens/auth/RegisterScreen";
-import OtpScreen from "../screens/auth/OtpScreen";
-
-
+import AddUser from "../screens/auth/AddUser";
 
 // Admin
 import AdminLayout from "../components/layout/AdminLayout";
+import AdminPortalSelector from "../screens/admin/AdminPortalSelector";
+import AdminUserDashboard from "../screens/admin/AdminUserDashboard";
+import UserAttendanceDashboard from "../screens/admin/UserAttendanceDashboard";
+import InterviewDashboard from "../screens/admin/InterviewDashboard";
 import AdminDashboard from "../screens/admin/AdminDashboard";
 import SendEmail from "../screens/admin/SendEmail";
-import Customers from "../screens/admin/Customers";
+import Customers from "../screens/admin/User";
 import EmailHistory from "../screens/admin/EmailHistory";
+
+// Intern
+import InternLayout from "../components/layout/InternLayout";
+import InternDashboard from "../screens/intern/InternDashboard";
 
 // User
 import UserLayout from "../components/layout/UserLayout";
 import UserDashboard from "../screens/user/UserDashboard";
 import TestPage from "../screens/user/TestPage";
 import ResultPage from "../screens/user/ResultPage";
-
-const getDefaultRoute = () => {
-  const { user } = store.getState().auth;
-
-  if (!user) return "/login";
-  return user.user_type === "admin"
-    ? "/admin/dashboard"
-    : "/user/dashboard";
-};
+import ProtectedRoute from "../components/ui/ProtectedRoute"; 
+import UserDetails from "../screens/auth/UserDetails";
 
 export const router = createHashRouter([
-  // 🌍 PUBLIC
-  { path: "/", element: <WelcomeScreen /> },
-  { path: "/login", element: <LoginScreen /> },
-  { path: "/register", element: <RegisterScreen /> },
-  { path: "/otp", element: <OtpScreen /> },
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute guestOnly>
+           <WelcomeScreen />
+      </ProtectedRoute>
+     
+    ),
+  },
+  {
+    path: "/login",
+    element: (
+       <ProtectedRoute guestOnly>
+           <LoginScreen />
+      </ProtectedRoute> 
+     
+    ),
+  },
+  { path: "/add-user", element: <AddUser /> },
+  { path: "/edit-user", element: <AddUser /> },
 
-  // 🔐 ADMIN
   {
     path: "/admin",
     element: (
-      //<ProtectedRoute role="admin">
-        <AdminLayout />
-      //</ProtectedRoute>
+      <ProtectedRoute role="1">
+          <Outlet />
+      </ProtectedRoute>
+      
     ),
     children: [
-      { index: true, element: <Navigate to="dashboard" replace /> },
-      { path: "dashboard", element: <AdminDashboard /> },
-      { path: "send-email", element: <SendEmail /> },
-      { path: "customers", element: <Customers /> },
-      { path: "email-history", element: <EmailHistory /> },
+      { index: true, element: <Navigate to="portals" replace /> },
+      { path: "portals", element: <AdminPortalSelector /> },
+      { path: "user-dashboard", element: <AdminUserDashboard /> },
+      { path: "attendance-dashboard", element: <UserAttendanceDashboard /> },
+      { path: "interview-dashboard", element: <InterviewDashboard /> },
+      {
+        path: "payment",
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <Navigate to="dashboard" replace /> },
+          { path: "dashboard", element: <AdminDashboard /> },
+          { path: "send-email", element: <SendEmail /> },
+          { path: "users", element: <Customers /> },
+          { path: "email-history", element: <EmailHistory /> },
+        ],
+      },
     ],
   },
 
-  // 👤 USER
+  {
+    path: "/intern",
+    element: (
+      <ProtectedRoute role="2">
+          <InternLayout />
+      </ProtectedRoute>
+      
+    ),
+    children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
+      { path: "dashboard", element: <InternDashboard /> },
+    ],
+  },
+
   {
     path: "/user",
     element: (
-      //<ProtectedRoute role="user">
-        <UserLayout />
-      //</ProtectedRoute>
+      <ProtectedRoute role="3">
+           <UserLayout key={window.location.pathname} />
+      </ProtectedRoute>
+      
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <UserDashboard /> },
       { path: "test", element: <TestPage /> },
       { path: "result", element: <ResultPage /> },
+       { 
+    path:"userDetails", 
+    element:<UserDetails/>
+  },
     ],
+    
+
   },
 
-  // 🔁 FALLBACK
+ 
   {
     path: "*",
-    element: <Navigate to={getDefaultRoute()} replace />,
+    element: <Navigate to="/" replace />,
   },
 ]);

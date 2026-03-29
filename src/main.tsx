@@ -6,6 +6,7 @@ import { store } from "./redux/store";
 import { router } from "./routes/AppRoutes";
 import "./index.css";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -14,11 +15,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <ToastContainer
         position="top-right"
         autoClose={3000}
-        hideProgressBar={false}
         newestOnTop
         closeOnClick
         pauseOnHover
-        theme="dark"
+        draggable
+        theme="light"
+        style={{ zIndex: 9999 }}
       />
     </Provider>
   </React.StrictMode>,

@@ -45,6 +45,9 @@ footer {
    Loaders
 ───────────────────────────────────────────── */
 .loader {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
   width: 48px;
   height: 48px;
   border: 3px dotted gray;
@@ -76,14 +79,24 @@ footer {
 }
 
 .loader-btn {
+  display: inline-block;
+  flex-shrink: 0;
+  box-sizing: border-box;
   width: 30px;
-  padding: 4px;
-  aspect-ratio: 1;
+  height: 30px;
+  border: 3px solid currentColor;
+  border-right-color: transparent;
   border-radius: 50%;
-  background: #0eadc2;
-  animation: l3 1s infinite linear;
+  animation: loader-btn-spin 0.8s linear infinite;
 }
-@keyframes l3 {
+
+.loader-btn-sm {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+@keyframes loader-btn-spin {
   to {
     transform: rotate(1turn);
   }
@@ -93,36 +106,66 @@ footer {
    Ant Design — USER (Light Theme)
 ───────────────────────────────────────────── */
 
-/* Transparent inputs */
-.ant-input,
-.ant-input-password input,
-.ant-input-affix-wrapper,
-.ant-input-number {
-  background-color: transparent !important;
-  color: #0f172a !important;
-  border-color: #b2b7be !important;
-}
-
-/* Fix focus (remove Ant blue glow) */
-.ant-input:focus,
-.ant-input-focused,
-.ant-input-affix-wrapper-focused,
-.ant-input-affix-wrapper:focus-within,
-.ant-input-number-focused {
-  background-color: transparent !important;
-  color: #0f172a !important;
-  border-color: #3b82f6 !important;
-  box-shadow: none !important;
+/* USER FORM - Dark Theme Inputs */
+.user-form .ant-input,
+.user-form .ant-input-password input,
+.user-form .ant-input-affix-wrapper,
+.user-form .ant-input-number {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border: 1px solid #334155 !important;
+  border-radius: 10px !important;
+  height: 46px !important;
+  font-size: 14px !important;
+  transition: all 200ms ease-out !important;
 }
 
 /* Placeholder */
-.ant-input::placeholder {
-  color: #94a3b8 !important;
+.user-form .ant-input::placeholder,
+.user-form .ant-input-affix-wrapper input::placeholder,
+.user-form .ant-input-password input::placeholder {
+  color: #9ca3af !important;
 }
 
-/* Password wrapper fix */
-.ant-input-affix-wrapper {
+/* Icon Prefix */
+.user-form .ant-input-prefix,
+.user-form .ant-input-affix-wrapper .ant-input-prefix {
+  color: #818cf8 !important;
+  font-size: 14px !important;
+}
+
+/* Focus State */
+.user-form .ant-input:focus,
+.user-form .ant-input-focused,
+.user-form .ant-input-affix-wrapper-focused,
+.user-form .ant-input-affix-wrapper:focus-within,
+.user-form .ant-input-number-focused {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* Hover State */
+.user-form .ant-input:hover,
+.user-form .ant-input-affix-wrapper:hover {
+  border-color: #475569 !important;
+  background-color: #1e293b !important;
+}
+
+/* Password Eye Icon */
+.user-form .ant-input-password-icon {
+  color: #818cf8 !important;
+}
+
+/* Global Default Styles - Only for non-form inputs */
+.ant-input:not(.user-form .ant-input),
+.ant-input-password input:not(.user-form .ant-input-password input),
+.ant-input-affix-wrapper:not(.user-form .ant-input-affix-wrapper),
+.ant-input-number:not(.user-form .ant-input-number) {
   background-color: transparent !important;
+  color: #0f172a !important;
+  border-color: #b2b7be !important;
 }
 
 /* ─────────────────────────────────────────────
@@ -159,6 +202,44 @@ footer {
   @apply bg-abg3 text-adark rounded-[10px];
 }
 
+.send-email-form .ant-input,
+.send-email-form .ant-input-affix-wrapper,
+.send-email-form .ant-input-password input,
+.send-email-form .ant-input-number,
+.send-email-form .ant-input-number-input {
+  color: #f3f4f6 !important;
+}
+
+.send-email-form .ant-input::placeholder,
+.send-email-form .ant-input-number-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.send-email-form .ant-input-affix-wrapper,
+.send-email-form .ant-input-number,
+.send-email-form .ant-input,
+.send-email-form .ant-input-password {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: none !important;
+}
+
+.send-email-form .ant-input-affix-wrapper:hover,
+.send-email-form .ant-input-number:hover,
+.send-email-form .ant-input:hover,
+.send-email-form .ant-input-password:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.send-email-form .ant-input-affix-wrapper-focused,
+.send-email-form .ant-input-affix-wrapper:focus-within,
+.send-email-form .ant-input-number-focused,
+.send-email-form .ant-input:focus,
+.send-email-form .ant-input-focused,
+.send-email-form .ant-input-password:focus-within {
+  border-color: #e9a628 !important;
+  box-shadow: none !important;
+}
+
 /* ─────────────────────────────────────────────
    Scrollbar
 ───────────────────────────────────────────── */
@@ -192,4 +273,21 @@ footer {
   display: flex !important;
   flex-direction: column !important;
   height: 100% !important;
+}
+
+.role-dropdown .ant-select-item {
+  width: 100%;
+  display: inline-block;
+}
+.role-dropdown .ant-select-item-group-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+.role-dropdown .ant-select-item-option:hover {
+  background-color: #e6f4ff; /* light blue */
+  color: #1677ff;
+}
+.role-dropdown {
+  width: 100px !important; /* control dropdown width */
 }

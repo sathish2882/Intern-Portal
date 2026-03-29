@@ -1,25 +1,61 @@
 import Cookies from 'js-cookie'
-import { AuthUser } from '../types'
 
-const TOKEN_KEY = 'mguru_token'
-const USER_KEY  = 'mguru_user'
-
-export const setAuthCookie = (user: AuthUser): void => {
-  Cookies.set(TOKEN_KEY, user.token, { expires: 7 })
-  Cookies.set(USER_KEY, JSON.stringify(user), { expires: 7 })
+// 🔹 TOKEN (Normal Users)
+export const setToken = (token: string) => {
+  Cookies.set('token', token, { expires: 7 })
 }
 
-export const getAuthToken = (): string | undefined => Cookies.get(TOKEN_KEY)
-
-export const getAuthUser = (): AuthUser | null => {
-  const raw = Cookies.get(USER_KEY)
-  if (!raw) return null
-  try { return JSON.parse(raw) as AuthUser } catch { return null }
+export const getToken = () => {
+  return Cookies.get('token') || null
 }
 
-export const removeAuthCookie = (): void => {
-  Cookies.remove(TOKEN_KEY)
-  Cookies.remove(USER_KEY)
+export const removeToken = () => {
+  Cookies.remove('token')
 }
 
-export const isAuthenticated = (): boolean => !!getAuthToken()
+// 🔹 USER TYPE
+export const setUser = (userType: string) => {
+  Cookies.set('userType', userType, { expires: 7 })
+}
+
+export const getUserType = () => {
+  return Cookies.get('userType') || null
+}
+
+export const removeUserType = () => {
+  Cookies.remove('userType')
+}
+
+// 🔹 USER ID (Exam Users)
+export const setUserId = (userId: string) => {
+  Cookies.set('userId', userId, { expires: 7 })
+}
+
+export const getUserId = () => {
+  return Cookies.get('userId') || null
+}
+
+export const removeUserId = () => {
+  Cookies.remove('userId')
+}
+
+// 🔥 IMPORTANT HELPERS
+
+// ✅ Exam user → has userId but NO token
+export const isExamUser = () => {
+  const userId = getUserId()
+  const token = getToken()
+  return !!userId && !token
+}
+
+// ✅ Normal user → has token
+export const isNormalUser = () => {
+  return !!getToken()
+}
+
+// 🔥 Logout (clean everything)
+export const clearAuth = () => {
+  removeToken()
+  removeUserId()
+  removeUserType()
+}
