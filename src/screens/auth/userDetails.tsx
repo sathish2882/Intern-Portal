@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Input, Button } from "antd";
-import intern from "../../assets/images/png/intern-illustration.png";
+import intern from "../../assets/images/png/Welcome to M-Intern illustration.png";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 

@@ -287,7 +287,7 @@ const AdminDashboard = () => {
             <table className="w-full text-[13.5px]">
               <thead>
                 <tr className="border-b border-white/[0.07]">
-                  {['Invoice No', 'Customer Id', 'Type', 'Amount', 'Due Date', 'Status'].map((heading) => (
+                  {['Invoice No', 'User Id', 'Type', 'Amount', 'Due Date', 'Status'].map((heading) => (
                     <th key={heading} className="text-left text-xs px-4 py-3 text-[11px] font-mono uppercase tracking-[0.06em] text-amuted font-medium">
                       {heading}
                     </th>

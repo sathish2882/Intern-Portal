@@ -20,8 +20,8 @@ interface AdminPortalShellProps {
 
 const NAV_ITEMS = [
   { to: '/admin/portals', label: 'Portals' },
-  { to: '/admin/interview-dashboard', label: 'Interview Dashboard' },
-  { to: '/admin/user-dashboard', label: 'User Dashboard' },
+  { to: '/admin/interview-dashboard', label: 'Assesment Dashboard' },
+  { to: '/admin/user-dashboard', label: 'Intern Dashboard' },
   { to: '/admin/attendance-dashboard', label: 'Attendance Dashboard' },
 ]
 
