@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Input, Button } from "antd";
-import students from "../../assets/images/png/student-illustration (2).png";
+import intern from "../../assets/images/png/intern-illustration.png";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -68,7 +68,7 @@ function UserDetails() {
         <div className="w-full md:w-1/2 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex flex-col justify-center px-6 sm:px-12 py-8 sm:py-10 text-white user-form">
           <div className="mb-6 sm:mb-8">
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-3">
-              Student Details
+              User Details
             </h1>
             <div className="h-1 w-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full mb-3"></div>
             <p className="text-gray-400 text-sm">
@@ -153,7 +153,7 @@ function UserDetails() {
 
         {/* RIGHT */}
         <img
-          src={students}
+          src={intern}
           alt="student illustration"
           className="hidden md:block w-full md:w-1/2 h-48 md:h-full object-cover"
         />
