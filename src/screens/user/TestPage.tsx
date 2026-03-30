@@ -82,13 +82,15 @@ const TestPage = () => {
 
       const elapsed = durationSeconds - timeLeft;
 
+      // Pass mark is 25 correct answers for both tests
+      const passMark = 25;
       const result: TestResult = {
         testType: activeTestType,
         correct,
         wrong,
         skipped,
         total: questions.length,
-        passed: correct >= activeTest.pass,
+        passed: correct >= passMark,
         timeTaken: "",
       };
 

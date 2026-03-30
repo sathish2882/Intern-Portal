@@ -75,7 +75,8 @@ const ResultPage = () => {
   const totalScore = backendResult?.total_score ?? 0;
   const totalATotalQuestions = TEST_CONFIG.aptitude.data.total + TEST_CONFIG.technical.data.total;
   const totalPercentage = totalATotalQuestions > 0 ? Math.round((totalScore / totalATotalQuestions) * 100) : 0;
-  const cumulativePassed = totalScore >= 27;
+  // Pass mark is 25 correct answers out of 50
+  const cumulativePassed = totalScore >= 25;
 
   console.log("📊 ResultPage - Calculated Percentage:", {
     totalScore,
@@ -140,7 +141,8 @@ const ResultPage = () => {
         {/* Individual Test Results Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           {[aptitudeResult, technicalResult].map((testResult) => {
-            const passThreshold = testResult.testType === "aptitude" ? 14 : 13;
+            // Pass mark is 25 for both tests
+            const passThreshold = 25;
             const testPassed = testResult.score >= passThreshold;
             return (
               <div
@@ -188,7 +190,7 @@ const ResultPage = () => {
         <div className="bg-sky border border-[#ccdff8] rounded-[9px] px-5 py-3 text-center mb-4">
           <p className="text-xs font-bold text-blue uppercase">Pass Criteria</p>
           <p className="text-sm text-navy font-semibold mt-1">
-            Minimum 27 correct answers (out of 50) to qualify for the sponsorship benefit
+            Minimum 25 correct answers (out of 50) to qualify for the sponsorship benefit
           </p>
         </div>
 
