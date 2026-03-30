@@ -3,7 +3,7 @@ import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Input, Button } from "antd";
 import { UserOutlined, MailOutlined } from "@ant-design/icons";
-import students from "../../assets/images/png/student-illustration (2).png";
+import students from "../../assets/images/png/intern-illustration.png";
 import { useNavigate } from "react-router-dom";
 
 const UserDetails: React.FC = () => {
@@ -38,7 +38,7 @@ const UserDetails: React.FC = () => {
         
         {/* LEFT SIDE */}
         <div className="w-1/2 bg-[#0f0f0f] flex flex-col justify-center px-12 text-white">
-          <h1 className="text-3xl font-bold mb-2">Student Details</h1>
+          <h1 className="text-3xl font-bold mb-2">User Details</h1>
           <p className="text-gray-400 mb-8">Enter your details</p>
 
           <Formik
