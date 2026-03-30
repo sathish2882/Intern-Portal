@@ -1,104 +1,134 @@
-import { useNavigate } from "react-router-dom";
-import { Formik, Form } from "formik";
-import * as Yup from "yup";
-import { useState } from "react";
-import { toast } from "react-toastify";
-import { loginApi } from "../../services/authApi";
-import { setToken, setUser } from "../../utils/authCookies";
-import { WelcomeImg } from "../../utils/Images";
-import FormInput from "../../components/form/FormInput";
+import { useNavigate } from 'react-router-dom'
+import { Formik, Form } from 'formik'
+import * as Yup from 'yup'
+import { useState } from 'react'
+import { toast } from 'react-toastify'
+import {loginApi } from '../../services/authApi'
+import {
+  removeToken,
+  removeUserId,
+  setToken,
+  setUser,
+  setUserId,
+} from '../../utils/authCookies'
+import { WelcomeImg } from '../../utils/Images'
+import FormInput from '../../components/form/FormInput'
 
 interface FormValues {
-  identifier: string;
-  password: string;
+  identifier: string
+  password: string
 }
 
 interface LoginResponse {
-  token?: string;
-  access_token?: string;
-  user_type?: number | string;
-  type?: number | string;
+  token?: string
+  access_token?: string
+  user_id?: number | string
+  user_type?: number | string
+  type?: number | string
   data?: {
-    token?: string;
-    access_token?: string;
-    user_type?: number | string;
-    type?: number | string;
-  };
+    token?: string
+    access_token?: string
+    user_id?: number | string
+    user_type?: number | string
+    type?: number | string
+  }
 }
 
 const getRedirectByUserType = (userType: number) => {
-  if (userType === 1) return "/admin/portals";
-  if (userType === 2) return "/intern/dashboard";
-   return "/user/userDetails"
-};
+  if (userType === 1) return '/admin/portals'
+  if (userType === 2) return '/intern/dashboard'
+  return '/user/userDetails'
+}
 
 const getAuthData = (responseData: LoginResponse) => {
   const token =
     responseData?.token ??
     responseData?.access_token ??
     responseData?.data?.token ??
-    responseData?.data?.access_token;
+    responseData?.data?.access_token
+
+  const rawUserId =
+    responseData?.user_id ??
+    responseData?.data?.user_id
 
   const rawUserType =
     responseData?.user_type ??
     responseData?.type ??
     responseData?.data?.user_type ??
-    responseData?.data?.type;
+    responseData?.data?.type
 
   return {
     token,
-    userType: Number(rawUserType),
-  };
-};
+    userId: rawUserId ? Number(rawUserId) : NaN,
+    userType: rawUserType ? Number(rawUserType) : NaN,
+  }
+}
 
 const LoginScreen = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
 
   const validationSchema = Yup.object({
     identifier: Yup.string()
-      .required("Email or Username is required")
-      .test("email-or-username", "Enter a valid email or username", (value) => {
-        if (!value) return false;
+      .required('Email or Username is required')
+      .test('email-or-username', 'Enter a valid email or username', (value) => {
+        if (!value) return false
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const usernameRegex = /^[a-zA-Z0-9_.]{3,20}$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        const usernameRegex = /^[a-zA-Z0-9_.]{3,20}$/
 
-        return emailRegex.test(value) || usernameRegex.test(value);
+        return emailRegex.test(value) || usernameRegex.test(value)
       }),
-    password: Yup.string().required("Password is required"),
-  });
+    password: Yup.string().required('Password is required'),
+  })
 
-  const handleSubmit = async (values: FormValues) => {
-    try {
-      setLoading(true);
+ const handleSubmit = async (values: FormValues) => {
+  try {
+    setLoading(true)
 
-      const payload = {
-        email: values.identifier,
-        username: values.identifier,
-        login: values.identifier,
-        password: values.password,
-      };
-
-      const response = await loginApi(payload);
-      const { token, userType } = getAuthData(response?.data ?? {});
-
-      if (token && !Number.isNaN(userType)) {
-        setToken(token);
-        setUser(String(userType));
-        toast.success("Login successful");
-        navigate(getRedirectByUserType(userType), { replace: true });
-        return;
-      }
-
-      toast.error("Invalid login response");
-    } catch (error: any) {
-      const message = error?.response?.data?.detail || "Something went wrong";
-      toast.error(message);
-    } finally {
-      setLoading(false);
+    const payload = {
+      email: values.identifier,
+      username: values.identifier,
+      login: values.identifier,
+      password: values.password,
     }
-  };
+
+    const response = await loginApi(payload)
+    const { token, userId, userType } = getAuthData(response?.data ?? {})
+
+    // 🟢 NORMAL USER
+    if (token) {
+      removeUserId()
+
+      setToken(token)
+      setUser(String(userType))
+
+      toast.success('Login successful')
+      navigate(getRedirectByUserType(userType), { replace: true })
+      return
+    }
+
+    // 🔵 EXAM USER
+    if (userId) {
+      removeToken()
+
+      setUserId(String(userId))
+      setUser('3')
+
+      toast.success('Exam login successful')
+      navigate('/user/userDetails', { replace: true })
+      return
+    }
+
+    toast.error('Invalid login response')
+  } catch (error: any) {
+    const message =
+      error?.response?.data?.detail || 'Invalid credentials'
+    toast.error(message)
+  } finally {
+    setLoading(false)
+  }
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] flex flex-col items-center justify-center px-4 font-body">
@@ -120,18 +150,14 @@ const LoginScreen = () => {
         </h1>
 
         <p className="text-[14px] text-[#64748b] mb-8">
-          by{" "}
-          <span className="text-[#4c1d95] font-semibold">
-            Velava Foundation
-          </span>
+          by <span className="text-[#4c1d95] font-semibold">Velava Foundation</span>
         </p>
 
         <div className="w-[60px] h-[2px] bg-gradient-to-r from-[#1e3a8a] to-[#4c1d95] rounded mb-8 mx-auto" />
-
       </div>
 
       <Formik
-        initialValues={{ identifier: "", password: "" }}
+        initialValues={{ identifier: '', password: '' }}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
@@ -165,7 +191,7 @@ const LoginScreen = () => {
                 transition duration-200 disabled:opacity-70 disabled:hover:translate-y-0"
               >
                 <span className="flex h-6 items-center justify-center">
-                  {loading ? <div className="loader-btn loader-btn-sm" /> : "Login"}
+                  {loading ? <div className="loader-btn loader-btn-sm" /> : 'Login'}
                 </span>
               </button>
             </div>
@@ -173,7 +199,7 @@ const LoginScreen = () => {
         )}
       </Formik>
     </div>
-  );
-};
+  )
+}
 
-export default LoginScreen;
+export default LoginScreen

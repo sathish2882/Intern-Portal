@@ -1,5 +1,5 @@
 import { Field, ErrorMessage } from "formik";
-import { Input, InputNumber } from "antd";
+import { useState } from "react";
 
 interface FormInputProps {
   label: string;
@@ -10,19 +10,14 @@ interface FormInputProps {
 }
 
 const baseClass =
-  "!w-full !h-[46px] !rounded-[12px] " +
-  "!bg-transparent !border transition-colors";
+  "w-full h-[46px] rounded-[12px] bg-transparent border px-4 text-sm outline-none transition-colors";
 
 const variantClass: Record<NonNullable<FormInputProps["variant"]>, string> = {
   default:
-    "!border-[#3b82f6] focus-within:!border-[#3b82f6] focus-within:!shadow-md",
+    "border-[#3b82f6] text-slate-900 placeholder:text-slate-400 focus:border-[#3b82f6] focus:shadow-md",
   admin:
-    "!border-white/[0.12] hover:!border-white/[0.2] focus-within:!border-[#e9a628] focus-within:!shadow-none",
+    "border-white/[0.12] text-adark placeholder:text-amuted hover:border-white/[0.2] focus:border-gold",
 };
-
-const inputClass =
-  "!bg-transparent !text-slate-900 !px-4 !text-sm !font-body " +
-  "placeholder:!text-slate-400";
 
 function FormInput({
   label,
@@ -31,11 +26,11 @@ function FormInput({
   placeholder,
   variant = "default",
 }: FormInputProps) {
-  const commonClass = `${baseClass} ${variantClass[variant]}`;
+  const [showPassword, setShowPassword] = useState(false);
+  const cls = `${baseClass} ${variantClass[variant]}`;
 
   return (
     <div>
-      {/* LABEL */}
       <label
         htmlFor={name}
         className="text-[11px] tracking-[1px] text-[#8a8aa3] mb-2 block"
@@ -43,60 +38,57 @@ function FormInput({
         {label}
       </label>
 
-      {/* INPUT */}
       {type === "password" ? (
         <Field name={name}>
           {({ field }: any) => (
-            <Input.Password
-              id={name}
-              name={field.name}
-              value={field.value ?? ""}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              placeholder={placeholder}
-              className={commonClass}
-              classNames={{ input: inputClass }}
-            />
-          )}
-        </Field>
-      ) : type === "number" ? (
-        <Field name={name}>
-          {({ field, form }: any) => (
-            <InputNumber
-              id={name}
-              value={field.value ?? null}
-              placeholder={placeholder}
-              controls={false}
-              onChange={(value) => form.setFieldValue(name, value)}
-              onBlur={() => form.setFieldTouched(name, true)}
-              className={`${commonClass} flex items-center 
-                [&_.ant-input-number-input]:!px-4 
-                [&_.ant-input-number-input]:!bg-transparent 
-                [&_.ant-input-number-input]:!text-slate-900 
-                [&_.ant-input-number-input]:!h-[46px] 
-                [&_.ant-input-number-input]:!text-sm`}
-            />
+            <div className="relative">
+              <input
+                id={name}
+                {...field}
+                value={field.value ?? ""}
+                type={showPassword ? "text" : "password"}
+                placeholder={placeholder}
+                className={cls}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-amuted text-xs select-none"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
           )}
         </Field>
       ) : (
         <Field name={name}>
-          {({ field }: any) => (
-            <Input
+          {({ field, form }: any) => (
+            <input
               id={name}
-              name={field.name}
-              value={field.value ?? ""}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              type={type}
+              {...(type === "number"
+                ? {
+                    name: field.name,
+                    value: field.value ?? "",
+                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      form.setFieldValue(name, val === "" ? null : Number(val));
+                    },
+                    onBlur: () => form.setFieldTouched(name, true),
+                    type: "text",
+                    inputMode: "numeric" as const,
+                  }
+                : {
+                    ...field,
+                    value: field.value ?? "",
+                    type,
+                  })}
               placeholder={placeholder}
-              className={commonClass}
-              classNames={{ input: inputClass }}
+              className={cls}
             />
           )}
         </Field>
       )}
 
-      {/* ERROR */}
       <ErrorMessage
         name={name}
         component="p"

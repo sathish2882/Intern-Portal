@@ -13,28 +13,14 @@ interface BatchOption {
 
 interface BatchUser {
   id: number
-  name: string
   username: string
   email: string
   phone: string
-  status: string
   batch: string
   techStack: string
-  createdAt: string
-  updatedAt: string
-  createdBy: string
-  roleType: string
-  is2FA: boolean
 }
 
 const PAGE_SIZE = 10
-
-const STATUS_CLASSES: Record<string, string> = {
-  Active: 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/20',
-  Pending: 'bg-amber-500/15 text-amber-300 border border-amber-400/20',
-  Selected: 'bg-sky-500/15 text-sky-300 border border-sky-400/20',
-  Inactive: 'bg-rose-500/15 text-rose-300 border border-rose-400/20',
-}
 
 const toArray = (value: unknown) => {
   if (Array.isArray(value)) return value
@@ -70,22 +56,6 @@ const normalizeBatches = (payload: unknown): BatchOption[] => {
   })
 }
 
-const normalizeStatus = (rawStatus: unknown) => {
-  const value = String(rawStatus ?? 'Active').trim()
-  if (!value) return 'Active'
-  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
-}
-
-const normalizeRoleType = (rawType: unknown) => {
-  const typeValue = Number(rawType)
-
-  if (typeValue === 1) return 'Admin'
-  if (typeValue === 2) return 'Intern'
-  if (typeValue === 3) return 'User'
-
-  return typeof rawType === 'string' && rawType ? rawType : 'Unknown'
-}
-
 const normalizeUsers = (payload: unknown, batchLabel?: string): BatchUser[] => {
   return toArray(payload)
     .map((item) => {
@@ -93,45 +63,19 @@ const normalizeUsers = (payload: unknown, batchLabel?: string): BatchUser[] => {
 
       const user = item as Record<string, unknown>
       const rawId = Number(user.id ?? user.user_id)
-      const username = String(user.username ?? user.name ?? '').trim()
-      const displayName = String(
-        user.name ?? user.full_name ?? user.fullName ?? user.username ?? `User ${rawId}`,
-      ).trim()
 
-      if (!Number.isFinite(rawId) || !displayName) return null
+      if (!Number.isFinite(rawId)) return null
 
       return {
         id: rawId,
-        name: displayName,
-        username: username || displayName,
+        username: String(user.username ?? ''),
         email: String(user.email ?? '-'),
-        phone: String(user.phone ?? user.phno ?? user.mobile ?? user.contact_no ?? user.contact ?? '-'),
-        status: normalizeStatus(user.status ?? user.user_status),
-        batch: String(user.batch ?? user.batch_name ?? batchLabel ?? '-'),
-        techStack: String(user.tech_stack ?? user.domain ?? user.role ?? 'Not assigned'),
-        createdAt: String(user.created_at ?? '-'),
-        updatedAt: String(user.updated_at ?? '-'),
-        createdBy: String(user.created_by ?? '-'),
-        roleType: normalizeRoleType(user.type ?? user.user_type),
-        is2FA: Boolean(user.is2FA ?? user.is_2fa ?? user.two_factor_enabled ?? false),
+        phone: String(user.phone ?? user.phno ?? '-'),
+        batch: String(user.batch ?? batchLabel ?? '-'),
+        techStack: String(user.tech_stack ?? user.domain ?? '-'),
       }
     })
     .filter((user): user is BatchUser => Boolean(user))
-}
-
-const formatDateTime = (value: string) => {
-  if (!value || value === '-') return '-'
-
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return value
-
-  return parsed.toLocaleString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 const EyeIcon = () => (
@@ -144,6 +88,13 @@ const EyeIcon = () => (
       strokeLinejoin="round"
     />
     <circle cx="12" cy="12" r="3.25" stroke="currentColor" strokeWidth="1.7" />
+  </svg>
+)
+
+const EditIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
@@ -177,9 +128,9 @@ const AdminUserDashboard = () => {
         const response = await getBatchesApi()
         const payload = response?.data?.data ?? response?.data?.batches ?? response?.data
         setBatches(normalizeBatches(payload))
-      } catch (error) {
+      } catch (error: any) {
         console.error(error)
-        toast.error('Failed to load batches')
+        toast.error(error?.response?.data?.detail || 'Failed to load batches')
       } finally {
         setLoadingBatches(false)
       }
@@ -213,9 +164,9 @@ const AdminUserDashboard = () => {
         setUsers(normalized)
         setTotalPages(1)
         setTotalUsers(normalized.length)
-      } catch (error) {
+      } catch (error: any) {
         console.error(error)
-        toast.error('Failed to load users')
+        toast.error(error?.response?.data?.detail || 'Failed to load users')
       } finally {
         setLoadingUsers(false)
       }
@@ -230,23 +181,16 @@ const AdminUserDashboard = () => {
       : batches.find((batch) => String(batch.id) === selectedBatchId)?.label ?? `Batch ${selectedBatchId}`
 
   const stats = useMemo(() => {
-    const active = users.filter((user) => user.status === 'Active').length
-    const pending = users.filter((user) => user.status === 'Pending').length
-    const secure = users.filter((user) => user.is2FA).length
-    const activePercent = totalUsers ? Math.round((active / totalUsers) * 100) : 0
-
     return [
       { label: 'Visible Users', value: String(users.length), hint: selectedBatchId === 'all' ? `${selectedBatchLabel} - page ${page}` : selectedBatchLabel, valueClass: 'text-white' },
       { label: 'Total Users', value: String(totalUsers), hint: 'Current filter count', valueClass: 'text-sky-300' },
-      { label: 'Pending Users', value: String(pending), hint: 'Need follow-up', valueClass: 'text-amber-300' },
-      { label: '2FA Enabled', value: String(secure), hint: `${activePercent}% active coverage`, valueClass: 'text-emerald-300' },
     ]
   }, [page, selectedBatchId, selectedBatchLabel, totalUsers, users])
 
   const handleDeleteUser = async (user: BatchUser) => {
     if (deletingUserId !== null) return
 
-    const shouldDelete = window.confirm(`Delete user ${user.name} (#${user.id})?`)
+    const shouldDelete = window.confirm(`Delete user ${user.username} (#${user.id})?`)
     if (!shouldDelete) return
 
     try {
@@ -270,9 +214,9 @@ const AdminUserDashboard = () => {
       if (selectedUser?.id === user.id) {
         setSelectedUser(null)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      toast.error('Failed to delete user')
+      toast.error(error?.response?.data?.detail || 'Failed to delete user')
     } finally {
       setDeletingUserId(null)
     }
@@ -336,7 +280,7 @@ const AdminUserDashboard = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  {['Id', 'Name', 'Email', 'Phone', 'Tech Stack', 'Status', 'View', 'Delete'].map((heading) => (
+                  {['Username', 'Email', 'Batch', 'Phone', 'Tech Stack', 'View', 'Edit', 'Delete'].map((heading) => (
                     <th key={heading} className="text-left px-5 py-3 text-[11px] uppercase tracking-[0.14em] text-slate-400 font-medium">
                       {heading}
                     </th>
@@ -354,26 +298,15 @@ const AdminUserDashboard = () => {
                   </tr>
                 ) : (
                   users.map((user) => {
-                    const statusClass = STATUS_CLASSES[user.status] ?? 'bg-white/10 text-slate-200 border border-white/10'
                     const isDeleting = deletingUserId === user.id
 
                     return (
                       <tr key={user.id} className="border-b border-white/5 last:border-b-0">
-                        <td className="px-5 py-4 font-mono text-slate-300">#{user.id}</td>
-                        <td className="px-5 py-4">
-                          <div>
-                            <p className="font-semibold text-white">{user.name}</p>
-                            <p className="text-xs text-slate-400">@{user.username}</p>
-                          </div>
-                        </td>
+                        <td className="px-5 py-4 font-semibold text-white">{user.username}</td>
                         <td className="px-5 py-4 text-slate-300">{user.email}</td>
+                        <td className="px-5 py-4 text-slate-300">{user.batch}</td>
                         <td className="px-5 py-4 text-slate-300">{user.phone}</td>
                         <td className="px-5 py-4 text-slate-300">{user.techStack}</td>
-                        <td className="px-5 py-4">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${statusClass}`}>
-                            {user.status}
-                          </span>
-                        </td>
                         <td className="px-5 py-4">
                           <button
                             type="button"
@@ -382,6 +315,16 @@ const AdminUserDashboard = () => {
                           >
                             <EyeIcon />
                             View
+                          </button>
+                        </td>
+                        <td className="px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={() => navigate('/edit-user', { state: { user } })}
+                            className="inline-flex items-center gap-2 rounded-lg border border-amber-400/25 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 transition-colors hover:bg-amber-500/20"
+                          >
+                            <EditIcon />
+                            Edit
                           </button>
                         </td>
                         <td className="px-5 py-4">
@@ -437,8 +380,8 @@ const AdminUserDashboard = () => {
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-400">User Details</p>
-                <h3 className="mt-2 text-2xl font-extrabold text-white">{selectedUser.name}</h3>
-                <p className="mt-1 text-sm text-slate-400">{selectedUser.email} � {selectedUser.batch}</p>
+                <h3 className="mt-2 text-2xl font-extrabold text-white">{selectedUser.username}</h3>
+                <p className="mt-1 text-sm text-slate-400">{selectedUser.email}</p>
               </div>
               <button type="button" onClick={() => setSelectedUser(null)} className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-semibold text-slate-300 transition-colors hover:text-white">
                 Close
@@ -449,15 +392,10 @@ const AdminUserDashboard = () => {
               {[
                 { label: 'User ID', value: `#${selectedUser.id}` },
                 { label: 'Username', value: selectedUser.username },
-                { label: 'Role Type', value: selectedUser.roleType },
-                { label: 'Status', value: selectedUser.status },
+                { label: 'Email', value: selectedUser.email },
+                { label: 'Batch', value: selectedUser.batch },
                 { label: 'Phone', value: selectedUser.phone },
                 { label: 'Tech Stack', value: selectedUser.techStack },
-                { label: 'Batch', value: selectedUser.batch },
-                { label: '2FA Enabled', value: selectedUser.is2FA ? 'Yes' : 'No' },
-                { label: 'Created By', value: selectedUser.createdBy },
-                { label: 'Created At', value: formatDateTime(selectedUser.createdAt) },
-                { label: 'Updated At', value: formatDateTime(selectedUser.updatedAt) },
               ].map((item) => (
                 <div key={item.label} className="rounded-xl border border-white/10 bg-white/5 p-4">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">{item.label}</p>

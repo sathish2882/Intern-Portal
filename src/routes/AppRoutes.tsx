@@ -1,6 +1,14 @@
-import { createHashRouter, Navigate, Outlet } from "react-router-dom";
+import { createHashRouter, Navigate, Outlet, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
-// Auth
+// ScrollToTop wrapper
+const ScrollToTopOutlet = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return <Outlet />;
+};
 import WelcomeScreen from "../screens/auth/WelcomeScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
 import AddUser from "../screens/auth/AddUser";
@@ -48,12 +56,13 @@ export const router = createHashRouter([
     ),
   },
   { path: "/add-user", element: <AddUser /> },
+  { path: "/edit-user", element: <AddUser /> },
 
   {
     path: "/admin",
     element: (
       <ProtectedRoute role="1">
-          <Outlet />
+          <ScrollToTopOutlet />
       </ProtectedRoute>
       
     ),
@@ -94,10 +103,10 @@ export const router = createHashRouter([
   {
     path: "/user",
     element: (
-     <ProtectedRoute role="3">
-          <UserLayout />
-      </ProtectedRoute> 
-       
+      <ProtectedRoute role="3">
+           <UserLayout key={window.location.pathname} />
+      </ProtectedRoute>
+      
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },

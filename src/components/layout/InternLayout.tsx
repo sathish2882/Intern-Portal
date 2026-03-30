@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { removeToken, removeUserType } from '../../utils/authCookies'
 import { getMeApi, logoutApi } from '../../services/authApi'
@@ -12,7 +12,13 @@ const FALLBACK_USER = {
 
 const InternLayout = () => {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [loggingOut, setLoggingOut] = useState(false)
+
+  // ✅ Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [profile, setProfile] = useState<CurrentUserProfile | null>(null)
 
@@ -25,8 +31,9 @@ const InternLayout = () => {
         if (mounted) {
           setProfile(response.data)
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to load profile:', error)
+        toast.error(error?.response?.data?.detail || 'Failed to load profile')
       } finally {
         if (mounted) {
           setLoadingProfile(false)
@@ -57,8 +64,9 @@ const InternLayout = () => {
 
     try {
       await logoutApi()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logout failed:', error)
+      toast.error(error?.response?.data?.detail || 'Logout failed')
     } finally {
       removeToken()
       removeUserType()

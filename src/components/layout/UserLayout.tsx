@@ -1,35 +1,98 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ReadOutlined } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { removeToken, removeUserType } from '../../utils/authCookies'
-import { logoutApi } from '../../services/authApi'
 
-const user = {
-  name: 'Sathish',
-  email: 'sathish19222978sk@gmail.com',
-}
+import { useAppDispatch } from '../../redux/hooks'
+import { clearTestData, setCurrentUser } from '../../redux/slices/testSlice'
+import { getUserByIdApi, examLogoutApi } from '../../services/authApi'
+
+import {
+  getUserId,
+  isExamUser,
+  removeToken,
+  removeUserId,
+  removeUserType,
+} from '../../utils/authCookies'
 
 const UserLayout = () => {
   const location = useLocation()
   const navigate = useNavigate()
+  const dispatch = useAppDispatch()
+
+  // ✅ Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+
   const [loggingOut, setLoggingOut] = useState(false)
+  const [user, setUser] = useState({ name: 'User', email: '' })
+
   const showAssessmentHeader = location.pathname === '/user/dashboard'
 
+  // 🔥 LOAD USER (ONLY EXAM USER FLOW)
+  useEffect(() => {
+  const loadUser = async () => {
+    const userId = getUserId()
+
+    // block invalid access
+    if (!isExamUser() || !userId) {
+      navigate('/login', { replace: true })
+      return
+    }
+
+    try {
+      const response = await getUserByIdApi(userId as string)
+
+      const payload = response?.data ?? {}
+
+      const userName = String(payload.name ?? payload.username ?? 'User')
+      const userEmail = String(payload.email ?? '')
+
+      setUser({
+        name: userName,
+        email: userEmail,
+      })
+
+      // 🔥 Store user info in Redux for access in UserDashboard
+      dispatch(setCurrentUser({ name: userName, email: userEmail }))
+    } catch (error: any) {
+      console.error('Failed to load user:', error)
+      toast.error(error?.response?.data?.detail || 'Failed to load user')
+    }
+  }
+
+  loadUser()
+}, [location.pathname]) // 🔥 IMPORTANT
+  // 🔥 LOGOUT
   const handleLogout = async () => {
     if (loggingOut) return
 
     setLoggingOut(true)
 
     try {
-      await logoutApi()
-    } catch (error) {
+      const userId = getUserId()
+      if (userId) {
+        await examLogoutApi(Number(userId))
+      }
+    } catch (error: any) {
       console.error('Logout failed:', error)
+      toast.error(error?.response?.data?.detail || 'Logout failed')
     } finally {
+      // 🔥 Clear test data from Redux
+      dispatch(clearTestData())
+      
+      // 🔥 Clear test data from localStorage
+      localStorage.removeItem('redux-test-state')
+      console.log("🧹 Cleared test data on logout")
+
       removeToken()
       removeUserType()
+      removeUserId()
+
       toast.success('Logged out successfully')
       navigate('/login', { replace: true })
+
       setLoggingOut(false)
     }
   }
@@ -38,6 +101,8 @@ const UserLayout = () => {
     <div className="min-h-screen bg-lightbg font-jakarta text-navy">
       {showAssessmentHeader && (
         <nav className="sticky top-0 z-50 flex h-[60px] items-center justify-between border-b border-line bg-white px-4 lg:px-8">
+          
+          {/* LEFT */}
           <div className="flex items-center gap-2.5">
             <div className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-blue text-[17px] text-white">
               <ReadOutlined />
@@ -50,7 +115,10 @@ const UserLayout = () => {
             </span>
           </div>
 
+          {/* RIGHT */}
           <div className="flex items-center gap-2 lg:gap-3">
+
+            {/* USER INFO */}
             <div className="flex items-center gap-2 rounded-[9px] border border-line py-[5px] pl-[5px] pr-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue to-[#6b49e8] text-[13px] font-extrabold text-white">
                 {user?.name?.charAt(0).toUpperCase() ?? 'U'}
@@ -59,6 +127,8 @@ const UserLayout = () => {
                 {user?.name?.split(' ')[0] ?? 'User'}
               </span>
             </div>
+
+            {/* LOGOUT BUTTON */}
             <button
               onClick={handleLogout}
               disabled={loggingOut}
@@ -81,6 +151,7 @@ const UserLayout = () => {
         </nav>
       )}
 
+      {/* PAGE CONTENT */}
       <main>
         <Outlet />
       </main>

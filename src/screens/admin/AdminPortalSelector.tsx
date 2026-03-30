@@ -64,11 +64,8 @@ const AdminPortalSelector = () => {
           <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="text-3xl font-extrabold tracking-tight text-white">
-                Choose An Admin Workspace
+                Select Workspace
               </h2>
-            </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-200">
-              <span className="text-lg font-bold">4</span>
             </div>
           </div>
         </div>

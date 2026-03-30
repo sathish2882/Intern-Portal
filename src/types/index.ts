@@ -44,21 +44,6 @@ export interface CurrentUserProfile {
 // Role options
 export type RoleType = 'Frontend' | 'Backend' | 'Others';
 
-// Customer Interface
-export interface Customer {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-
-  role: string;       
-  customRole?: string; 
-  fees: string; 
-}
-
-export interface CustomerState {
-  customers: Customer[];
-}
 
 // ── Email ──────────────────────────────────────────
 export type EmailType =
@@ -108,8 +93,25 @@ export interface TestResult {
   timeTaken: string;
 }
 
+// 🔥 Backend API Result (from /users/{id}/test-status)
+export interface BackendTestResult {
+  attempt_id: number;
+  status: "in_progress" | "completed";
+  aptitude_score: number;
+  technical_score: number;
+  total_score: number;
+  percentage: number;
+  submitted_at: string;
+}
+
 // 🔥 Better type safety
 export type ResultsByType = Partial<Record<TestType, TestResult>>;
+
+// 🔥 Current User Profile
+export interface UserProfile {
+  name: string;
+  email: string;
+}
 
 export interface TestState {
   activeTestType: TestType;
@@ -120,6 +122,12 @@ export interface TestState {
   result: TestResult | null;
   resultsByType: ResultsByType;
   timeLeft: number;
+
+  // 🔥 Backend Result (from API) - SINGLE SOURCE OF TRUTH
+  backendResult: BackendTestResult | null;
+
+  // 🔥 Current User Profile
+  currentUser: UserProfile | null;
 
   // 🔥 API states
   loading: boolean;
