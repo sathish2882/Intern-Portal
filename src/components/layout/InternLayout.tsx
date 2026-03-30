@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { Button } from 'antd'
+
 import { removeToken, removeUserType } from '../../utils/authCookies'
 import { getMeApi, logoutApi } from '../../services/authApi'
+import { checkInApi, checkOutApi } from '../../services/attendanceApi'
+
 import { CurrentUserProfile } from '../../types'
 import { capitalizeName } from '../../utils/formatName'
+import welcomeLogo from "../../assets/images/jpg/welcome-logo.jpg"
 
 const FALLBACK_USER = {
   name: 'Intern',
@@ -14,35 +19,40 @@ const FALLBACK_USER = {
 const InternLayout = () => {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const [loggingOut, setLoggingOut] = useState(false)
 
-  // ✅ Scroll to top on route change
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [pathname])
+  const [loggingOut, setLoggingOut] = useState(false)
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [profile, setProfile] = useState<CurrentUserProfile | null>(null)
 
+  const [attendanceStatus, setAttendanceStatus] = useState<'IN' | 'OUT'>('OUT')
+  const [attendanceLoading, setAttendanceLoading] = useState(false)
+
+  // ✅ Scroll to top
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
+  // ✅ Load Profile
   useEffect(() => {
     let mounted = true
 
     const loadProfile = async () => {
       try {
-        const response = await getMeApi()
+        const res = await getMeApi()
         if (mounted) {
-          setProfile(response.data)
+          setProfile(res.data)
+
+          // OPTIONAL: if backend gives attendance status
+          // setAttendanceStatus(res.data.attendance_status)
         }
       } catch (error: any) {
-        console.error('Failed to load profile:', error)
         toast.error(error?.response?.data?.detail || 'Failed to load profile')
       } finally {
-        if (mounted) {
-          setLoadingProfile(false)
-        }
+        if (mounted) setLoadingProfile(false)
       }
     }
 
-    void loadProfile()
+    loadProfile()
 
     return () => {
       mounted = false
@@ -58,6 +68,30 @@ const InternLayout = () => {
     }
   }, [profile])
 
+  // ✅ Check-In / Check-Out Handler
+  const handleAttendance = async () => {
+    if (attendanceLoading) return
+
+    setAttendanceLoading(true)
+
+    try {
+      if (attendanceStatus === 'OUT') {
+        await checkInApi()
+        setAttendanceStatus('IN')
+        toast.success('Checked in successfully')
+      } else {
+        await checkOutApi()
+        setAttendanceStatus('OUT')
+        toast.success('Checked out successfully')
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.detail || 'Attendance failed')
+    } finally {
+      setAttendanceLoading(false)
+    }
+  }
+
+  // ✅ Logout
   const handleLogout = async () => {
     if (loggingOut) return
 
@@ -66,7 +100,6 @@ const InternLayout = () => {
     try {
       await logoutApi()
     } catch (error: any) {
-      console.error('Logout failed:', error)
       toast.error(error?.response?.data?.detail || 'Logout failed')
     } finally {
       removeToken()
@@ -77,56 +110,75 @@ const InternLayout = () => {
     }
   }
 
+  // ✅ AUTO CHECKOUT AT 6 PM
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date()
+      const hours = now.getHours()
+
+      if (hours >= 18 && attendanceStatus === 'IN') {
+        checkOutApi()
+        setAttendanceStatus('OUT')
+        toast.info('Auto checked-out at 6 PM')
+      }
+    }, 60000) // check every 1 min
+
+    return () => clearInterval(interval)
+  }, [attendanceStatus])
+
+  // ✅ AUTO LOGOUT AT 12 AM
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date()
+      const hours = now.getHours()
+      const minutes = now.getMinutes()
+
+      if (hours === 0 && minutes === 0) {
+        handleLogout()
+      }
+    }, 60000)
+
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <div className="min-h-screen bg-lightbg font-jakarta text-navy">
       <nav className="bg-white border-b border-line flex items-center justify-between px-4 lg:px-8 h-[60px] sticky top-0 z-50">
-        <div className="flex items-center gap-2.5">
-          <div className="w-[34px] h-[34px] bg-blue rounded-lg flex items-center justify-center text-base">
-            IN
-          </div>
-          <span className="text-[17px] font-extrabold text-navy hidden sm:block">
-            Intern Portal
-          </span>
-          <span className="text-[17px] font-extrabold text-navy sm:hidden">
-            Intern
-          </span>
-        </div>
 
-        <div className="flex items-center gap-2 lg:gap-3">
-          <div className="flex min-w-[108px] items-center gap-2 py-[5px] pl-[5px] pr-3 border border-line rounded-[9px]">
-            {loadingProfile ? (
-              <div className="flex h-8 w-full items-center justify-center">
-                <div className="loader-btn loader-btn-sm" />
-              </div>
-            ) : (
-              <>
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue to-[#6b49e8] flex items-center justify-center text-[13px] font-extrabold text-white">
+        {/* LEFT */}
+        <div className='flex items-center gap-5 text-xl font-bold'>
+           <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-text overflow-hidden">
+                <img src={welcomeLogo} alt="Admin Logo" className=" w-10 h-10" />
+              </span>
+              <span>Intern Portal</span>
+        </div>
+        {/* RIGHT */}
+        <div className="flex items-center gap-5">
+
+          {/* ✅ CHECK IN / OUT BUTTON */}
+          <Button
+            type={attendanceStatus === 'IN' ? 'default' : 'primary'}
+            danger={attendanceStatus === 'IN'}
+            loading={attendanceLoading}
+            onClick={handleAttendance}
+          >
+            {attendanceStatus === 'IN' ? 'Check Out' : 'Check In'}
+          </Button>
+
+          {/* USER */}
+         <div className="w-8 h-8 rounded-full bg-ainfo flex items-center justify-center text-xs font-bold text-abg flex-shrink-0 shadow-[0_0_6px_#3dba78]">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-[13px] font-bold text-navy hidden sm:block">
-                  {user.name.split(' ')[0]}
-                </span>
-              </>
-            )}
-          </div>
-          <button
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="h-[34px] px-3 lg:px-4 bg-white border border-line rounded-lg text-slate text-[13px] font-semibold flex items-center gap-1.5 transition-all hover:border-danger hover:text-danger hover:bg-red-50"
-          >
-            <span className="flex min-h-5 min-w-[72px] items-center justify-center gap-1.5">
-              {loggingOut ? (
-                <div className="loader-btn loader-btn-sm" />
-              ) : (
-                <>
-                  <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
-                  </svg>
-                  <span className="hidden sm:inline">Sign Out</span>
-                </>
-              )}
-            </span>
-          </button>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-black font-syne truncate">{user.name}</p>
+                  <p className="text-xs text-amuted font-mono truncate">{user.email}</p>
+                </div>
+
+          {/* LOGOUT */}
+          <Button loading={loggingOut} onClick={handleLogout}>
+            Logout
+          </Button>
+
         </div>
       </nav>
 
