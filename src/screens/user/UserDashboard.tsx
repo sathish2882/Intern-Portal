@@ -321,9 +321,6 @@ const UserDashboard = () => {
                       Score: {backendResult?.total_score} ({bestPct}%)
                     </p>
                   </div>
-                  <span className="text-[13px] font-extrabold flex-shrink-0 text-asuccess">
-                    PASS
-                  </span>
                 </div>
                 <button
                   onClick={handleViewResults}

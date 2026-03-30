@@ -1,7 +1,7 @@
 import { TestData, TestType } from '../types'
 
 export const APTITUDE_TEST: TestData = {
-  title: 'Aptitude Test - Batch 1',
+  title: 'Aptitude Test',
   subtitle: '30 Questions - 45 min - Pass: 60% (18/30)',
   total: 30,
   pass: 18,
