@@ -2,12 +2,7 @@ import { useEffect, useState } from "react";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Input, Button } from "antd";
-<<<<<<< HEAD
-import { UserOutlined, MailOutlined } from "@ant-design/icons";
-import students from "../../assets/images/png/intern-illustration.png";
-=======
 import students from "../../assets/images/png/student-illustration (2).png";
->>>>>>> b59a624ab2bc709ab27297a6c1598b895156f7c8
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -67,17 +62,6 @@ function UserDetails() {
   }, []);
 
   return (
-<<<<<<< HEAD
-    <div className="h-screen flex items-center justify-center bg-[#e5e7eb]">
-      
-      {/* MAIN CARD */}
-      <div className="flex w-[900px] h-[520px] rounded-2xl overflow-hidden shadow-[0_4px_14px_0_rgba(99,102,241,0.4)]">
-        
-        {/* LEFT SIDE */}
-        <div className="w-1/2 bg-[#0f0f0f] flex flex-col justify-center px-12 text-white">
-          <h1 className="text-3xl font-bold mb-2">User Details</h1>
-          <p className="text-gray-400 mb-8">Enter your details</p>
-=======
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
       <div className="flex flex-col md:flex-row w-full max-w-[900px] md:h-[540px] rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_rgba(0,0,0,0.15)] transition-all duration-300">
         {/* LEFT */}
@@ -91,7 +75,6 @@ function UserDetails() {
               Complete your profile to continue
             </p>
           </div>
->>>>>>> b59a624ab2bc709ab27297a6c1598b895156f7c8
 
           <Formik
             initialValues={initialValues}

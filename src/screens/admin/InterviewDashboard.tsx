@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import AdminPortalShell from '../../components/layout/AdminPortalShell'
 import { getExamSummaryApi, resetExamDataApi } from '../../services/authApi'
+import { Button } from 'antd'
+import { downloadExcel } from '../../utils/download'
 
 interface ExamUser {
   user_id: number
@@ -43,6 +45,8 @@ const InterviewDashboard = () => {
 
     void load()
   }, [])
+
+  
 
   const totalUsers = data.length
   const passCount = data.filter((u) => u.result === 'PASS').length
@@ -152,6 +156,15 @@ const InterviewDashboard = () => {
                   ))}
                 </tbody>
               </table>
+
+              {data.length > 0 && (
+                <div className="flex justify-end p-4">
+                  <Button onClick={() => downloadExcel(data)} type="primary" size="small">  
+                    Download Excel
+                  </Button>
+                </div>
+              )}
+
             </div>
           </div>
         </>
