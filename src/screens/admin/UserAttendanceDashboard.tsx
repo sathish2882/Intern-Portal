@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
+import { Button } from 'antd'
 import AdminPortalShell from '../../components/layout/AdminPortalShell'
 import { getBatchesApi, getUserByBatchApi } from '../../services/authApi'
 import { viewAttendanceByAdminApi, getAllUsers } from '../../services/adminApi'
+import { downloadExcel } from '../../utils/download'
+import { capitalizeName } from '../../utils/formatName'
 
 interface BatchOption {
   id: number
@@ -71,7 +74,7 @@ const normalizeUsers = (payload: unknown): BatchUser[] =>
 
       return {
         id,
-        name: String(name),
+        name: capitalizeName(String(name)),
         email: String(email),
         phone: String(u.phone ?? u.mobile ?? '-'),
         status: String(u.status ?? 'Active'),
@@ -318,6 +321,29 @@ const UserAttendanceDashboard = () => {
         )}
       </div>
 
+      {users.length > 0 && (
+        <div className="flex justify-end py-5">
+          <Button
+            onClick={() =>
+              downloadExcel(
+                users.map((u) => ({
+                  ID: u.id,
+                  Name: u.name,
+                  Email: u.email,
+                  Phone: u.phone,
+                  Status: u.status,
+                })),
+                { filename: 'attendance_users.xlsx', sheetName: 'Users' },
+              )
+            }
+            type="primary"
+            size="small"
+          >
+            Download Excel
+          </Button>
+        </div>
+      )}
+
       {/*  MODAL  */}
       {selectedUserId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
@@ -339,6 +365,30 @@ const UserAttendanceDashboard = () => {
                 Close
               </button>
             </div>
+
+            {attendanceDetails.length > 0 && !loadingDetails && (
+              <div className="flex justify-end mb-4">
+                <Button
+                  onClick={() =>
+                    downloadExcel(
+                      attendanceDetails.map((d) => ({
+                        Login: formatDateTime(d.login),
+                        Logout: formatDateTime(d.logout),
+                        'Idle Time': formatHours(d.ideal_time),
+                      })),
+                      {
+                        filename: `attendance_${selectedUserName.replace(/\s+/g, '_')}.xlsx`,
+                        sheetName: 'Attendance',
+                      },
+                    )
+                  }
+                  type="primary"
+                  size="small"
+                >
+                  Download Excel
+                </Button>
+              </div>
+            )}
 
             <div className="rounded-2xl border border-white/10 bg-abg3 overflow-hidden">
               <div className="overflow-x-auto">

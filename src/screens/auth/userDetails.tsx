@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Input, Button } from "antd";
-import students from "../../assets/images/png/intern-illustration (2).png";
+import intern from "../../assets/images/png/intern-illustration.png";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -153,7 +153,7 @@ function UserDetails() {
 
         {/* RIGHT */}
         <img
-          src={students}
+          src={intern}
           alt="student illustration"
           className="hidden md:block w-full md:w-1/2 h-48 md:h-full object-cover"
         />
