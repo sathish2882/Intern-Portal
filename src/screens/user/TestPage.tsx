@@ -9,7 +9,6 @@ import {
   prevQuestion,
   tickTimer,
   submitTest,
-  resetTest,
 } from "../../redux/slices/testSlice";
 import { TEST_CONFIG } from "../../utils/testData";
 import { TestResult } from "../../types";
