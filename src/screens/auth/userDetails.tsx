@@ -37,7 +37,7 @@ function UserDetails() {
         const payload = response?.data ?? {};
 
         setInitialValues({
-          name: String(payload.name ?? payload.username ?? ""),
+          name: String(payload.name ?? ""),
           email: String(payload.email ?? ""),
         });
       } catch (error: any) {
@@ -104,7 +104,7 @@ function UserDetails() {
                 {/* NAME */}
                 <div>
                   <label className="block text-xs text-gray-300 font-semibold mb-2.5 uppercase tracking-wide">
-                    Full Name
+                    Your Name
                   </label>
                   <Input
                     name="name"
