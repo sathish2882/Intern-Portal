@@ -2,12 +2,7 @@ import { useEffect, useState } from "react";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Input, Button } from "antd";
-<<<<<<< HEAD
-import { UserOutlined, MailOutlined } from "@ant-design/icons";
-import students from "../../assets/images/png/intern-illustration.png";
-=======
-import students from "../../assets/images/png/student-illustration (2).png";
->>>>>>> b59a624ab2bc709ab27297a6c1598b895156f7c8
+import students from "../../assets/images/png/intern-illustration (2).png";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -42,7 +37,7 @@ function UserDetails() {
         const payload = response?.data ?? {};
 
         setInitialValues({
-          name: String(payload.name ?? payload.username ?? ""),
+          name: String(payload.name ?? ""),
           email: String(payload.email ?? ""),
         });
       } catch (error: any) {
@@ -67,31 +62,19 @@ function UserDetails() {
   }, []);
 
   return (
-<<<<<<< HEAD
-    <div className="h-screen flex items-center justify-center bg-[#e5e7eb]">
-      
-      {/* MAIN CARD */}
-      <div className="flex w-[900px] h-[520px] rounded-2xl overflow-hidden shadow-[0_4px_14px_0_rgba(99,102,241,0.4)]">
-        
-        {/* LEFT SIDE */}
-        <div className="w-1/2 bg-[#0f0f0f] flex flex-col justify-center px-12 text-white">
-          <h1 className="text-3xl font-bold mb-2">User Details</h1>
-          <p className="text-gray-400 mb-8">Enter your details</p>
-=======
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
       <div className="flex flex-col md:flex-row w-full max-w-[900px] md:h-[540px] rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_rgba(0,0,0,0.15)] transition-all duration-300">
         {/* LEFT */}
         <div className="w-full md:w-1/2 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex flex-col justify-center px-6 sm:px-12 py-8 sm:py-10 text-white user-form">
           <div className="mb-6 sm:mb-8">
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-3">
-              Student Details
+              User Details
             </h1>
             <div className="h-1 w-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full mb-3"></div>
             <p className="text-gray-400 text-sm">
               Complete your profile to continue
             </p>
           </div>
->>>>>>> b59a624ab2bc709ab27297a6c1598b895156f7c8
 
           <Formik
             initialValues={initialValues}
@@ -121,7 +104,7 @@ function UserDetails() {
                 {/* NAME */}
                 <div>
                   <label className="block text-xs text-gray-300 font-semibold mb-2.5 uppercase tracking-wide">
-                    Full Name
+                    Your Name
                   </label>
                   <Input
                     name="name"
