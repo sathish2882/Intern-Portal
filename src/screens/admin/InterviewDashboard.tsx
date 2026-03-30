@@ -4,6 +4,7 @@ import AdminPortalShell from "../../components/layout/AdminPortalShell";
 import { getExamSummaryApi, resetExamDataApi } from "../../services/authApi";
 import { Button } from "antd";
 import { downloadExcel } from "../../utils/download";
+import { capitalizeName } from "../../utils/formatName";
 
 interface ExamUser {
   user_id: number;
@@ -192,7 +193,7 @@ const InterviewDashboard = () => {
                       <td className="px-5 py-4 text-slate-400">
                         {user.username}
                       </td>
-                      <td className="px-5 py-4 font-semibold">{user.name}</td>
+                      <td className="px-5 py-4 font-semibold">{capitalizeName(user.name)}</td>
                       <td className="px-5 py-4 text-slate-300 text-xs">
                         {user.email}
                       </td>

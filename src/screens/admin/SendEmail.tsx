@@ -9,6 +9,7 @@ import {
   getUserByBatchApi,
   paymentEmailApi,
 } from '../../services/authApi'
+import { capitalizeName } from '../../utils/formatName'
 
 const EMAIL_TYPES: { key: EmailType; label: string }[] = [
   { key: 'invoice', label: 'Invoice' },
@@ -117,7 +118,7 @@ const normalizeUsers = (payload: unknown): BatchUser[] => {
 
       return {
         id: rawId,
-        name: String(name),
+        name: capitalizeName(String(name)),
         email: String(email),
       }
     })

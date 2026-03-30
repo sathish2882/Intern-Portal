@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ReadOutlined } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { capitalizeName } from '../../utils/formatName'
 
 import { useAppDispatch } from '../../redux/hooks'
 import { clearTestData, setCurrentUser } from '../../redux/slices/testSlice'
@@ -46,7 +47,7 @@ const UserLayout = () => {
 
       const payload = response?.data ?? {}
 
-      const userName = String(payload.name ?? payload.username ?? 'User')
+      const userName = capitalizeName(String(payload.name ?? payload.username ?? 'User'))
       const userEmail = String(payload.email ?? '')
 
       setUser({

@@ -5,6 +5,7 @@ import AdminPortalShell from '../../components/layout/AdminPortalShell'
 import { getBatchesApi, getUserByBatchApi } from '../../services/authApi'
 import { viewAttendanceByAdminApi, getAllUsers } from '../../services/adminApi'
 import { downloadExcel } from '../../utils/download'
+import { capitalizeName } from '../../utils/formatName'
 
 interface BatchOption {
   id: number
@@ -73,7 +74,7 @@ const normalizeUsers = (payload: unknown): BatchUser[] =>
 
       return {
         id,
-        name: String(name),
+        name: capitalizeName(String(name)),
         email: String(email),
         phone: String(u.phone ?? u.mobile ?? '-'),
         status: String(u.status ?? 'Active'),

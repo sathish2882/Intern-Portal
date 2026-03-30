@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'
 import { removeToken, removeUserType } from '../../utils/authCookies'
 import { getMeApi, logoutApi } from '../../services/authApi'
 import { CurrentUserProfile } from '../../types'
+import { capitalizeName } from '../../utils/formatName'
 
 const FALLBACK_USER = {
   name: 'Intern',
@@ -52,7 +53,7 @@ const InternLayout = () => {
     if (!profile) return FALLBACK_USER
 
     return {
-      name: profile.username || FALLBACK_USER.name,
+      name: capitalizeName(profile.username || FALLBACK_USER.name),
       email: profile.email || FALLBACK_USER.email,
     }
   }, [profile])
