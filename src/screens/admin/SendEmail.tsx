@@ -258,7 +258,7 @@ const SendEmail = () => {
               <div>
                 <h1 className="text-2xl font-extrabold text-adark mb-1">Send Email</h1>
                 <p className="text-sm text-amuted">
-                  Compose and send payment emails to your customers.
+                  Compose and send payment emails to your users.
                 </p>
               </div>
 
@@ -306,8 +306,8 @@ const SendEmail = () => {
                 <h2 className="text-lg font-bold text-adark mb-4">Email Details</h2>
 
                 <div className="mb-4">
-                  <label className="block text-xs text-adark uppercase tracking-[0.06em] mb-1.5">
-                    Select Customer
+                  <label className="block text-xs text-[#8a8aa3] uppercase tracking-[0.06em] mb-1.5">
+                    Select User
                   </label>
                   <select
                     value={values.userId}
@@ -335,8 +335,8 @@ const SendEmail = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                  <FormInput label="NAME" name="name" placeholder="Customer name" variant="admin" />
-                  <FormInput label="EMAIL" name="email" type="email" placeholder="customer@example.com" variant="admin" />
+                  <FormInput label="NAME" name="name" placeholder="User name" variant="admin" />
+                  <FormInput label="EMAIL" name="email" type="email" placeholder="user@example.com" variant="admin" />
                   <FormInput label="AMOUNT (Rs)" name="amount" type="number" placeholder="0" variant="admin" />
                   <FormInput label="INVOICE NO" name="invoiceNo" placeholder="INV-001" variant="admin" />
                   <div>
@@ -398,11 +398,11 @@ const SendEmail = () => {
                     </div>
                   </div>
                   <p className="text-xs text-amuted mb-1">
-                    To: <span className="text-adark">{values.email || 'customer@example.com'}</span>
+                    To: <span className="text-adark">{values.email || 'user@example.com'}</span>
                   </p>
                   <p className="text-sm font-bold text-adark mb-3">{titles[emailType]}</p>
                   <p className="text-xs text-amuted mb-3">
-                    Dear <span className="text-adark">{values.name || 'Customer'}</span>,
+                    Dear <span className="text-adark">{values.name || 'user'}</span>,
                   </p>
                   <div className={`rounded-[10px] p-3 mb-3 text-center border ${TYPE_COLOR[emailType]}`}>
                     <p className="text-sm text-amuted mb-0.5">Amount Due</p>

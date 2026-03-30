@@ -252,7 +252,7 @@ const AdminUserDashboard = () => {
           </div>
 
           <Button onClick={() => navigate('/add-user')} className="self-start lg:self-auto" type="primary">
-            Add User
+            Add Intern
           </Button>
         </div>
 

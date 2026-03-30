@@ -209,8 +209,8 @@ const UserAttendanceDashboard = () => {
     // ✅ TRANSFORM BACKEND → UI FORMAT
     const normalized = Array.isArray(payload)
       ? payload.map((item: any) => ({
-          login: item.first_login ?? null,
-          logout: item.last_logout ?? null,
+          login: item.check_in ?? null,
+          logout: item.check_out ?? null,
           ideal_time: item.productive_minutes ?? null,
         }))
       : []
@@ -395,7 +395,7 @@ const UserAttendanceDashboard = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/10">
-                      {['Login','Logout','Idle Time'].map(h => (
+                      {['Checkin','Checkout','Idle Time'].map(h => (
                         <th key={h} className="px-5 py-3 text-xs text-slate-400">{h}</th>
                       ))}
                     </tr>

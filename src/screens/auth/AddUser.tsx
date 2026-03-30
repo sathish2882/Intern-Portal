@@ -137,7 +137,7 @@ const AddUser = () => {
         shadow-[0_20px_60px_rgba(15,23,42,0.12)]"
       >
         <h2 className="text-[26px] font-heading font-semibold text-slate-900 mb-5">
-          {isEdit ? "Edit" : "Add"} <span className="text-[#2563eb]">User</span>
+          {isEdit ? "Edit" : "Add"} <span className="text-[#2563eb]">Intern</span>
         </h2>
 
         <Formik
@@ -157,7 +157,7 @@ const AddUser = () => {
           {({ values, setFieldValue }) => (
             <Form className="space-y-5 flex flex-col">
 
-              <FormInput label="USER NAME" name="username" type="text" />
+              <FormInput label="FULL NAME" name="username" type="text" />
 
               <FormInput label="EMAIL ADDRESS" name="email" type="email" />
 
@@ -208,7 +208,7 @@ const AddUser = () => {
                 flex items-center justify-center gap-2"
               >
                 <span className="flex h-6 w-[120px] items-center justify-center">
-                  {loading ? <div className="loader-btn loader-btn-sm" /> : isEdit ? "Update User" : "Add User"}
+                  {loading ? <div className="loader-btn loader-btn-sm" /> : isEdit ? "Update User" : "Add Intern"}
                 </span>
               </button>
 

@@ -113,7 +113,7 @@ const InterviewDashboard = () => {
   };
 
   return (
-    <AdminPortalShell title="Interview Dashboard">
+    <AdminPortalShell title="Admin Portal">
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="loader" />

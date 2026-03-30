@@ -9,7 +9,7 @@ import {
 
 const PORTALS = [
   {
-    title: "Interview Dashboard",
+    title: "Assesment Dashboard",
     route: "/admin/interview-dashboard",
     accent: "border-amber-400/20 bg-amber-500/10",
     icon: (
@@ -20,7 +20,7 @@ const PORTALS = [
   },
 
   {
-    title: "User Dashboard",
+    title: "Intern Dashboard",
     route: "/admin/user-dashboard",
     accent: "border-red-400/30 bg-red-500/10",
     icon: (
@@ -30,7 +30,7 @@ const PORTALS = [
     ),
   },
   {
-    title: "User Attendance Dashboard",
+    title: "Intern Attendance Dashboard",
     route: "/admin/attendance-dashboard",
     accent: "border-emerald-400/20 bg-emerald-500/10",
     icon: (
@@ -84,7 +84,7 @@ const AdminPortalSelector = () => {
             <p className="mb-2 text-lg font-bold text-white">{portal.title}</p>
 
             <div className="mt-auto flex items-center gap-2 pt-6 text-sm font-semibold text-white">
-              <span>Open Dashboard</span>
+              <span>Go To Dashboard</span>
               <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
             </div>
           </button>
