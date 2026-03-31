@@ -23,6 +23,7 @@ interface ExamUser {
 const STATUS_CLASSES: Record<string, string> = {
   PASS: "bg-emerald-500/15 text-emerald-300 border border-emerald-400/20",
   FAIL: "bg-red-500/15 text-red-300 border border-red-400/20",
+  Ongoing: "bg-yellow-500/15 text-yellow-300 border border-yellow-400/20",
 };
 
 const InterviewDashboard = () => {
@@ -193,7 +194,9 @@ const InterviewDashboard = () => {
                       <td className="px-5 py-4 text-slate-400">
                         {user.username}
                       </td>
-                      <td className="px-5 py-4 font-semibold">{capitalizeName(user.name)}</td>
+                      <td className="px-5 py-4 font-semibold">
+                        {capitalizeName(user.name)}
+                      </td>
                       <td className="px-5 py-4 text-slate-300 text-xs">
                         {user.email}
                       </td>

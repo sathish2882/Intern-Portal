@@ -227,9 +227,9 @@ const UserDashboard = () => {
                     actionButton = (
                       <button
                         onClick={() => handleStart(a.id)}
-                        className="border border-blue rounded-lg px-3 py-1.5 text-xs font-bold text-blue hover:bg-sky hover:border-blue transition-all"
+                        className="border flex items-center gap-1 border-blue rounded-lg px-3 py-1.5 text-xs font-bold text-blue hover:bg-sky hover:border-blue transition-all"
                       >
-                        Start →
+                        Start <span>→</span>
                       </button>
                     );
                   }
@@ -255,20 +255,21 @@ const UserDashboard = () => {
                       {/* Status badge */}
                       <td className="px-5 py-3.5 align-middle">
                         {!a.active ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-lightbg text-mist">
-                            Soon
+                          <span className="flex items-center gap-1 h-6 text-[11px] font-bold px-2.5 rounded-full bg-lightbg text-mist">
+                            <span>Soon</span>
                           </span>
                         ) : displayStatus === "Completed" ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ecfdf5] text-asuccess">
-                            ✓ Completed
+                          <span className="flex items-center gap-1 h-6 text-[11px] font-bold px-2.5 rounded-full bg-[#ecfdf5] text-asuccess">
+
+                            <span>✓</span> <span>Completed</span>
                           </span>
                         ) : displayStatus === "Attempted" ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#fff7ed] text-[#e07b00]">
-                            ◉ Attempted
+                          <span className="flex items-center gap-1 h-6 text-[11px] font-bold px-2.5 rounded-full bg-[#fff7ed] text-[#e07b00]">
+                            <span>◉</span> <span>Attempted</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#eef2ff] text-blue">
-                            ● New
+                          <span className="flex items-center gap-1 h-6 text-[11px] font-bold px-2.5 rounded-full bg-[#eef2ff] text-blue">
+                            <span>●</span> <span>New</span>
                           </span>
                         )}
                       </td>

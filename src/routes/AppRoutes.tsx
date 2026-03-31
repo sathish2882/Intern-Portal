@@ -17,9 +17,9 @@ import NotFound from "../screens/NotFound";
 // Admin
 import AdminLayout from "../components/layout/AdminLayout";
 import AdminPortalSelector from "../screens/admin/AdminPortalSelector";
-import AdminUserDashboard from "../screens/admin/AdminUserDashboard";
+import AdminUserDashboard from "../screens/admin/AdminInternDashboard";
 import UserAttendanceDashboard from "../screens/admin/UserAttendanceDashboard";
-import InterviewDashboard from "../screens/admin/InterviewDashboard";
+import InterviewDashboard from "../screens/admin/AssesmentDashboard";
 import AdminDashboard from "../screens/admin/AdminDashboard";
 import SendEmail from "../screens/admin/SendEmail";
 import Customers from "../screens/admin/User";
