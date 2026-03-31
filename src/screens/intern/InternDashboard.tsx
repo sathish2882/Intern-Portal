@@ -13,9 +13,11 @@ const getTodayKey = () => new Date().toISOString().slice(0, 10)
 
 const formatTime = (isoString: string) => {
   try {
-    const date = new Date(isoString)
+    // 🔥 Force UTC → then convert to IST
+    const date = new Date(isoString + 'Z')
 
     return date.toLocaleTimeString('en-IN', {
+      timeZone: 'Asia/Kolkata',
       hour: '2-digit',
       minute: '2-digit',
       hour12: true,
@@ -39,7 +41,6 @@ const InternDashboard = () => {
         const response = await viewAttendanceByUserApi()
         const raw = response.data as any[]
 
-        // ✅ FIXED MAPPING
         const normalized: AttendanceEntry[] = Array.isArray(raw)
           ? raw.map((item) => ({
               date: item.date,
@@ -61,6 +62,15 @@ const InternDashboard = () => {
     }
 
     fetchAttendance()
+     const handleUpdate = () => {
+    fetchAttendance()
+  }
+
+  window.addEventListener('attendanceUpdated', handleUpdate)
+
+  return () => {
+    window.removeEventListener('attendanceUpdated', handleUpdate)
+  }
   }, [])
 
   const todayKey = getTodayKey()

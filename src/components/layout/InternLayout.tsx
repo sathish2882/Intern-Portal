@@ -32,6 +32,14 @@ const InternLayout = () => {
     window.scrollTo(0, 0)
   }, [pathname])
 
+  // ✅ Load attendance status from localStorage (FIX)
+  useEffect(() => {
+    const savedStatus = localStorage.getItem('attendanceStatus')
+    if (savedStatus === 'IN' || savedStatus === 'OUT') {
+      setAttendanceStatus(savedStatus)
+    }
+  }, [])
+
   // ✅ Load Profile
   useEffect(() => {
     let mounted = true
@@ -42,7 +50,7 @@ const InternLayout = () => {
         if (mounted) {
           setProfile(res.data)
 
-          // OPTIONAL: if backend gives attendance status
+          // 🔥 If backend gives status → use this instead of localStorage
           // setAttendanceStatus(res.data.attendance_status)
         }
       } catch (error: any) {
@@ -68,7 +76,7 @@ const InternLayout = () => {
     }
   }, [profile])
 
-  // ✅ Check-In / Check-Out Handler
+  // ✅ Check-In / Check-Out
   const handleAttendance = async () => {
     if (attendanceLoading) return
 
@@ -78,10 +86,14 @@ const InternLayout = () => {
       if (attendanceStatus === 'OUT') {
         await checkInApi()
         setAttendanceStatus('IN')
+        localStorage.setItem('attendanceStatus', 'IN')
+        window.dispatchEvent(new Event('attendanceUpdated'))
         toast.success('Checked in successfully')
       } else {
         await checkOutApi()
         setAttendanceStatus('OUT')
+        localStorage.setItem('attendanceStatus', 'OUT')
+         window.dispatchEvent(new Event('attendanceUpdated'))
         toast.success('Checked out successfully')
       }
     } catch (error: any) {
@@ -104,6 +116,7 @@ const InternLayout = () => {
     } finally {
       removeToken()
       removeUserType()
+      localStorage.removeItem('attendanceStatus') //
       toast.success('Logged out successfully')
       navigate('/login', { replace: true })
       setLoggingOut(false)
@@ -119,9 +132,10 @@ const InternLayout = () => {
       if (hours >= 18 && attendanceStatus === 'IN') {
         checkOutApi()
         setAttendanceStatus('OUT')
+        localStorage.setItem('attendanceStatus', 'OUT') // ✅ SAVE
         toast.info('Auto checked-out at 6 PM')
       }
-    }, 60000) // check every 1 min
+    }, 60000)
 
     return () => clearInterval(interval)
   }, [attendanceStatus])
@@ -147,15 +161,16 @@ const InternLayout = () => {
 
         {/* LEFT */}
         <div className='flex items-center gap-5 text-xl font-bold'>
-           <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-text overflow-hidden">
-                <img src={welcomeLogo} alt="Admin Logo" className=" w-10 h-10" />
-              </span>
-              <span>Intern Portal</span>
+          <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-text overflow-hidden">
+            <img src={welcomeLogo} alt="Logo" className="w-10 h-10" />
+          </span>
+          <span>Intern Portal</span>
         </div>
+
         {/* RIGHT */}
         <div className="flex items-center gap-5">
 
-          {/* ✅ CHECK IN / OUT BUTTON */}
+          {/* ✅ CHECK IN / OUT */}
           <Button
             type={attendanceStatus === 'IN' ? 'default' : 'primary'}
             danger={attendanceStatus === 'IN'}
@@ -166,13 +181,21 @@ const InternLayout = () => {
           </Button>
 
           {/* USER */}
-         <div className="w-8 h-8 rounded-full bg-ainfo flex items-center justify-center text-xs font-bold text-abg flex-shrink-0 shadow-[0_0_6px_#3dba78]">
+          <div className="flex items-center gap-2 min-w-[120px]">
+            {loadingProfile ? (
+              <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-full bg-ainfo flex items-center justify-center text-xs font-bold text-white">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-black font-syne truncate">{user.name}</p>
-                  <p className="text-xs text-amuted font-mono truncate">{user.email}</p>
+                <div>
+                  <p className="text-xs font-semibold">{user.name}</p>
+                  <p className="text-xs text-gray-500">{user.email}</p>
                 </div>
+              </>
+            )}
+          </div>
 
           {/* LOGOUT */}
           <Button loading={loggingOut} onClick={handleLogout}>
