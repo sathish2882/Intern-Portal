@@ -14,7 +14,7 @@ import { TEST_CONFIG } from "../../utils/testData";
 import { TestResult } from "../../types";
 import { getTestStatusApi, submitResultApi } from "../../services/testApi";
 
-const TestPage = () => {
+function TestPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 

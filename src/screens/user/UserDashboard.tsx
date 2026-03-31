@@ -255,19 +255,19 @@ const UserDashboard = () => {
                       {/* Status badge */}
                       <td className="px-5 py-3.5 align-middle">
                         {!a.active ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-lightbg text-mist">
+                          <span className="flex items-center gap-1 h-3 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-lightbg text-mist">
                             Soon
                           </span>
                         ) : displayStatus === "Completed" ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ecfdf5] text-asuccess">
+                          <span className="flex items-center gap-1 h-3 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ecfdf5] text-asuccess">
                             ✓ Completed
                           </span>
                         ) : displayStatus === "Attempted" ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#fff7ed] text-[#e07b00]">
+                          <span className="flex items-center gap-1 h-3 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#fff7ed] text-[#e07b00]">
                             ◉ Attempted
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#eef2ff] text-blue">
+                          <span className="flex items-center gap-1 h-3 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#eef2ff] text-blue">
                             ● New
                           </span>
                         )}
