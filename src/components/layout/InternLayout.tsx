@@ -5,7 +5,11 @@ import { Button } from 'antd'
 
 import { removeToken, removeUserType } from '../../utils/authCookies'
 import { getMeApi, logoutApi } from '../../services/authApi'
-import { checkInApi, checkOutApi } from '../../services/attendanceApi'
+import {
+  checkInApi,
+  checkOutApi,
+  userStatusApi,
+} from '../../services/attendanceApi'
 
 import { CurrentUserProfile } from '../../types'
 import { capitalizeName } from '../../utils/formatName'
@@ -21,62 +25,46 @@ const InternLayout = () => {
   const { pathname } = useLocation()
 
   const [loggingOut, setLoggingOut] = useState(false)
-  const [loadingProfile, setLoadingProfile] = useState(true)
   const [profile, setProfile] = useState<CurrentUserProfile | null>(null)
 
   const [attendanceStatus, setAttendanceStatus] = useState<'IN' | 'OUT'>('OUT')
   const [attendanceLoading, setAttendanceLoading] = useState(false)
 
-  // ✅ Scroll to top
+  //  Scroll to top
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [pathname])
 
-  // ✅ Load attendance status from localStorage (FIX)
+  //  Load attendance status from localStorage
   useEffect(() => {
-    const savedStatus = localStorage.getItem('attendanceStatus')
-    if (savedStatus === 'IN' || savedStatus === 'OUT') {
-      setAttendanceStatus(savedStatus)
+    const saved = localStorage.getItem('attendanceStatus')
+    if (saved === 'IN' || saved === 'OUT') {
+      setAttendanceStatus(saved)
     }
   }, [])
 
-  // ✅ Load Profile
+  //  Load Profile
   useEffect(() => {
-    let mounted = true
-
-    const loadProfile = async () => {
+    const load = async () => {
       try {
         const res = await getMeApi()
-        if (mounted) {
-          setProfile(res.data)
-
-          // 🔥 If backend gives status → use this instead of localStorage
-          // setAttendanceStatus(res.data.attendance_status)
-        }
-      } catch (error: any) {
-        toast.error(error?.response?.data?.detail || 'Failed to load profile')
-      } finally {
-        if (mounted) setLoadingProfile(false)
+        setProfile(res.data)
+      } catch (err: any) {
+        toast.error(err?.response?.data?.detail || 'Failed to load profile')
       }
     }
-
-    loadProfile()
-
-    return () => {
-      mounted = false
-    }
+    load()
   }, [])
 
   const user = useMemo(() => {
     if (!profile) return FALLBACK_USER
-
     return {
       name: capitalizeName(profile.username || FALLBACK_USER.name),
       email: profile.email || FALLBACK_USER.email,
     }
   }, [profile])
 
-  // ✅ Check-In / Check-Out
+  //  Check-In / Check-Out
   const handleAttendance = async () => {
     if (attendanceLoading) return
 
@@ -93,84 +81,93 @@ const InternLayout = () => {
         await checkOutApi()
         setAttendanceStatus('OUT')
         localStorage.setItem('attendanceStatus', 'OUT')
-         window.dispatchEvent(new Event('attendanceUpdated'))
+        window.dispatchEvent(new Event('attendanceUpdated'))
         toast.success('Checked out successfully')
       }
-    } catch (error: any) {
-      toast.error(error?.response?.data?.detail || 'Attendance failed')
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Attendance failed')
     } finally {
       setAttendanceLoading(false)
     }
   }
 
-  // ✅ Logout
+  //  Logout (with safe checkout)
   const handleLogout = async () => {
     if (loggingOut) return
-
     setLoggingOut(true)
 
     try {
+      if (attendanceStatus === 'IN') {
+        await checkOutApi()
+        localStorage.setItem('attendanceStatus', 'OUT')
+      }
+
       await logoutApi()
-    } catch (error: any) {
-      toast.error(error?.response?.data?.detail || 'Logout failed')
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Logout failed')
     } finally {
       removeToken()
       removeUserType()
-      localStorage.removeItem('attendanceStatus') //
+      localStorage.removeItem('attendanceStatus')
       toast.success('Logged out successfully')
       navigate('/login', { replace: true })
       setLoggingOut(false)
     }
   }
+     //  INACTIVITY + BACKEND SYNC
+ useEffect(() => {
+  let lastPing = Date.now()
 
-  // ✅ AUTO CHECKOUT AT 6 PM
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date()
-      const hours = now.getHours()
+  const handleActivity = async () => {
+    const now = Date.now()
 
-      if (hours >= 18 && attendanceStatus === 'IN') {
-        checkOutApi()
-        setAttendanceStatus('OUT')
-        localStorage.setItem('attendanceStatus', 'OUT') // ✅ SAVE
-        toast.info('Auto checked-out at 6 PM')
+    // ping backend every 1 min
+    if (now - lastPing > 5000) {
+      lastPing = now
+
+      try {
+       const response = await userStatusApi()
+         console.log(response) // tells backend "user is active"
+      } catch (err) {
+        console.error('user_status failed', err)
       }
-    }, 60000)
+    }
+  }
 
-    return () => clearInterval(interval)
-  }, [attendanceStatus])
+  const handleVisibility = () => {
+    if (document.visibilityState === 'visible') {
+      handleActivity()
+    }
+  }
 
-  // ✅ AUTO LOGOUT AT 12 AM
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date()
-      const hours = now.getHours()
-      const minutes = now.getMinutes()
+  window.addEventListener('mousemove', handleActivity)
+  window.addEventListener('keydown', handleActivity)
+  window.addEventListener('click', handleActivity)
+  window.addEventListener('scroll', handleActivity)
+  document.addEventListener('visibilitychange', handleVisibility)
 
-      if (hours === 0 && minutes === 0) {
-        handleLogout()
-      }
-    }, 60000)
-
-    return () => clearInterval(interval)
-  }, [])
+  return () => {
+    window.removeEventListener('mousemove', handleActivity)
+    window.removeEventListener('keydown', handleActivity)
+    window.removeEventListener('click', handleActivity)
+    window.removeEventListener('scroll', handleActivity)
+    document.removeEventListener('visibilitychange', handleVisibility)
+  }
+}, [])
 
   return (
     <div className="min-h-screen bg-lightbg font-jakarta text-navy">
-      <nav className="bg-white border-b border-line flex items-center justify-between px-4 lg:px-8 h-[60px] sticky top-0 z-50">
+      <nav className="bg-white border-b border-line flex items-center justify-between px-4 lg:px-8 h-[60px]">
 
         {/* LEFT */}
-        <div className='flex items-center gap-5 text-xl font-bold'>
-          <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-text overflow-hidden">
-            <img src={welcomeLogo} alt="Logo" className="w-10 h-10" />
-          </span>
-          <span>Intern Portal</span>
+        <div className="flex items-center gap-4 font-bold text-lg">
+          <img src={welcomeLogo} className="w-10 h-10 rounded" />
+          Intern Portal
         </div>
 
         {/* RIGHT */}
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-4">
 
-          {/* ✅ CHECK IN / OUT */}
           <Button
             type={attendanceStatus === 'IN' ? 'default' : 'primary'}
             danger={attendanceStatus === 'IN'}
@@ -180,25 +177,21 @@ const InternLayout = () => {
             {attendanceStatus === 'IN' ? 'Check Out' : 'Check In'}
           </Button>
 
-          {/* USER */}
-          <div className="flex items-center gap-2 min-w-[120px]">
-            {loadingProfile ? (
-              <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
-            ) : (
-              <>
-                <div className="w-8 h-8 rounded-full bg-ainfo flex items-center justify-center text-xs font-bold text-white">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-xs font-semibold">{user.name}</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
-                </div>
-              </>
-            )}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-blue text-white flex items-center justify-center text-xs font-bold">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="text-xs font-semibold">{user.name}</p>
+              <p className="text-xs text-gray-500">{user.email}</p>
+            </div>
           </div>
 
-          {/* LOGOUT */}
-          <Button loading={loggingOut} onClick={handleLogout}>
+          <Button
+            loading={loggingOut}
+            disabled={attendanceLoading}
+            onClick={handleLogout}
+          >
             Logout
           </Button>
 

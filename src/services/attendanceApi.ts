@@ -7,3 +7,7 @@ export const checkInApi = ()=>{
 export const checkOutApi = ()=>{
     return API.post("/check-out")
 }
+
+export const userStatusApi = () => {
+    return API.post('/user_status')
+ }
