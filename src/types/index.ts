@@ -1,4 +1,3 @@
-
 // ── Auth ──────────────────────────────────────────
 export interface LoginPayload {
   email: string;
@@ -38,21 +37,15 @@ export interface CurrentUserProfile {
   created_by?: string;
 }
 
-
 // ── Customer ──────────────────────────────────────
 
 // Role options
-export type RoleType = 'Frontend' | 'Backend' | 'Others';
-
+export type RoleType = "Frontend" | "Backend" | "Others";
 
 // ── Email ──────────────────────────────────────────
-export type EmailType =
-  | 'invoice'
-  | 'reminder'
-  | 'confirmation'
-  | 'renewal';
+export type EmailType = "invoice" | "confirmation" | "reminder";
 
-export type EmailStatus = 'Sent' | 'Pending' | 'Failed';
+export type EmailStatus = "Sent" | "Pending" | "Failed";
 
 export interface EmailHistory {
   id: number;
@@ -63,7 +56,6 @@ export interface EmailHistory {
   date: string;
   status: EmailStatus;
 }
-
 
 // ── Test ──────────────────────────────────────────
 export interface Question {
@@ -81,7 +73,7 @@ export interface TestData {
   questions: Question[];
 }
 
-export type TestType = 'aptitude' | 'technical';
+export type TestType = "aptitude" | "technical";
 
 export interface TestResult {
   testType: TestType;
@@ -134,7 +126,6 @@ export interface TestState {
   error: string | null;
 }
 
-
 // ── Intern ────────────────────────────────────────
 export interface InternStep1 {
   fullName: string;
@@ -152,7 +143,6 @@ export interface InternStep3 {
   linkedIn: string;
   github: string;
 }
-
 
 // ── Signup ────────────────────────────────────────
 export interface SignupPayload {
