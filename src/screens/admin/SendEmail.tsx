@@ -10,6 +10,7 @@ import {
   paymentEmailApi,
 } from "../../services/authApi";
 import { capitalizeName } from "../../utils/formatName";
+import { getBankDetailsApi } from "../../services/adminApi";
 
 const EMAIL_TYPES: { key: EmailType; label: string }[] = [
   { key: "invoice", label: "Invoice" },
@@ -53,7 +54,7 @@ interface SendEmailFormValues {
   email: string;
   amount: number | null;
   invoiceNo: string;
-  referenceNo: string
+  referenceNo: string;
   dueDate: string;
   note: string;
   accountName: string;
@@ -263,6 +264,41 @@ const SendEmail = () => {
         };
 
         const titles = previewTitle();
+
+        useEffect(() => {
+          if (emailType === "invoice") return;
+          const delay = setTimeout(async () => {
+            if (!values.invoiceNo) return;
+
+            if (!values.invoiceNo) {
+              setFieldValue("accountName", "");
+              setFieldValue("accountNo", "");
+              setFieldValue("ifsc", "");
+              setFieldValue("bankName", "");
+              return;
+            }
+
+            try {
+              const res = await getBankDetailsApi(values.invoiceNo);
+              const data = res?.data;
+
+              if (!data || data.message) {
+                toast.error("Invalid Invoice Number"); // ✅ UX improvement
+                return;
+              }
+
+              // Auto fill form
+              setFieldValue("accountName", data.account_name || "");
+              setFieldValue("accountNo", data.account_no || "");
+              setFieldValue("ifsc", data.ifsc || "");
+              setFieldValue("bankName", data.bank_name || "");
+            } catch (error) {
+              console.error("Failed to fetch bank details", error);
+            }
+          }, 500); // debounce
+
+          return () => clearTimeout(delay);
+        }, [values.invoiceNo, emailType]);
 
         return (
           <Form className="text-adark send-email-form">

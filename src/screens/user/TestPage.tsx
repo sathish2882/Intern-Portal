@@ -212,7 +212,7 @@ function TestPage() {
 
   // ✅ AUTO SUBMIT ON TIME END
   useEffect(() => {
-    if (timeLeft === 0 && testStarted) {
+    if (timeLeft <= 0 && testStarted) {
       showWarning("⏱ Time is up! Submitting your test.", 5000);
       handleSubmit();
     }
@@ -844,6 +844,6 @@ function TestPage() {
       </div>
     </div>
   );
-};
+}
 
 export default TestPage;
