@@ -53,6 +53,7 @@ interface SendEmailFormValues {
   email: string;
   amount: number | null;
   invoiceNo: string;
+  referenceNo: string
   dueDate: string;
   note: string;
   accountName: string;
@@ -134,8 +135,9 @@ const validationSchema = Yup.object({
     .typeError("Enter amount")
     .positive("Amount must be greater than 0")
     .required("Enter amount"),
-  invoiceNo: Yup.string().required("Enter invoice number"),
-  dueDate: Yup.string().required("Select due date"),
+  invoiceNo: Yup.string(),
+  referenceNumber: Yup.string(),
+  dueDate: Yup.string(),
   note: Yup.string(),
   accountName: Yup.string().required("Enter account name"),
   accountNo: Yup.string().required("Enter account number"),
@@ -191,6 +193,7 @@ const SendEmail = () => {
         accountNo: "",
         ifsc: "",
         bankName: "",
+        referenceNo: "",
       }}
       validationSchema={validationSchema}
       onSubmit={async (values) => {
@@ -201,6 +204,7 @@ const SendEmail = () => {
             user_id: Number(values.userId),
             amount: Number(values.amount),
             invoice_no: values.invoiceNo,
+            reference_no: values.referenceNo,
             due_date: values.dueDate,
             note: values.note || "",
             email_type: EMAIL_TYPE_ID[emailType],
@@ -371,12 +375,15 @@ const SendEmail = () => {
                     placeholder="0"
                     variant="admin"
                   />
-                  <FormInput
-                    label="INVOICE NO"
-                    name="invoiceNo"
-                    placeholder="INV-001"
-                    variant="admin"
-                  />
+                  {emailType !== "invoice" && (
+                    <FormInput
+                      label="INVOICE NO"
+                      name="invoiceNo"
+                      placeholder="INV-001"
+                      variant="admin"
+                    />
+                  )}
+
                   <div>
                     <label className="text-[11px] tracking-[1px] text-[#8a8aa3] mb-2 block">
                       DUE DATE
@@ -418,6 +425,14 @@ const SendEmail = () => {
                     placeholder="Bank name"
                     variant="admin"
                   />
+                  {emailType === "confirmation" && (
+                    <FormInput
+                      label="Reference Number"
+                      name="referenceNo"
+                      placeholder="Reference number"
+                      variant="admin"
+                    />
+                  )}
                 </div>
 
                 <div className="mb-5">
