@@ -5,7 +5,8 @@ import { removeToken, removeUserType } from "../../utils/authCookies";
 import { getMeApi, logoutApi } from "../../services/authApi";
 import { CurrentUserProfile } from "../../types";
 import { capitalizeName } from "../../utils/formatName";
-import welcomeLogo from "../../assets/images/jpg/welcome-logo.jpg";
+import welcomeLogoDark from '../../assets/images/png/welcome-dark.png'
+
 
 const FALLBACK_USER = {
   name: "Admin",
@@ -86,14 +87,14 @@ const AdminPortalShell = ({ children }: AdminPortalShellProps) => {
           <div>
             <NavLink
               to="/admin/portals"
-              className="mt-1 flex items-center gap-3 text-[28px] font-extrabold tracking-[-0.02em] lg:text-[32px] hover:text-blue-400 transition-colors"
+              className="mt-1 flex items-center text-[28px] font-extrabold tracking-[-0.02em] lg:text-[32px] hover:text-blue-400 transition-colors"
               style={{ textDecoration: "none" }}
             >
-              <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-text overflow-hidden">
+              <span className="inline-flex items-center w-[55px] h-[60px] justify-center rounded-lg bg-text overflow-hidden">
                 <img
-                  src={welcomeLogo}
+                  src={welcomeLogoDark}
                   alt="Admin Logo"
-                  className=" w-10 h-10"
+                  className="w-full object-cover"
                 />
               </span>
               <span>Admin</span>
