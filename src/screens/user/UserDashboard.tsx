@@ -1,6 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaCalculator, FaCode, FaClipboardList, FaCheckCircle, FaClock, FaTrophy } from "react-icons/fa";
+import {
+  FaCalculator,
+  FaCode,
+  FaClipboardList,
+  FaCheckCircle,
+  FaClock,
+  FaTrophy,
+} from "react-icons/fa";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { startTest, getResult } from "../../redux/slices/testSlice";
 import { TEST_CONFIG } from "../../utils/testData";
@@ -33,54 +40,55 @@ const UserDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
-  // ✅ Redux Selectors
-  const { resultsByType, backendResult, currentUser } = useAppSelector((s) => s.test);
+  // ─── Redux State ───────────────────────────────────────────────────────────
+  const { backendResult, currentUser } = useAppSelector((s) => s.test);
 
-  // ✅ Derived Values
-  const completed = Object.keys(resultsByType).length;
-  const pending = ASSESSMENTS.length - completed;
+  // ─── Scenario flags ────────────────────────────────────────────────────────
+  // Scenario 1: No test attempted (both scores null/undefined)
+  // Scenario 2: One test attempted (one score present, one null/undefined)
+  // Scenario 3: Both tests attempted (both scores present)
 
-  console.log("📊 UserDashboard State:", {
-    completed,
-    resultsByType: Object.keys(resultsByType),
-    backendResult,
-  });
+  const hasAptitude = backendResult?.aptitude_score != null;
+  const hasTechnical = backendResult?.technical_score != null;
 
-  // ✅ Calculate best percentage (only when both tests are completed)
+  const attemptedCount = (hasAptitude ? 1 : 0) + (hasTechnical ? 1 : 0);
+
+  const isCompleted = attemptedCount === 2;
+  const isInProgress = attemptedCount === 1;
+  // (isNew removed, not used)
+  const pending = ASSESSMENTS.length - attemptedCount;
+
+  // ─── Best Score ────────────────────────────────────────────────────────────
+  // Only calculated and displayed when BOTH tests are completed (Scenario 3)
   let bestPct = 0;
-  if (completed === ASSESSMENTS.length && backendResult) {
-    // Both tests done: calculate from actual scores, not backend percentage (backend calculation may be wrong)
-    const totalCorrect = (backendResult.aptitude_score ?? 0) + (backendResult.technical_score ?? 0);
-    const totalQuestions = TEST_CONFIG.aptitude.data.total + TEST_CONFIG.technical.data.total;
-    bestPct = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-    
-    console.log("📊 Calculated Best Score:", {
-      totalCorrect,
-      totalQuestions,
-      bestPct,
-      aptitude_score: backendResult.aptitude_score,
-      technical_score: backendResult.technical_score,
-    });
+  if (isCompleted) {
+    const totalCorrect =
+      (backendResult?.aptitude_score ?? 0) +
+      (backendResult?.technical_score ?? 0);
+    const totalQuestions =
+      TEST_CONFIG.aptitude.data.total + TEST_CONFIG.technical.data.total;
+    bestPct =
+      totalQuestions > 0
+        ? Math.round((totalCorrect / totalQuestions) * 100)
+        : 0;
   }
 
-  // ✅ Fetch backend results when dashboard mounts
+  // ─── Fetch backend results on mount ────────────────────────────────────────
   useEffect(() => {
-    console.log("📋 UserDashboard mounted - fetching results");
     dispatch(getResult() as any);
   }, [dispatch]);
 
-  // ✅ Start Test Handler
+  // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleStart = (testType: TestType) => {
     dispatch(startTest(testType));
     navigate("/user/test");
   };
 
-  // ✅ View Results Handler
   const handleViewResults = () => {
     navigate("/user/result");
   };
 
-  // ✅ KPI Data
+  // ─── KPI Cards ─────────────────────────────────────────────────────────────
   const KPIS = [
     {
       icon: <FaClipboardList className="w-5 h-5 text-blue" />,
@@ -92,21 +100,21 @@ const UserDashboard = () => {
     {
       icon: <FaCheckCircle className="w-5 h-5 text-asuccess" />,
       label: "Completed",
-      value: String(completed),
+      value: String(isCompleted ? 2 : isInProgress ? 1 : 0),
       badgeClass: "bg-[#ecfdf5] text-asuccess",
       badge: "Done",
     },
     {
       icon: <FaClock className="w-5 h-5 text-[#e07b00]" />,
       label: "Pending",
-      value: String(pending),
+      value: String(isCompleted ? 0 : isInProgress ? 1 : 2),
       badgeClass: "bg-[#fff7ed] text-[#e07b00]",
       badge: "Pending",
     },
     {
       icon: <FaTrophy className="w-5 h-5 text-blue" />,
       label: "Best Score",
-      value: bestPct ? `${bestPct}%` : "—",
+      value: isCompleted ? `${bestPct}%` : "—",
       badgeClass: "bg-sky text-blue",
       badge: "Best",
     },
@@ -122,7 +130,7 @@ const UserDashboard = () => {
       {/* Greeting */}
       <div className="mb-7">
         <h1 className="text-2xl font-extrabold text-navy tracking-tight mb-1">
-          Good day, {currentUser?.name ?? 'Intern'} 👋
+          Good day, {currentUser?.name ?? "Intern"} 👋
         </h1>
         <p className="text-sm text-slate">
           You have active assessments waiting. Start when you're ready.
@@ -155,9 +163,9 @@ const UserDashboard = () => {
         ))}
       </div>
 
-      {/* Grid */}
+      {/* Main Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        {/* Assessments Table */}
+        {/* ── Assessments Table ──────────────────────────────────────────────── */}
         <div className="xl:col-span-2 bg-white border border-line rounded-[13px] overflow-hidden">
           <div className="px-5 py-4 border-b border-line">
             <span className="text-sm font-extrabold text-navy">
@@ -182,38 +190,55 @@ const UserDashboard = () => {
               </thead>
               <tbody>
                 {ASSESSMENTS.map((a) => {
-                  const testResult = resultsByType[a.id];
-                  const testTotal = TEST_CONFIG[a.id].data.total;
-
-                  // Calculate scores based on completion state
-                  let displayScore = "—";
-                  let displayStatus = "New";
+                  // Per-row: did THIS specific test get attempted?
+                  const isAttempted =
+                    a.id === "aptitude" ? hasAptitude : hasTechnical;
+                  let displayStatus: "Completed" | "Attempted" | "New" = "New";
                   let displayProgress = 0;
-
-                  if (completed === ASSESSMENTS.length && testResult) {
-                    // BOTH tests done: show backend scores
-                    const backendScore = backendResult?.[`${a.id}_score`] ?? 0;
-                    displayScore = `${backendScore}/${testTotal}`;
+                  let actionButton = null;
+                  // Scenario 3: Both done
+                  if (isCompleted) {
                     displayStatus = "Completed";
                     displayProgress = 100;
-
-                    console.log(`📊 [${a.id}] Score from backend:`, {
-                      backendScore,
-                      testTotal,
-                      displayScore,
-                      backendResult,
-                    });
-                  } else if (completed === 1 && testResult) {
-                    // ONE test done: show attempted
+                    actionButton = (
+                      <button
+                        disabled
+                        className="border border-line rounded-lg px-3 py-1.5 text-xs font-bold text-mist cursor-not-allowed bg-lightbg"
+                      >
+                        Completed
+                      </button>
+                    );
+                  } else if (isInProgress && isAttempted) {
+                    // Scenario 2: This test attempted
                     displayStatus = "Attempted";
                     displayProgress = 50;
+                    actionButton = (
+                      <button
+                        disabled
+                        className="border border-line rounded-lg px-3 py-1.5 text-xs font-bold text-mist cursor-not-allowed bg-lightbg"
+                      >
+                        Attempted
+                      </button>
+                    );
+                  } else {
+                    // Scenario 1: New, or Scenario 2: other test not attempted
+                    displayStatus = "New";
+                    displayProgress = 0;
+                    actionButton = (
+                      <button
+                        onClick={() => handleStart(a.id)}
+                        className="border border-blue rounded-lg px-3 py-1.5 text-xs font-bold text-blue hover:bg-sky hover:border-blue transition-all"
+                      >
+                        Start →
+                      </button>
+                    );
                   }
-
                   return (
                     <tr
                       key={a.id}
                       className="border-b border-line last:border-b-0"
                     >
+                      {/* Assessment info */}
                       <td className="px-5 py-3.5 align-middle">
                         <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 bg-sky rounded-lg flex items-center justify-center flex-shrink-0">
@@ -227,7 +252,7 @@ const UserDashboard = () => {
                           </div>
                         </div>
                       </td>
-
+                      {/* Status badge */}
                       <td className="px-5 py-3.5 align-middle">
                         {!a.active ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-lightbg text-mist">
@@ -242,56 +267,29 @@ const UserDashboard = () => {
                             ◉ Attempted
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ecfdf5] text-asuccess">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#eef2ff] text-blue">
                             ● New
                           </span>
                         )}
                       </td>
-
+                      {/* Progress bar */}
                       <td className="px-5 py-3.5 align-middle">
                         <div className="w-[72px] h-1 bg-line rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-700 ${
-                              displayProgress === 100
-                                ? "bg-asuccess w-full"
-                                : displayProgress === 50
-                                  ? "bg-[#e07b00] w-1/2"
-                                  : "bg-line w-0"
-                            }`}
+                            className={`h-full rounded-full transition-all duration-700 ${displayProgress === 100 ? "bg-asuccess" : displayProgress === 50 ? "bg-[#e07b00]" : "bg-line"}`}
                             style={{ width: `${displayProgress}%` }}
                           />
                         </div>
                       </td>
-
+                      {/* Score — hidden on dashboard, shown only on result page */}
                       <td className="px-5 py-3.5 align-middle">
                         <span className="text-[13px] font-bold text-mist">
-                          {displayScore}
+                          —
                         </span>
                       </td>
-
+                      {/* Action button */}
                       <td className="px-5 py-3.5 align-middle">
-                        {!a.active ? null : displayStatus === "Completed" ? (
-                          <button
-                            disabled
-                            className="border border-line rounded-lg px-3 py-1.5 text-xs font-bold text-mist cursor-not-allowed bg-lightbg"
-                          >
-                            Completed
-                          </button>
-                        ) : displayStatus === "Attempted" ? (
-                          <button
-                            disabled
-                            className="border border-line rounded-lg px-3 py-1.5 text-xs font-bold text-mist cursor-not-allowed bg-lightbg"
-                          >
-                            Attempted
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleStart(a.id)}
-                            className="border border-blue rounded-lg px-3 py-1.5 text-xs font-bold text-blue hover:bg-sky hover:border-blue transition-all"
-                          >
-                            Start →
-                          </button>
-                        )}
+                        {actionButton}
                       </td>
                     </tr>
                   );
@@ -301,7 +299,7 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* ── Recent Activity ────────────────────────────────────────────────── */}
         <div className="bg-white border border-line rounded-[13px] overflow-hidden">
           <div className="px-5 py-4 border-b border-line">
             <span className="text-sm font-extrabold text-navy">
@@ -309,7 +307,8 @@ const UserDashboard = () => {
             </span>
           </div>
           <div className="p-5">
-            {completed === ASSESSMENTS.length && backendResult?.total_score ? (
+            {isCompleted ? (
+              // Scenario 3 — both done
               <div className="space-y-4">
                 <div className="flex gap-3">
                   <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-asuccess" />
@@ -318,7 +317,8 @@ const UserDashboard = () => {
                       Final Assessment Completed ✅
                     </p>
                     <p className="text-[11px] text-mist mt-0.5">
-                      Score: {backendResult?.total_score} ({bestPct}%)
+                      Total Score: {backendResult?.total_score ?? 0} · {bestPct}
+                      %
                     </p>
                   </div>
                 </div>
@@ -329,7 +329,8 @@ const UserDashboard = () => {
                   View Full Results →
                 </button>
               </div>
-            ) : completed === 1 ? (
+            ) : isInProgress ? (
+              // Scenario 2 — one done, one pending
               <div className="flex gap-3">
                 <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-[#e07b00]" />
                 <div className="flex-1 min-w-0">
@@ -337,11 +338,12 @@ const UserDashboard = () => {
                     Tests in Progress ⏳
                   </p>
                   <p className="text-[11px] text-mist mt-0.5">
-                    You have {pending} test pending.
+                    {pending} test{pending > 1 ? "s" : ""} still pending.
                   </p>
                 </div>
               </div>
             ) : (
+              // Scenario 1 — no test started
               <p className="text-center text-sm text-mist py-6">
                 No activity yet. Start a test!
               </p>

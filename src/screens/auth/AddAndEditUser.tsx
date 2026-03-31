@@ -137,7 +137,7 @@ const AddUser = () => {
         shadow-[0_20px_60px_rgba(15,23,42,0.12)]"
       >
         <h2 className="text-[26px] font-heading font-semibold text-slate-900 mb-5">
-          {isEdit ? "Edit" : "Add"} <span className="text-[#2563eb]">User</span>
+          {isEdit ? "Edit" : "Add"} <span className="text-[#2563eb]">Intern</span>
         </h2>
 
         <Formik

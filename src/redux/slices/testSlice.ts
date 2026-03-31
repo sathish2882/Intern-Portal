@@ -1,5 +1,11 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
-import { TestResult, TestState, TestType, BackendTestResult, UserProfile } from "../../types";
+import {
+  TestResult,
+  TestState,
+  TestType,
+  BackendTestResult,
+  UserProfile,
+} from "../../types";
 import { TEST_CONFIG } from "../../utils/testData";
 import { getTestStatusApi } from "../../services/testApi";
 
@@ -19,14 +25,14 @@ export const getResult = createAsyncThunk(
       console.error("❌ getResult Thunk Error:", error);
       return rejectWithValue(error?.message || "Failed to fetch test results");
     }
-  }
+  },
 );
 
 // ==============================
 // ✅ INITIAL STATE CREATOR
 // ==============================
 const createInitialState = (
-  testType: TestType = DEFAULT_TEST_TYPE
+  testType: TestType = DEFAULT_TEST_TYPE,
 ): TestState => {
   const config = TEST_CONFIG[testType];
 
@@ -66,9 +72,6 @@ const testSlice = createSlice({
     startTest: (state, action: PayloadAction<TestType | undefined>) => {
       const testType = action.payload ?? DEFAULT_TEST_TYPE;
 
-      // 🔥 prevent retake if already completed
-      if (state.resultsByType[testType]) return;
-
       Object.assign(state, createInitialState(testType), {
         testStarted: true,
       });
@@ -93,8 +96,7 @@ const testSlice = createSlice({
     // ✅ ANSWER SELECT
     // ==========================
     selectAnswer: (state, action: PayloadAction<SelectAnswerPayload>) => {
-      state.answers[action.payload.questionIndex] =
-        action.payload.answer;
+      state.answers[action.payload.questionIndex] = action.payload.answer;
     },
 
     // ==========================
@@ -136,8 +138,7 @@ const testSlice = createSlice({
       state.result = action.payload;
 
       // 🔥 store per test result
-      state.resultsByType[action.payload.testType] =
-        action.payload;
+      state.resultsByType[action.payload.testType] = action.payload;
     },
 
     // ==========================
@@ -148,17 +149,13 @@ const testSlice = createSlice({
       state.error = null;
     },
 
-    submitTestSuccess: (
-      state,
-      action: PayloadAction<TestResult>
-    ) => {
+    submitTestSuccess: (state, action: PayloadAction<TestResult>) => {
       state.loading = false;
       state.testSubmitted = true;
       state.testStarted = false;
       state.result = action.payload;
 
-      state.resultsByType[action.payload.testType] =
-        action.payload;
+      state.resultsByType[action.payload.testType] = action.payload;
     },
 
     submitTestFailure: (state, action: PayloadAction<string>) => {
@@ -174,11 +171,13 @@ const testSlice = createSlice({
       action: PayloadAction<{
         aptitude_score: number;
         technical_score: number;
-      }>
+      }>,
     ) => {
       const { aptitude_score, technical_score } = action.payload;
 
-      if (aptitude_score > 0) {
+      state.resultsByType = {}; // 🔥 CLEAR OLD DATA FIRST
+
+      if (aptitude_score != null) {
         state.resultsByType["aptitude"] = {
           testType: "aptitude",
           correct: aptitude_score,
@@ -190,7 +189,7 @@ const testSlice = createSlice({
         };
       }
 
-      if (technical_score > 0) {
+      if (technical_score != null) {
         state.resultsByType["technical"] = {
           testType: "technical",
           correct: technical_score,
@@ -248,11 +247,13 @@ const testSlice = createSlice({
       .addCase(getResult.fulfilled, (state, action) => {
         state.loading = false;
         state.backendResult = action.payload; // 🔥 Store backend result in Redux
-        
+
         // 🔥 SYNC: Update resultsByType so UI displays completed tests
         const { aptitude_score, technical_score } = action.payload;
-        
-        if (aptitude_score > 0 && !state.resultsByType["aptitude"]) {
+
+        state.resultsByType = {}; // 🔥 VERY IMPORTANT (clear old data)
+
+        if (aptitude_score != null) {
           state.resultsByType["aptitude"] = {
             testType: "aptitude",
             correct: aptitude_score,
@@ -263,8 +264,8 @@ const testSlice = createSlice({
             timeTaken: "",
           };
         }
-        
-        if (technical_score > 0 && !state.resultsByType["technical"]) {
+
+        if (technical_score != null) {
           state.resultsByType["technical"] = {
             testType: "technical",
             correct: technical_score,
@@ -275,8 +276,11 @@ const testSlice = createSlice({
             timeTaken: "",
           };
         }
-        
-        console.log("✅ getResult: Success + Synced to resultsByType", action.payload);
+
+        console.log(
+          "✅ getResult: Success + Synced to resultsByType",
+          action.payload,
+        );
       })
       // 🔥 Rejected
       .addCase(getResult.rejected, (state, action) => {

@@ -11,7 +11,8 @@ const ScrollToTopOutlet = () => {
 };
 import WelcomeScreen from "../screens/auth/WelcomeScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
-import AddUser from "../screens/auth/AddUser";
+import AddUser from "../screens/auth/AddAndEditUser";
+import NotFound from "../screens/NotFound";
 
 // Admin
 import AdminLayout from "../components/layout/AdminLayout";
@@ -125,6 +126,6 @@ export const router = createHashRouter([
  
   {
     path: "*",
-    element: <Navigate to="/" replace />,
+    element: <NotFound />,
   },
 ]);
