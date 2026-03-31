@@ -1,108 +1,103 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
-import { removeToken, removeUserType } from '../../utils/authCookies'
-import { getMeApi, logoutApi } from '../../services/authApi'
-import { CurrentUserProfile } from '../../types'
-import { capitalizeName } from '../../utils/formatName'
+import { ReactNode, useEffect, useMemo, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { removeToken, removeUserType } from "../../utils/authCookies";
+import { getMeApi, logoutApi } from "../../services/authApi";
+import { CurrentUserProfile } from "../../types";
+import { capitalizeName } from "../../utils/formatName";
+import welcomeLogo from "../../assets/images/jpg/welcome-logo.jpg";
 
 const FALLBACK_USER = {
-  name: 'Admin',
-  email: '',
-}
+  name: "Admin",
+  email: "",
+};
 
 interface AdminPortalShellProps {
-  title: string
-  subtitle?: string
-  children: ReactNode
-  hideNav?: boolean
+  title?: string;
+  subtitle?: string;
+  children: ReactNode;
+  hideNav?: boolean;
 }
 
-const NAV_ITEMS = [
-  { to: '/admin/portals', label: 'Portals' },
-  { to: '/admin/interview-dashboard', label: 'Assesment Dashboard' },
-  { to: '/admin/user-dashboard', label: 'Intern Dashboard' },
-  { to: '/admin/attendance-dashboard', label: 'Attendance Dashboard' },
-]
-
-const AdminPortalShell = ({
-  title,
-  subtitle,
-  children,
-  hideNav = false,
-}: AdminPortalShellProps) => {
-  const navigate = useNavigate()
-  const [loggingOut, setLoggingOut] = useState(false)
-  const [loadingProfile, setLoadingProfile] = useState(true)
-  const [profile, setProfile] = useState<CurrentUserProfile | null>(null)
+const AdminPortalShell = ({ children }: AdminPortalShellProps) => {
+  const navigate = useNavigate();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [profile, setProfile] = useState<CurrentUserProfile | null>(null);
 
   useEffect(() => {
-    let mounted = true
+    let mounted = true;
 
     const loadProfile = async () => {
       try {
-        const response = await getMeApi()
+        const response = await getMeApi();
         if (mounted) {
-          setProfile(response.data)
+          setProfile(response.data);
         }
       } catch (error: any) {
-        console.error('Failed to load profile:', error)
-        toast.error(error?.response?.data?.detail || 'Failed to load profile')
+        console.error("Failed to load profile:", error);
+        toast.error(error?.response?.data?.detail || "Failed to load profile");
       } finally {
         if (mounted) {
-          setLoadingProfile(false)
+          setLoadingProfile(false);
         }
       }
-    }
+    };
 
-    void loadProfile()
+    void loadProfile();
 
     return () => {
-      mounted = false
-    }
-  }, [])
+      mounted = false;
+    };
+  }, []);
 
   const user = useMemo(() => {
-    if (!profile) return FALLBACK_USER
+    if (!profile) return FALLBACK_USER;
 
     return {
       name: capitalizeName(profile.username || FALLBACK_USER.name),
       email: profile.email || FALLBACK_USER.email,
-    }
-  }, [profile])
+    };
+  }, [profile]);
 
   const handleLogout = async () => {
-    if (loggingOut) return
+    if (loggingOut) return;
 
-    setLoggingOut(true)
+    setLoggingOut(true);
 
     try {
-      await logoutApi()
+      await logoutApi();
     } catch (error: any) {
-      console.error('Logout failed:', error)
-      toast.error(error?.response?.data?.detail || 'Logout failed')
+      console.error("Logout failed:", error);
+      toast.error(error?.response?.data?.detail || "Logout failed");
     } finally {
-      removeToken()
-      removeUserType()
-      toast.success('Logged out successfully')
-      navigate('/login', { replace: true })
-      setLoggingOut(false)
+      removeToken();
+      removeUserType();
+      toast.success("Logged out successfully");
+      navigate("/login", { replace: true });
+      setLoggingOut(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
       <header className="border-b border-white/10 bg-[#111827]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="mt-1 text-[28px] font-extrabold tracking-[-0.02em] text-white lg:text-[32px]">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="mt-1 text-sm leading-6 text-slate-300">
-                {subtitle}
-              </p>
-            )}
+            <NavLink
+              to="/admin/portals"
+              className="mt-1 flex items-center gap-3 text-[28px] font-extrabold tracking-[-0.02em] lg:text-[32px] hover:text-blue-400 transition-colors"
+              style={{ textDecoration: "none" }}
+            >
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-text overflow-hidden">
+                <img
+                  src={welcomeLogo}
+                  alt="Admin Logo"
+                  className=" w-10 h-10"
+                />
+              </span>
+              <span>Admin</span>
+            </NavLink>
           </div>
 
           <div className="flex items-center gap-3">
@@ -113,12 +108,16 @@ const AdminPortalShell = ({
                 </div>
               ) : (
                 <>
-                  <div className="w-8 h-8 rounded-full bg-sky-500 text-slate-950 flex items-center justify-center text-sm font-bold">
+                  <div className="w-8 h-8 rounded-full bg-blue flex items-center justify-center text-xs font-bold text-white-600 flex-shrink-0 shadow-[0_0_6px_#3dba78]">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate">{user.name}</p>
-                    <p className="text-xs text-slate-400 truncate">{user.email || 'admin@example.com'}</p>
+                    <p className="text-sm font-semibold truncate">
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {user.email || "admin@example.com"}
+                    </p>
                   </div>
                 </>
               )}
@@ -132,7 +131,7 @@ const AdminPortalShell = ({
                 {loggingOut ? (
                   <div className="loader-btn loader-btn-sm" />
                 ) : (
-                  'Sign Out'
+                  "Sign Out"
                 )}
               </span>
             </button>
@@ -140,31 +139,9 @@ const AdminPortalShell = ({
         </div>
       </header>
 
-      <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-6">
-        {!hideNav && (
-          <nav className="flex flex-wrap gap-2 mb-6">
-            {NAV_ITEMS.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                    isActive
-                      ? 'bg-sky-500 text-yellow-400'
-                      : 'bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10'
-                  }`
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        )}
-
-        {children}
-      </div>
+      <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-6">{children}</div>
     </div>
-  )
-}
+  );
+};
 
-export default AdminPortalShell
+export default AdminPortalShell;

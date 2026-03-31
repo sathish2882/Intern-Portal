@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ReadOutlined } from '@ant-design/icons'
+
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { capitalizeName } from '../../utils/formatName'
@@ -7,6 +7,7 @@ import { capitalizeName } from '../../utils/formatName'
 import { useAppDispatch } from '../../redux/hooks'
 import { clearTestData, setCurrentUser } from '../../redux/slices/testSlice'
 import { getUserByIdApi, examLogoutApi } from '../../services/authApi'
+import welcomeLogo from "../../assets/images/jpg/welcome-logo.jpg";
 
 import {
   getUserId,
@@ -105,9 +106,13 @@ const UserLayout = () => {
           
           {/* LEFT */}
           <div className="flex items-center gap-2.5">
-            <div className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-blue text-[17px] text-white">
-              <ReadOutlined />
-            </div>
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-text overflow-hidden">
+                            <img
+                              src={welcomeLogo}
+                              alt="Admin Logo"
+                              className=" w-10 h-10"
+                            />
+                          </span>
             <span className="hidden text-[17px] font-extrabold text-navy sm:block">
               Assessment Portal
             </span>

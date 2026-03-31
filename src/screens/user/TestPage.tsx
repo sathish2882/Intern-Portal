@@ -30,6 +30,7 @@ const TestPage = () => {
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [showFullscreenRestore, setShowFullscreenRestore] = useState(false);
   const warningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blurStartRef = useRef<number | null>(null);
 
   const showWarning = useCallback((msg: string, duration = 3000) => {
     setWarningMsg(msg);
@@ -118,7 +119,12 @@ const TestPage = () => {
       const statusRes = await getTestStatusApi();
       const status = statusRes?.data?.status;
 
-      console.log("📊 After submit - Status:", status, "Response:", statusRes?.data);
+      console.log(
+        "📊 After submit - Status:",
+        status,
+        "Response:",
+        statusRes?.data,
+      );
 
       // 🔥 navigate
       if (status === "completed") {
@@ -140,7 +146,7 @@ const TestPage = () => {
           total: questions.length,
           passed: false,
           timeTaken: "",
-        })
+        }),
       );
 
       navigate("/user/dashboard", { replace: true });
@@ -160,24 +166,27 @@ const TestPage = () => {
   ]);
 
   // ✅ GLOBAL VIOLATION COOLDOWN (prevents duplicate rapid events)
-  const registerViolation = useCallback((msg?: string) => {
-    const now = Date.now();
+  const registerViolation = useCallback(
+    (msg?: string) => {
+      const now = Date.now();
 
-    // Ignore rapid duplicate events (within 2s)
-    if (now - lastViolationTimeRef.current < 2000) return;
+      // Ignore rapid duplicate events (within 2s)
+      if (now - lastViolationTimeRef.current < 2000) return;
 
-    lastViolationTimeRef.current = now;
-    violationsRef.current += 1;
+      lastViolationTimeRef.current = now;
+      violationsRef.current += 1;
 
-    if (violationsRef.current === 1) {
-      showWarning(msg || "⚠️ Warning: Do not perform this action again!");
-      return;
-    }
+      if (violationsRef.current === 1) {
+        showWarning(msg || "⚠️ Warning: Do not perform this action again!");
+        return;
+      }
 
-    if (violationsRef.current >= 2) {
-      handleSubmit();
-    }
-  }, [handleSubmit, showWarning]);
+      if (violationsRef.current >= 2) {
+        handleSubmit();
+      }
+    },
+    [handleSubmit, showWarning],
+  );
 
   // ✅ FULLSCREEN ON TEST PAGE (handled by guidelines accept now)
   useEffect(() => {
@@ -212,20 +221,33 @@ const TestPage = () => {
   // ✅ TAB SWITCH DETECTION
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!testStarted || isSubmittingRef.current || fullscreenExitingRef.current || showFullscreenRestore) return;
+      if (
+        !testStarted ||
+        isSubmittingRef.current ||
+        fullscreenExitingRef.current ||
+        showFullscreenRestore
+      )
+        return;
 
       if (document.hidden) {
-        registerViolation();
+        blurStartRef.current = Date.now();
+      } else {
+        if (!blurStartRef.current) return;
+
+        const duration = Date.now() - blurStartRef.current;
+
+        if (duration > 1200) {
+          registerViolation();
+        }
+
+        blurStartRef.current = null;
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibilityChange
-      );
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [handleSubmit, testStarted, registerViolation, showFullscreenRestore]);
 
@@ -249,11 +271,14 @@ const TestPage = () => {
         }, 2000);
 
         // Use single violation system
-        registerViolation("⚠️ Do not exit fullscreen! Next time your test will be auto-submitted.");
+        registerViolation(
+          "⚠️ Do not exit fullscreen! Next time your test will be auto-submitted.",
+        );
 
         // Show restore overlay if not auto-submitting
         if (violationsRef.current < 2) {
-          setShowFullscreenRestore(true);
+          setWarningMsg(null); // ❌ remove warning popup
+          setShowFullscreenRestore(true); // ✅ show only fullscreen popup
         }
       }
     };
@@ -317,15 +342,40 @@ const TestPage = () => {
   // ✅ DETECT APP SWITCHING (WINDOW BLUR)
   useEffect(() => {
     const handleBlur = () => {
-      if (!testStarted || isSubmittingRef.current || fullscreenExitingRef.current || showFullscreenRestore) return;
+      if (
+        !testStarted ||
+        isSubmittingRef.current ||
+        fullscreenExitingRef.current ||
+        showFullscreenRestore
+      )
+        return;
 
+      blurStartRef.current = Date.now();
+    };
+
+    const handleFocus = () => {
+      if (!blurStartRef.current) return;
+
+      const duration = Date.now() - blurStartRef.current;
+
+      // 👉 Ignore short blur (notification)
+      if (duration < 1200) {
+        blurStartRef.current = null;
+        return;
+      }
+
+      // 👉 Real tab switch / app switch
       registerViolation();
+
+      blurStartRef.current = null;
     };
 
     window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
 
     return () => {
       window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [testStarted, handleSubmit, registerViolation, showFullscreenRestore]);
 
@@ -373,9 +423,7 @@ const TestPage = () => {
   const fmt = (sec: number) =>
     `${Math.floor(sec / 60)
       .toString()
-      .padStart(2, "0")}:${(sec % 60)
-      .toString()
-      .padStart(2, "0")}`;
+      .padStart(2, "0")}:${(sec % 60).toString().padStart(2, "0")}`;
 
   const answered = answers.filter((a) => a !== null).length;
   const isLow = timeLeft < 300;
@@ -386,22 +434,33 @@ const TestPage = () => {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-lightbg font-jakarta text-navy gap-5">
         <div className="loader" />
-        <p className="text-sm font-semibold text-slate animate-pulse">Submitting your test…</p>
+        <p className="text-sm font-semibold text-slate animate-pulse">
+          Submitting your test…
+        </p>
       </div>
     );
   }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-lightbg font-jakarta text-navy">
-
       {/* ✅ TEST GUIDELINES POPUP */}
       {showGuidelines && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-[92%] p-7 animate-[fadeIn_0.2s_ease-out]">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-xl bg-sky flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <svg
+                  className="w-5 h-5 text-blue"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
               </div>
               <h2 className="text-lg font-bold text-navy">Test Guidelines</h2>
@@ -410,33 +469,63 @@ const TestPage = () => {
             <ul className="space-y-2.5 text-[13px] text-slate mb-6">
               <li className="flex items-start gap-2">
                 <span className="text-blue font-bold mt-0.5">01.</span>
-                <span>The test will run in <strong className="text-navy">fullscreen mode</strong>. Do not press ESC or exit fullscreen.</span>
+                <span>
+                  The test will run in{" "}
+                  <strong className="text-navy">fullscreen mode</strong>. Do not
+                  press ESC or exit fullscreen.
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue font-bold mt-0.5">02.</span>
-                <span><strong className="text-navy">Do not switch tabs</strong> or open other applications during the test.</span>
+                <span>
+                  <strong className="text-navy">Do not switch tabs</strong> or
+                  open other applications during the test.
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue font-bold mt-0.5">03.</span>
-                <span><strong className="text-navy">Copy, paste, and right-click</strong> are disabled throughout the test.</span>
+                <span>
+                  <strong className="text-navy">
+                    Copy, paste, and right-click
+                  </strong>{" "}
+                  are disabled throughout the test.
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue font-bold mt-0.5">04.</span>
-                <span><strong className="text-navy">Developer tools</strong> (F12, Ctrl+Shift+I, etc.) are not allowed.</span>
+                <span>
+                  <strong className="text-navy">Developer tools</strong> (F12,
+                  Ctrl+Shift+I, etc.) are not allowed.
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue font-bold mt-0.5">05.</span>
-                <span>You have <strong className="text-navy">{Math.floor(durationSeconds / 60)} minutes</strong> to complete <strong className="text-navy">{questions.length} questions</strong>.</span>
+                <span>
+                  You have{" "}
+                  <strong className="text-navy">
+                    {Math.floor(durationSeconds / 60)} minutes
+                  </strong>{" "}
+                  to complete{" "}
+                  <strong className="text-navy">
+                    {questions.length} questions
+                  </strong>
+                  .
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue font-bold mt-0.5">06.</span>
-                <span>Any <strong className="text-navy">2 violations</strong> will result in automatic test submission.</span>
+                <span>
+                  Any <strong className="text-navy">2 violations</strong> will
+                  result in automatic test submission.
+                </span>
               </li>
             </ul>
 
             <div className="flex items-center gap-3 pt-2 border-t border-line">
               <button
-                onClick={() => { navigate("/user/dashboard", { replace: true }); }}
+                onClick={() => {
+                  navigate("/user/dashboard", { replace: true });
+                }}
                 className="flex-1 py-2.5 rounded-lg border border-line text-[13px] font-bold text-slate hover:bg-gray-50 transition-colors"
               >
                 Go Back
@@ -458,17 +547,32 @@ const TestPage = () => {
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-[88%] p-6 animate-[fadeIn_0.2s_ease-out]">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                <svg
+                  className="w-5 h-5 text-red-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
                 </svg>
               </div>
               <div>
-                <h3 className="text-[15px] font-bold text-navy">Fullscreen Required</h3>
-                <p className="text-[12px] text-slate mt-0.5">You exited fullscreen mode. This is a violation.</p>
+                <h3 className="text-[15px] font-bold text-navy">
+                  Fullscreen Required
+                </h3>
+                <p className="text-[12px] text-slate mt-0.5">
+                  You exited fullscreen mode. This is a violation.
+                </p>
               </div>
             </div>
             <p className="text-[13px] text-red-500 font-semibold mb-4">
-              Warning: If you exit fullscreen again, your test will be automatically submitted.
+              Warning: If you exit fullscreen again, your test will be
+              automatically submitted.
             </p>
             <button
               onClick={async () => {
@@ -493,11 +597,23 @@ const TestPage = () => {
           <div className="bg-white rounded-xl shadow-2xl max-w-sm w-[88%] p-5 pointer-events-auto animate-[fadeIn_0.15s_ease-out]">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                <svg
+                  className="w-5 h-5 text-red-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
                 </svg>
               </div>
-              <p className="text-[14px] font-semibold text-navy leading-snug">{warningMsg}</p>
+              <p className="text-[14px] font-semibold text-navy leading-snug">
+                {warningMsg}
+              </p>
             </div>
             <button
               onClick={() => setWarningMsg(null)}
@@ -515,12 +631,23 @@ const TestPage = () => {
           <div className="bg-white rounded-xl shadow-2xl max-w-sm w-[88%] p-5 animate-[fadeIn_0.15s_ease-out]">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5 text-amber-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
               </div>
               <p className="text-[14px] font-semibold text-navy leading-snug">
-                You have {answers.filter((a) => a === null).length} unanswered question(s). Submit anyway?
+                You have {answers.filter((a) => a === null).length} unanswered
+                question(s). Submit anyway?
               </p>
             </div>
             <div className="flex items-center gap-2.5 mt-4">
@@ -531,7 +658,10 @@ const TestPage = () => {
                 Cancel
               </button>
               <button
-                onClick={() => { setShowConfirmSubmit(false); handleSubmit(); }}
+                onClick={() => {
+                  setShowConfirmSubmit(false);
+                  handleSubmit();
+                }}
                 className="flex-1 py-2.5 rounded-lg bg-blue hover:bg-bluelt text-white text-[13px] font-bold transition-colors"
               >
                 Yes, Submit
@@ -709,8 +839,6 @@ const TestPage = () => {
                 {submitting ? "Submitting..." : "Submit Test"}
               </button>
             </div>
-
-
           </div>
         </main>
       </div>

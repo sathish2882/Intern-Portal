@@ -30,6 +30,7 @@ export default {
         abg3: "#18181f",
         abg4: "#1f1f28",
         gold: "#e9a628",
+        blue: "#1d6ede",
         golddim: "rgba(233,166,40,0.10)",
         goldtxt: "#ffc85a",
         adark: "#eeebe3",

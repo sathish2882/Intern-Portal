@@ -18,6 +18,7 @@ interface BatchUser {
   phone: string
   batch: string
   techStack: string
+  total_fee: number | null
 }
 
 const PAGE_SIZE = 10
@@ -66,6 +67,12 @@ const normalizeUsers = (payload: unknown, batchLabel?: string): BatchUser[] => {
 
       if (!Number.isFinite(rawId)) return null
 
+      let feeVal = null;
+      if (typeof user.total_fee === 'number') feeVal = user.total_fee;
+      else if (typeof user.fee === 'number') feeVal = user.fee;
+      else if (typeof user.total_fee === 'string' && user.total_fee.trim() !== '') feeVal = Number(user.total_fee);
+      else if (typeof user.fee === 'string' && user.fee.trim() !== '') feeVal = Number(user.fee);
+
       return {
         id: rawId,
         username: String(user.username ?? ''),
@@ -73,6 +80,7 @@ const normalizeUsers = (payload: unknown, batchLabel?: string): BatchUser[] => {
         phone: String(user.phone ?? user.phno ?? '-'),
         batch: String(user.batch ?? batchLabel ?? '-'),
         techStack: String(user.tech_stack ?? user.domain ?? '-'),
+        total_fee: Number.isFinite(feeVal) ? (feeVal as number) : null,
       }
     })
     .filter((user): user is BatchUser => Boolean(user))
@@ -190,13 +198,13 @@ const AdminUserDashboard = () => {
   const handleDeleteUser = async (user: BatchUser) => {
     if (deletingUserId !== null) return
 
-    const shouldDelete = window.confirm(`Delete user ${user.username} (#${user.id})?`)
+    const shouldDelete = window.confirm(`Delete intern ${user.username} (#${user.id})?`)
     if (!shouldDelete) return
 
     try {
       setDeletingUserId(user.id)
       await deleteUser(user.id)
-      toast.success('User deleted successfully')
+      toast.success('Intern deleted successfully')
 
       if (selectedBatchId === 'all') {
         const isLastItemOnPage = users.length === 1 && page > 1
@@ -251,8 +259,8 @@ const AdminUserDashboard = () => {
             </select>
           </div>
 
-          <Button onClick={() => navigate('/add-user')} className="self-start lg:self-auto" type="primary">
-            Add User
+          <Button onClick={() => navigate('/add-user')} className="self-start lg:self-auto !bg-blue font-bold" type="primary">
+            Add Intern
           </Button>
         </div>
 
@@ -396,6 +404,7 @@ const AdminUserDashboard = () => {
                 { label: 'Batch', value: selectedUser.batch },
                 { label: 'Phone', value: selectedUser.phone },
                 { label: 'Tech Stack', value: selectedUser.techStack },
+                { label: 'Total Fee', value: selectedUser.total_fee ?? '-' },
               ].map((item) => (
                 <div key={item.label} className="rounded-xl border border-white/10 bg-white/5 p-4">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">{item.label}</p>

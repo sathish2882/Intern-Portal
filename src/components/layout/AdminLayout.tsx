@@ -7,6 +7,7 @@ import { removeToken, removeUserType } from '../../utils/authCookies'
 import { getMeApi, logoutApi } from '../../services/authApi'
 import { CurrentUserProfile } from '../../types'
 import { capitalizeName } from '../../utils/formatName'
+import welcomeLogo from '../../assets/images/jpg/welcome-logo.jpg'
 
 const FALLBACK_USER = {
   name: 'Admin',
@@ -121,13 +122,11 @@ const AdminLayout = () => {
           title="PayDesk"
           className={`flex items-center ${collapsed ? 'justify-center' : 'gap-4 px-1'}`}
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-golddim text-gold">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M6 4h9a5 5 0 0 1 0 10H9v6H6V4Zm3 3v4h6a2 2 0 1 0 0-4H9Z" />
-            </svg>
-          </span>
+          <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-text overflow-hidden">
+                          <img src={welcomeLogo} alt="Admin Logo" className=" w-10 h-10" />
+                        </span>
           {!collapsed && (
-            <span className="font-syne font-extrabold text-2xl text-adark tracking-wide whitespace-nowrap overflow-hidden">
+            <span className="font-syne font-extrabold text-2xl text-white tracking-wide whitespace-nowrap overflow-hidden">
               PayDesk
             </span>
           )}
@@ -164,7 +163,7 @@ const AdminLayout = () => {
               </div>
             ) : (
               <>
-                <div className="w-8 h-8 rounded-full bg-asuccess flex items-center justify-center text-xs font-bold text-abg flex-shrink-0 shadow-[0_0_6px_#3dba78]">
+                <div className="w-8 h-8 rounded-full bg-blue flex items-center justify-center text-xs font-bold text-white-600 flex-shrink-0 shadow-[0_0_6px_#3dba78]">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
