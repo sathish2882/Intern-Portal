@@ -122,7 +122,7 @@ const AdminLayout = () => {
           title="PayDesk"
           className={`flex items-center ${collapsed ? "justify-center" : "px-1"}`}
         >
-          <span className="inline-flex items-center w-[55px] h-[60px] justify-center rounded-lg bg-text overflow-hidden">
+          <span className="inline-flex items-center w-[60px] h-[60px] justify-center rounded-lg bg-text overflow-hidden">
             <img
               src={welcomeLogoDark}
               alt="Admin Logo"

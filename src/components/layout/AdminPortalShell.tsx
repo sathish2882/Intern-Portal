@@ -90,7 +90,7 @@ const AdminPortalShell = ({ children }: AdminPortalShellProps) => {
               className="mt-1 flex items-center text-[28px] font-extrabold tracking-[-0.02em] lg:text-[32px] hover:text-blue-400 transition-colors"
               style={{ textDecoration: "none" }}
             >
-              <span className="inline-flex items-center w-[55px] h-[60px] justify-center rounded-lg bg-text overflow-hidden">
+              <span className="inline-flex items-center w-[60px] h-[60px] justify-center rounded-lg bg-text overflow-hidden">
                 <img
                   src={welcomeLogoDark}
                   alt="Admin Logo"
