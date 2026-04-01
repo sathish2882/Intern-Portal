@@ -342,14 +342,14 @@ const AdminDashboard = () => {
         </div>
 
         <div className="bg-abg2 border border-white/[0.07] rounded-2xl p-5">
-          <h2 className="text-lg font-bold text-adark mb-5">Email Type Breakdown</h2>
+          <h2 className="text-lg font-bold text-adark mb-5">Email Overview</h2>
           <div className="space-y-5">
             {!loadingDashboard && (dashboard?.email_type_count.length ?? 0) === 0 && (
               <p className="text-sm text-amuted">No email type data found.</p>
             )}
 
             {loadingDashboard && (
-              <p className="text-sm text-amuted">Loading breakdown...</p>
+              <p className="text-sm text-amuted">Loading overview...</p>
             )}
 
             {dashboard?.email_type_count.map((item) => {
@@ -365,7 +365,6 @@ const AdminDashboard = () => {
                   <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all duration-700 ${colorClass}`} style={{ width: `${pct}%` }} />
                   </div>
-                  <p className="text-[11px] text-amuted mt-1">{pct}%</p>
                 </div>
               )
             })}

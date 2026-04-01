@@ -133,9 +133,9 @@ const LoginScreen = () => {
 }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] flex flex-col font-body">
+    <div className="min-h-screen bg-gradient-to-br from-[#5192d4] to-[#eef2ff] flex flex-col font-body">
       <div className="flex-1 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-[440px] bg-white rounded-[24px] border border-[#e2e8f0] shadow-[0_8px_40px_rgba(124,58,237,0.12),0_2px_8px_rgba(76,29,149,0.06)] my-10 p-8 sm:p-10">
+      <div className="w-full max-w-[440px] bg-white rounded-[24px] border border-[#e2e8f0] shadow-[0_8px_40px_rgba(124,58,237,0.12),0_2px_8px_rgba(76,29,149,0.06)] my- p-8 sm:p-10">
       <div className="text-center">
         <div className="mx-auto mb-6 flex h-[110px] w-[110px] items-center justify-center rounded-[22px] bg-white shadow-md">
           <img

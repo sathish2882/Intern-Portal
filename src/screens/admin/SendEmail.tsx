@@ -264,8 +264,6 @@ const SendEmail = () => {
 
         const titles = previewTitle();
 
-        
-
         return (
           <Form className="text-adark send-email-form">
             <div className="flex flex-col gap-4 mb-6 lg:flex-row lg:items-start lg:justify-between">
@@ -481,7 +479,7 @@ const SendEmail = () => {
                     <div
                       className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold text-abg ${TYPE_ACTIVE[emailType].split(" ")[0]}`}
                     >
-                      $
+                      ₹
                     </div>
                     <div>
                       <p className="text-sm font-bold text-adark">
