@@ -34,3 +34,10 @@ export const viewAttendanceByUserApi = () => {
 export const deleteUser = (userId: number | string) => {
   return API.delete(`/users/${userId}`)
 }
+
+
+export const getBankDetailsApi = (invoiceNo: string) => {
+  return API.post(
+    `/get_bankdetails?invoice_no=${invoiceNo}`
+  );
+};
