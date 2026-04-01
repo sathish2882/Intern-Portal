@@ -21,7 +21,7 @@ const PORTALS = [
 
   {
     title: "Intern Dashboard",
-    route: "/admin/user-dashboard",
+    route: "/admin/intern-dashboard",
     accent: "border-red-400/30 bg-red-500/10",
     icon: (
       <TeamOutlined

@@ -361,7 +361,7 @@ const SendEmail = () => {
 
                 <div className="mb-4">
                   <label className="block text-xs text-adark uppercase tracking-[0.06em] mb-1.5">
-                    Select User
+                    Select Intern
                   </label>
                   <select
                     value={values.userId}
@@ -394,14 +394,14 @@ const SendEmail = () => {
                   <FormInput
                     label="NAME"
                     name="name"
-                    placeholder="User name"
+                    placeholder="Intern name"
                     variant="admin"
                   />
                   <FormInput
                     label="EMAIL"
                     name="email"
                     type="email"
-                    placeholder="user@example.com"
+                    placeholder="intern@example.com"
                     variant="admin"
                   />
                   <FormInput
@@ -424,43 +424,51 @@ const SendEmail = () => {
                     <label className="text-[11px] tracking-[1px] text-[#8a8aa3] mb-2 block">
                       DUE DATE
                     </label>
-                    <input
-                      type="date"
-                      value={values.dueDate}
-                      onChange={(e) => setFieldValue("dueDate", e.target.value)}
-                      onBlur={() => setFieldTouched("dueDate", true)}
-                      className="w-full h-[46px]  rounded-[12px] bg-transparent border border-white/[0.12] px-4 text-sm text-adark outline-none transition-colors focus:border-gold [color-scheme:dark]"
-                    />
+                    {emailType !== "confirmation" && (
+                      <input
+                        type="date"
+                        value={values.dueDate}
+                        onChange={(e) =>
+                          setFieldValue("dueDate", e.target.value)
+                        }
+                        onBlur={() => setFieldTouched("dueDate", true)}
+                        className="w-full h-[46px]  rounded-[12px] bg-transparent border border-white/[0.12] px-4 text-sm text-adark outline-none transition-colors focus:border-gold [color-scheme:dark]"
+                      />
+                    )}
                     {errors.dueDate && touched.dueDate && (
                       <p className="text-red-400 text-[11px] mt-1">
                         {errors.dueDate}
                       </p>
                     )}
                   </div>
-                  <FormInput
-                    label="ACCOUNT NAME"
-                    name="accountName"
-                    placeholder="Account holder name"
-                    variant="admin"
-                  />
-                  <FormInput
-                    label="ACCOUNT NO"
-                    name="accountNo"
-                    placeholder="Account number"
-                    variant="admin"
-                  />
-                  <FormInput
-                    label="IFSC CODE"
-                    name="ifsc"
-                    placeholder="IFSC code"
-                    variant="admin"
-                  />
-                  <FormInput
-                    label="BANK NAME"
-                    name="bankName"
-                    placeholder="Bank name"
-                    variant="admin"
-                  />
+                  {emailType === "invoice" && (
+                    <>
+                      <FormInput
+                        label="ACCOUNT NAME"
+                        name="accountName"
+                        placeholder="Account holder name"
+                        variant="admin"
+                      />
+                      <FormInput
+                        label="ACCOUNT NO"
+                        name="accountNo"
+                        placeholder="Account number"
+                        variant="admin"
+                      />
+                      <FormInput
+                        label="IFSC CODE"
+                        name="ifsc"
+                        placeholder="IFSC code"
+                        variant="admin"
+                      />
+                      <FormInput
+                        label="BANK NAME"
+                        name="bankName"
+                        placeholder="Bank name"
+                        variant="admin"
+                      />{" "}
+                    </>
+                  )}
                   {emailType === "confirmation" && (
                     <FormInput
                       label="Reference Number"
@@ -529,12 +537,15 @@ const SendEmail = () => {
                   </p>
                   <p className="text-xs text-amuted mb-3">
                     Dear{" "}
-                    <span className="text-adark">{values.name || "User"}</span>,
+                    <span className="text-adark">
+                      {values.name || "Intern"}
+                    </span>
+                    ,
                   </p>
                   <div
                     className={`rounded-[10px] p-3 mb-3 text-center border ${TYPE_COLOR[emailType]}`}
                   >
-                    <p className="text-sm text-amuted mb-0.5">Amount Due</p>
+                    <p className="text-sm text-amuted mb-0.5">Fee Due</p>
                     <p className="text-3xl font-bold">
                       Rs {values.amount ?? 0}
                     </p>

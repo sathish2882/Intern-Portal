@@ -17,7 +17,7 @@ import NotFound from "../screens/NotFound";
 // Admin
 import AdminLayout from "../components/layout/AdminLayout";
 import AdminPortalSelector from "../screens/admin/AdminPortalSelector";
-import AdminUserDashboard from "../screens/admin/AdminInternDashboard";
+import AdminInternDashboard from "../screens/admin/AdminInternDashboard";
 import UserAttendanceDashboard from "../screens/admin/UserAttendanceDashboard";
 import InterviewDashboard from "../screens/admin/AssesmentDashboard";
 import AdminDashboard from "../screens/admin/AdminDashboard";
@@ -70,7 +70,7 @@ export const router = createHashRouter([
     children: [
       { index: true, element: <Navigate to="portals" replace /> },
       { path: "portals", element: <AdminPortalSelector /> },
-      { path: "user-dashboard", element: <AdminUserDashboard /> },
+      { path: "intern-dashboard", element: <AdminInternDashboard /> },
       { path: "attendance-dashboard", element: <UserAttendanceDashboard /> },
       { path: "interview-dashboard", element: <InterviewDashboard /> },
       {

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik'
 import * as Yup from 'yup'
-import { useState } from 'react'
+import { useState} from 'react'
 import { toast } from 'react-toastify'
 import {loginApi } from '../../services/authApi'
 import {
@@ -13,6 +13,7 @@ import {
 } from '../../utils/authCookies'
 import { WelcomeImg } from '../../utils/Images'
 import FormInput from '../../components/form/FormInput'
+import Footer from '../../components/footer/Footer'
 
 interface FormValues {
   identifier: string
@@ -67,6 +68,7 @@ const getAuthData = (responseData: LoginResponse) => {
 const LoginScreen = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+
 
   const validationSchema = Yup.object({
     identifier: Yup.string()
@@ -131,8 +133,9 @@ const LoginScreen = () => {
 }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] flex flex-col items-center justify-center px-4 font-body">
-      <div className="w-full max-w-[440px] bg-white rounded-[24px] border border-[#e2e8f0] shadow-[0_8px_40px_rgba(124,58,237,0.12),0_2px_8px_rgba(76,29,149,0.06)] p-8 sm:p-10">
+    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] to-[#eef2ff] flex flex-col font-body">
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-[440px] bg-white rounded-[24px] border border-[#e2e8f0] shadow-[0_8px_40px_rgba(124,58,237,0.12),0_2px_8px_rgba(76,29,149,0.06)] my-10 p-8 sm:p-10">
       <div className="text-center">
         <div className="mx-auto mb-6 flex h-[110px] w-[110px] items-center justify-center rounded-[22px] bg-white shadow-md">
           <img
@@ -150,7 +153,7 @@ const LoginScreen = () => {
           Welcome to M-Guru
         </h1>
 
-        <p className="text-[14px] text-[#64748b] mb-8">
+        <p className="text-[14px] text-[#64748b] mb-4">
           by <span className="text-[#4c1d95] font-semibold">Velava Foundation</span>
         </p>
 
@@ -200,6 +203,8 @@ const LoginScreen = () => {
         )}
       </Formik>
       </div>
+      </div>
+      <Footer />
     </div>
   )
 }
