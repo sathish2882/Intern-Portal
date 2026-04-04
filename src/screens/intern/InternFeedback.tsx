@@ -28,16 +28,23 @@ interface FeedbackEntry {
   category: FeedbackCategory;
   subject: string;
   message: string;
-  anonymous: boolean;
   createdAt: number;
 }
 
 // ── Constants ──────────────────────────────────────
-const CATEGORIES: { value: FeedbackCategory; label: string; icon: React.ReactNode }[] = [
+const CATEGORIES: {
+  value: FeedbackCategory;
+  label: string;
+  icon: React.ReactNode;
+}[] = [
   { value: "general", label: "General", icon: <FiMessageCircle /> },
   { value: "training", label: "Training & Learning", icon: <FiBookOpen /> },
   { value: "mentorship", label: "Mentorship", icon: <FiUsers /> },
-  { value: "work-environment", label: "Work Environment", icon: <FiBriefcase /> },
+  {
+    value: "work-environment",
+    label: "Work Environment",
+    icon: <FiBriefcase />,
+  },
   { value: "technical", label: "Technical Issues", icon: <FiTool /> },
   { value: "suggestion", label: "Suggestions", icon: <FiZap /> },
 ];
@@ -83,10 +90,11 @@ const InternFeedback = () => {
   const [category, setCategory] = useState<FeedbackCategory>("general");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [anonymous, setAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [historyFilter, setHistoryFilter] = useState<"all" | FeedbackCategory>("all");
+  const [historyFilter, setHistoryFilter] = useState<"all" | FeedbackCategory>(
+    "all",
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -100,7 +108,8 @@ const InternFeedback = () => {
     const err: Record<string, string> = {};
     if (!subject.trim()) err.subject = "Subject is required";
     if (!message.trim()) err.message = "Please enter your feedback";
-    else if (message.trim().length < 10) err.message = "Feedback must be at least 10 characters";
+    else if (message.trim().length < 10)
+      err.message = "Feedback must be at least 10 characters";
     setErrors(err);
     return Object.keys(err).length === 0;
   };
@@ -117,14 +126,12 @@ const InternFeedback = () => {
         category,
         subject: subject.trim(),
         message: message.trim(),
-        anonymous,
         createdAt: Date.now(),
       };
       setEntries((prev) => [entry, ...prev]);
       setCategory("general");
       setSubject("");
       setMessage("");
-      setAnonymous(false);
       setErrors({});
       setSubmitting(false);
       setSubmitted(true);
@@ -144,7 +151,7 @@ const InternFeedback = () => {
       historyFilter === "all"
         ? entries
         : entries.filter((e) => e.category === historyFilter),
-    [entries, historyFilter]
+    [entries, historyFilter],
   );
 
   return (
@@ -156,8 +163,12 @@ const InternFeedback = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-7 gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-navy tracking-tight mb-1">Feedback</h1>
-          <p className="text-sm text-slate">Share your thoughts, suggestions, and experiences.</p>
+          <h1 className="text-2xl font-extrabold text-navy tracking-tight mb-1">
+            Feedback
+          </h1>
+          <p className="text-sm text-slate">
+            Share your thoughts, suggestions, and experiences.
+          </p>
         </div>
       </div>
 
@@ -182,55 +193,20 @@ const InternFeedback = () => {
 
           {/* Category */}
           <div className="mb-4">
-            <label className="block text-xs font-bold text-slate mb-2">Category</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.value}
-                  onClick={() => setCategory(cat.value)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
-                    category === cat.value
-                      ? "border-blue bg-sky text-blue shadow-sm"
-                      : "border-line bg-white text-slate hover:border-blue/30 hover:bg-sky/50"
-                  }`}
-                >
-                  <span className="text-sm text-current">{cat.icon}</span>
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Subject */}
-          <div className="mb-4">
             <label className="block text-xs font-bold text-slate mb-2">
-              Subject <span className="text-red-400">*</span>
+              Category
             </label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => {
-                setSubject(e.target.value);
-                if (errors.subject)
-                  setErrors((prev) => {
-                    const next = { ...prev };
-                    delete next.subject;
-                    return next;
-                  });
-              }}
-              placeholder="Brief title for your feedback"
-              maxLength={100}
-              className={`w-full px-4 py-2.5 rounded-xl border text-sm font-medium transition-all outline-none ${
-                errors.subject
-                  ? "border-red-300 bg-red-50/50 focus:border-red-400"
-                  : "border-line bg-lightbg focus:border-blue focus:bg-white"
-              }`}
-            />
-            {errors.subject && (
-              <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
-                <FiAlertCircle className="text-xs" /> {errors.subject}
-              </p>
-            )}
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
+              className="w-100 bg-lightbg border border-line rounded-lg px-3 py-2 text-sm font-medium text-slate outline-none focus:border-blue cursor-pointer"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Message */}
@@ -266,25 +242,10 @@ const InternFeedback = () => {
               ) : (
                 <span />
               )}
-              <span className="text-[10px] text-mist">{message.length}/1000</span>
+              <span className="text-[10px] text-mist">
+                {message.length}/1000
+              </span>
             </div>
-          </div>
-
-          {/* Anonymous toggle */}
-          <div className="mb-5 flex items-center gap-3">
-            <button
-              onClick={() => setAnonymous(!anonymous)}
-              className={`relative w-10 h-[22px] rounded-full transition-colors ${
-                anonymous ? "bg-blue" : "bg-gray-300"
-              }`}
-            >
-              <span
-                className={`absolute top-[3px] w-4 h-4 rounded-full bg-white shadow transition-transform ${
-                  anonymous ? "left-[22px]" : "left-[3px]"
-                }`}
-              />
-            </button>
-            <span className="text-xs font-semibold text-slate">Submit anonymously</span>
           </div>
 
           {/* Submit */}
@@ -319,7 +280,9 @@ const InternFeedback = () => {
             <div className="relative">
               <select
                 value={historyFilter}
-                onChange={(e) => setHistoryFilter(e.target.value as "all" | FeedbackCategory)}
+                onChange={(e) =>
+                  setHistoryFilter(e.target.value as "all" | FeedbackCategory)
+                }
                 className="appearance-none bg-lightbg border border-line rounded-lg px-3 py-1.5 pr-7 text-[11px] font-semibold text-slate outline-none focus:border-blue cursor-pointer"
               >
                 <option value="all">All</option>
@@ -340,7 +303,9 @@ const InternFeedback = () => {
                 <div className="w-14 h-14 rounded-full bg-sky flex items-center justify-center mb-3">
                   <FiMessageCircle className="text-blue text-xl" />
                 </div>
-                <p className="text-sm font-bold text-navy mb-1">No feedback yet</p>
+                <p className="text-sm font-bold text-navy mb-1">
+                  No feedback yet
+                </p>
                 <p className="text-xs text-mist">
                   Your submitted feedback will appear here.
                 </p>
@@ -356,7 +321,9 @@ const InternFeedback = () => {
                     {/* Top row */}
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm text-blue flex-shrink-0">{cat?.icon}</span>
+                        <span className="text-sm text-blue flex-shrink-0">
+                          {cat?.icon}
+                        </span>
                         <span className="text-xs font-bold text-navy truncate">
                           {entry.subject}
                         </span>
@@ -399,16 +366,9 @@ const InternFeedback = () => {
                       <span className="text-[10px] font-semibold text-mist bg-gray-100 px-2 py-0.5 rounded">
                         {cat?.label}
                       </span>
-                      <div className="flex items-center gap-2">
-                        {entry.anonymous && (
-                          <span className="text-[9px] font-semibold text-mist bg-gray-100 px-1.5 py-0.5 rounded">
-                            Anonymous
-                          </span>
-                        )}
-                        <span className="text-[10px] text-mist">
-                          {timeAgo(entry.createdAt)}
-                        </span>
-                      </div>
+                      <span className="text-[10px] text-mist">
+                        {timeAgo(entry.createdAt)}
+                      </span>
                     </div>
                   </div>
                 );

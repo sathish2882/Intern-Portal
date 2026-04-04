@@ -13,6 +13,7 @@ import welcomeLogo from "../../assets/images/jpg/welcome-logo.jpg";
 import { IoTimeOutline } from "react-icons/io5";
 import { FaTasks} from "react-icons/fa";
 import { FiMessageSquare } from "react-icons/fi";
+import Profile from "../../assets/images/png/profile.png";
 
 const FALLBACK_USER = {
   name: "Intern",
@@ -207,7 +208,7 @@ const InternLayout = () => {
                   M-Guru
                 </p>
                 <p className="text-[11px] text-slate-500 font-medium">
-                  Intern Portal
+                  Intern
                 </p>
               </div>
             )}
@@ -375,13 +376,7 @@ const InternLayout = () => {
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-blue text-white flex items-center justify-center text-xs font-bold">
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="leading-tight hidden sm:block">
-                <p className="text-xs font-semibold">{user.name}</p>
-                <p className="text-[11px] text-gray-500">{user.email}</p>
-              </div>
+                <img src={Profile} alt="Intern Logo" className="w-10 h-10 rounded" />
             </div>
           </div>
         </nav>

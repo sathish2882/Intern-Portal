@@ -8,9 +8,11 @@ import {
   FiRefreshCw,
   FiSearch,
   FiTool,
-  FiUser,
   FiUsers,
   FiZap,
+  FiCalendar,
+  FiLayers,
+  FiTrendingUp,
 } from "react-icons/fi";
 import AdminPortalShell from "../../components/layout/AdminPortalShell";
 
@@ -27,11 +29,14 @@ interface FeedbackEntry {
   category: FeedbackCategory;
   subject: string;
   message: string;
-  anonymous: boolean;
   createdAt: number;
+  source?: "intern" | "mentor";
 }
 
-const STORAGE_KEY = "intern_feedback";
+const INTERN_STORAGE_KEY = "intern_feedback";
+const MENTOR_STORAGE_KEY = "mentor_feedback";
+
+type FeedbackSource = "all" | "intern" | "mentor";
 
 const CATEGORY_META: {
   value: FeedbackCategory;
@@ -79,10 +84,16 @@ const CATEGORY_META: {
 
 const loadFeedbackEntries = (): FeedbackEntry[] => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? (JSON.parse(raw) as FeedbackEntry[]) : [];
+    const loadFrom = (key: string, source: "intern" | "mentor"): FeedbackEntry[] => {
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? (JSON.parse(raw) as FeedbackEntry[]) : [];
+      return parsed.map((e) => ({ ...e, source }));
+    };
 
-    return parsed.sort((a, b) => b.createdAt - a.createdAt);
+    const internEntries = loadFrom(INTERN_STORAGE_KEY, "intern");
+    const mentorEntries = loadFrom(MENTOR_STORAGE_KEY, "mentor");
+
+    return [...internEntries, ...mentorEntries].sort((a, b) => b.createdAt - a.createdAt);
   } catch {
     return [];
   }
@@ -116,9 +127,8 @@ const timeAgo = (timestamp: number): string => {
 const AdminFeedback = () => {
   const [entries, setEntries] = useState<FeedbackEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | FeedbackCategory>(
-    "all"
-  );
+  const [categoryFilter, setCategoryFilter] = useState<"all" | FeedbackCategory>("all");
+  const [sourceFilter, setSourceFilter] = useState<FeedbackSource>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const refreshEntries = () => {
@@ -136,7 +146,7 @@ const AdminFeedback = () => {
     refreshEntries();
 
     const handleStorage = (event: StorageEvent) => {
-      if (!event.key || event.key === STORAGE_KEY) {
+      if (!event.key || event.key === INTERN_STORAGE_KEY || event.key === MENTOR_STORAGE_KEY) {
         refreshEntries();
       }
     };
@@ -151,14 +161,16 @@ const AdminFeedback = () => {
     return entries.filter((entry) => {
       const matchesCategory =
         categoryFilter === "all" || entry.category === categoryFilter;
+      const matchesSource =
+        sourceFilter === "all" || entry.source === sourceFilter;
       const matchesSearch =
         !query ||
         entry.subject.toLowerCase().includes(query) ||
         entry.message.toLowerCase().includes(query);
 
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesSource && matchesSearch;
     });
-  }, [entries, categoryFilter, searchTerm]);
+  }, [entries, categoryFilter, sourceFilter, searchTerm]);
 
   const selectedEntry =
     filteredEntries.find((entry) => entry.id === selectedId) ??
@@ -166,7 +178,8 @@ const AdminFeedback = () => {
     null;
 
   const stats = useMemo(() => {
-    const anonymousCount = entries.filter((entry) => entry.anonymous).length;
+    const internCount = entries.filter((e) => e.source === "intern").length;
+    const mentorCount = entries.filter((e) => e.source === "mentor").length;
     const todayCount = entries.filter((entry) => {
       const entryDate = new Date(entry.createdAt);
       const now = new Date();
@@ -187,7 +200,8 @@ const AdminFeedback = () => {
 
     return {
       total: entries.length,
-      anonymous: anonymousCount,
+      intern: internCount,
+      mentor: mentorCount,
       today: todayCount,
       topCategory,
     };
@@ -196,6 +210,7 @@ const AdminFeedback = () => {
   return (
     <AdminPortalShell title="Feedback" hideNav>
       <div className="mx-auto max-w-[1280px] text-white">
+        {/* ── Header ── */}
         <div className="mb-8 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.12),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-6 py-7 shadow-[0_18px_50px_rgba(0,0,0,0.22)]">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -203,11 +218,10 @@ const AdminFeedback = () => {
                 Admin Workspace / Feedback
               </p>
               <h1 className="text-3xl font-extrabold tracking-tight text-white">
-                Intern Feedback Monitor
+                Feedback Monitor
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-slate-300">
-                Review suggestions, issues, and anonymous submissions from the
-                intern portal in one place.
+                Review feedback from both interns and mentors. Filter by source, category, or search keywords.
               </p>
             </div>
 
@@ -216,46 +230,59 @@ const AdminFeedback = () => {
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#38bdf8]/25 bg-[#0ea5e9]/10 px-4 py-3 text-sm font-semibold text-[#bae6fd] transition-colors hover:bg-[#0ea5e9]/20"
             >
               <FiRefreshCw className="text-base" />
-              Refresh Feedback
+              Refresh
             </button>
           </div>
         </div>
 
+        {/* ── Stats Cards ── */}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
+              <FiLayers className="inline -mt-0.5 mr-1.5" />
               Total Entries
             </p>
             <p className="mt-3 text-3xl font-extrabold text-white">{stats.total}</p>
             <p className="mt-2 text-sm text-slate-300">
-              All feedback submitted by interns.
+              Combined feedback from all sources.
             </p>
           </div>
 
           <div className="rounded-[24px] border border-[#38bdf8]/15 bg-[#0ea5e9]/10 p-5 shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#bae6fd]/80">
-              Submitted Today
+              <FiCalendar className="inline -mt-0.5 mr-1.5" />
+              Today
             </p>
             <p className="mt-3 text-3xl font-extrabold text-white">{stats.today}</p>
             <p className="mt-2 text-sm text-[#e0f2fe]/80">
-              New feedback added in the current local day.
+              New feedback added today.
             </p>
           </div>
 
           <div className="rounded-[24px] border border-fuchsia-400/15 bg-fuchsia-500/10 p-5 shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-fuchsia-200/80">
-              Anonymous
+              <FiUsers className="inline -mt-0.5 mr-1.5" />
+              By Source
             </p>
-            <p className="mt-3 text-3xl font-extrabold text-white">
-              {stats.anonymous}
-            </p>
+            <div className="mt-3 flex items-baseline gap-3">
+              <div>
+                <span className="text-2xl font-extrabold text-white">{stats.intern}</span>
+                <span className="ml-1 text-xs font-semibold text-fuchsia-200/60">Intern</span>
+              </div>
+              <span className="text-slate-500">/</span>
+              <div>
+                <span className="text-2xl font-extrabold text-white">{stats.mentor}</span>
+                <span className="ml-1 text-xs font-semibold text-fuchsia-200/60">Mentor</span>
+              </div>
+            </div>
             <p className="mt-2 text-sm text-fuchsia-100/80">
-              Entries submitted without identity.
+              Breakdown by submission source.
             </p>
           </div>
 
           <div className="rounded-[24px] border border-emerald-400/15 bg-emerald-500/10 p-5 shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-200/80">
+              <FiTrendingUp className="inline -mt-0.5 mr-1.5" />
               Top Category
             </p>
             <p className="mt-3 text-xl font-extrabold text-white">
@@ -269,7 +296,41 @@ const AdminFeedback = () => {
           </div>
         </div>
 
+        {/* ── Source Tabs ── */}
+        <div className="mb-6 flex items-center gap-2">
+          {(["all", "intern", "mentor"] as FeedbackSource[]).map((src) => {
+            const label = src === "all" ? "All Feedback" : src === "intern" ? "Intern" : "Mentor";
+            const count =
+              src === "all"
+                ? entries.length
+                : entries.filter((e) => e.source === src).length;
+            const isActive = sourceFilter === src;
+            return (
+              <button
+                key={src}
+                onClick={() => setSourceFilter(src)}
+                className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition-all ${
+                  isActive
+                    ? "border-[#38bdf8]/30 bg-[#0ea5e9]/15 text-[#bae6fd] shadow-[0_4px_20px_rgba(14,165,233,0.15)]"
+                    : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/20 hover:text-slate-300"
+                }`}
+              >
+                {label}
+                <span
+                  className={`min-w-[22px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold ${
+                    isActive ? "bg-[#0ea5e9]/30 text-[#bae6fd]" : "bg-white/10 text-slate-500"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Main Grid ── */}
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          {/* Inbox */}
           <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.18)] lg:p-6">
             <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -277,7 +338,7 @@ const AdminFeedback = () => {
                   Feedback Inbox
                 </h2>
                 <p className="mt-1 text-sm text-slate-300">
-                  Filter and scan all submitted feedback.
+                  {filteredEntries.length} {filteredEntries.length === 1 ? "entry" : "entries"} found
                 </p>
               </div>
             </div>
@@ -298,21 +359,13 @@ const AdminFeedback = () => {
                 <select
                   value={categoryFilter}
                   onChange={(event) =>
-                    setCategoryFilter(
-                      event.target.value as "all" | FeedbackCategory
-                    )
+                    setCategoryFilter(event.target.value as "all" | FeedbackCategory)
                   }
                   className="w-full bg-transparent text-sm text-white outline-none"
                 >
-                  <option value="all" className="bg-[#10131b]">
-                    All Categories
-                  </option>
+                  <option value="all" className="bg-[#10131b]">All Categories</option>
                   {CATEGORY_META.map((category) => (
-                    <option
-                      key={category.value}
-                      value={category.value}
-                      className="bg-[#10131b]"
-                    >
+                    <option key={category.value} value={category.value} className="bg-[#10131b]">
                       {category.label}
                     </option>
                   ))}
@@ -320,25 +373,20 @@ const AdminFeedback = () => {
               </label>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
               {filteredEntries.length === 0 ? (
                 <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-black/10 px-6 text-center">
                   <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#38bdf8]/20 bg-[#0ea5e9]/10 text-[#bae6fd]">
                     <FiAlertCircle className="text-xl" />
                   </div>
-                  <p className="text-lg font-bold text-white">
-                    No matching feedback found
-                  </p>
+                  <p className="text-lg font-bold text-white">No matching feedback found</p>
                   <p className="mt-2 max-w-md text-sm text-slate-400">
-                    Try a different category or search term, or refresh to load
-                    the latest submissions.
+                    Try a different category, source, or search term.
                   </p>
                 </div>
               ) : (
                 filteredEntries.map((entry) => {
-                  const category = CATEGORY_META.find(
-                    (item) => item.value === entry.category
-                  );
+                  const category = CATEGORY_META.find((item) => item.value === entry.category);
                   const isActive = selectedEntry?.id === entry.id;
 
                   return (
@@ -360,12 +408,15 @@ const AdminFeedback = () => {
                               {category?.icon}
                               {category?.label}
                             </span>
-                            {entry.anonymous && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-2.5 py-1 text-[11px] font-bold text-fuchsia-200">
-                                <FiUser />
-                                Anonymous
-                              </span>
-                            )}
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold ${
+                                entry.source === "mentor"
+                                  ? "border-amber-400/20 bg-amber-500/10 text-amber-200"
+                                  : "border-[#38bdf8]/20 bg-[#0ea5e9]/10 text-[#bae6fd]"
+                              }`}
+                            >
+                              {entry.source === "mentor" ? "Mentor" : "Intern"}
+                            </span>
                           </div>
                           <h3 className="truncate text-base font-extrabold text-white">
                             {entry.subject}
@@ -386,12 +437,11 @@ const AdminFeedback = () => {
             </div>
           </section>
 
+          {/* Detail Panel */}
           <aside className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.18)] lg:p-6">
-            <h2 className="text-xl font-extrabold text-white">
-              Feedback Detail
-            </h2>
+            <h2 className="text-xl font-extrabold text-white">Feedback Detail</h2>
             <p className="mt-1 text-sm text-slate-300">
-              Open an item to review the full submission.
+              Select an item to review the full submission.
             </p>
 
             {!selectedEntry ? (
@@ -399,39 +449,32 @@ const AdminFeedback = () => {
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300">
                   <FiMessageCircle className="text-xl" />
                 </div>
-                <p className="text-lg font-bold text-white">
-                  No feedback selected
-                </p>
+                <p className="text-lg font-bold text-white">No feedback selected</p>
                 <p className="mt-2 max-w-sm text-sm text-slate-400">
                   Choose a submission from the inbox to inspect the full message.
                 </p>
               </div>
             ) : (
               <div className="mt-6 space-y-5">
+                {/* Meta */}
                 <div className="rounded-[24px] border border-white/10 bg-black/15 p-5">
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <span
                       className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold ${
-                        CATEGORY_META.find(
-                          (item) => item.value === selectedEntry.category
-                        )?.chipClass
+                        CATEGORY_META.find((item) => item.value === selectedEntry.category)?.chipClass
                       }`}
                     >
-                      {
-                        CATEGORY_META.find(
-                          (item) => item.value === selectedEntry.category
-                        )?.icon
-                      }
-                      {
-                        CATEGORY_META.find(
-                          (item) => item.value === selectedEntry.category
-                        )?.label
-                      }
+                      {CATEGORY_META.find((item) => item.value === selectedEntry.category)?.icon}
+                      {CATEGORY_META.find((item) => item.value === selectedEntry.category)?.label}
                     </span>
-                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300">
-                      {selectedEntry.anonymous
-                        ? "Submitted anonymously"
-                        : "Named submission"}
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold ${
+                        selectedEntry.source === "mentor"
+                          ? "border-amber-400/20 bg-amber-500/10 text-amber-200"
+                          : "border-[#38bdf8]/20 bg-[#0ea5e9]/10 text-[#bae6fd]"
+                      }`}
+                    >
+                      {selectedEntry.source === "mentor" ? "Mentor" : "Intern"}
                     </span>
                   </div>
 
@@ -444,6 +487,7 @@ const AdminFeedback = () => {
                   </p>
                 </div>
 
+                {/* Message */}
                 <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
                   <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
                     Message
@@ -453,22 +497,17 @@ const AdminFeedback = () => {
                   </p>
                 </div>
 
+                {/* Notes */}
                 <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
                   <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
                     Review Notes
                   </p>
                   <div className="space-y-2 text-sm text-slate-300">
                     <p>
-                      Use the category chip to understand whether this belongs to
-                      training, mentorship, environment, or technical workflows.
+                      Use the category and source chips to understand the context of this feedback.
                     </p>
                     <p>
-                      Anonymous entries hide the sender identity in the intern
-                      flow, but the content is still fully visible here.
-                    </p>
-                    <p>
-                      This page reads directly from the same browser storage used
-                      by the intern feedback form.
+                      This page aggregates feedback from both intern and mentor portals.
                     </p>
                   </div>
                 </div>
