@@ -1,4 +1,9 @@
-import { createHashRouter, Navigate, Outlet, useLocation } from "react-router-dom";
+import {
+  createHashRouter,
+  Navigate,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
 import { useEffect } from "react";
 
 // ScrollToTop wrapper
@@ -24,6 +29,7 @@ import AdminDashboard from "../screens/admin/AdminDashboard";
 import SendEmail from "../screens/admin/SendEmail";
 import Customers from "../screens/admin/User";
 import EmailHistory from "../screens/admin/EmailHistory";
+import AdminFeedback from "../screens/admin/AdminFeedback";
 
 // Intern
 import InternLayout from "../components/layout/InternLayout";
@@ -31,13 +37,14 @@ import InternDashboard from "../screens/intern/InternDashboard";
 import TasksPage from "../screens/intern/TasksPage";
 import MessagesPage from "../screens/intern/MessagesPage";
 import CalendarPage from "../screens/intern/CalendarPage";
+import InternFeedback from "../screens/intern/InternFeedback";
 
 // User
 import UserLayout from "../components/layout/UserLayout";
 import UserDashboard from "../screens/user/UserDashboard";
 import TestPage from "../screens/user/TestPage";
 import ResultPage from "../screens/user/ResultPage";
-import ProtectedRoute from "../components/ui/ProtectedRoute"; 
+import ProtectedRoute from "../components/ui/ProtectedRoute";
 import UserDetails from "../screens/auth/userDetails";
 import CodingTest from "../screens/user/CodingTestPage";
 
@@ -46,18 +53,16 @@ export const router = createHashRouter([
     path: "/",
     element: (
       <ProtectedRoute guestOnly>
-           <WelcomeScreen />
+        <WelcomeScreen />
       </ProtectedRoute>
-     
     ),
   },
   {
     path: "/login",
     element: (
-       <ProtectedRoute guestOnly>
-           <LoginScreen />
-      </ProtectedRoute> 
-     
+      <ProtectedRoute guestOnly>
+        <LoginScreen />
+      </ProtectedRoute>
     ),
   },
   { path: "/add-user", element: <AddUser /> },
@@ -67,9 +72,8 @@ export const router = createHashRouter([
     path: "/admin",
     element: (
       <ProtectedRoute role="1">
-          <ScrollToTopOutlet />
+        <ScrollToTopOutlet />
       </ProtectedRoute>
-      
     ),
     children: [
       { index: true, element: <Navigate to="portals" replace /> },
@@ -77,6 +81,7 @@ export const router = createHashRouter([
       { path: "intern-dashboard", element: <AdminInternDashboard /> },
       { path: "attendance-dashboard", element: <UserAttendanceDashboard /> },
       { path: "interview-dashboard", element: <InterviewDashboard /> },
+      { path: "feedback", element: <AdminFeedback /> },
       {
         path: "payment",
         element: <AdminLayout />,
@@ -95,9 +100,8 @@ export const router = createHashRouter([
     path: "/intern",
     element: (
       <ProtectedRoute role="2">
-          <InternLayout />
+        <InternLayout />
       </ProtectedRoute>
-      
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
@@ -105,6 +109,7 @@ export const router = createHashRouter([
       { path: "tasks", element: <TasksPage /> },
       { path: "messages", element: <MessagesPage /> },
       { path: "calendar", element: <CalendarPage /> },
+      { path: "feedback", element: <InternFeedback /> },
     ],
   },
 
@@ -112,9 +117,8 @@ export const router = createHashRouter([
     path: "/user",
     element: (
       <ProtectedRoute role="3">
-           <UserLayout key={window.location.pathname} />
+        <UserLayout key={window.location.pathname} />
       </ProtectedRoute>
-      
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
@@ -122,16 +126,13 @@ export const router = createHashRouter([
       { path: "test", element: <TestPage /> },
       { path: "result", element: <ResultPage /> },
       { path: "coding-test", element: <CodingTest /> },
-       { 
-    path:"userDetails", 
-    element:<UserDetails/>
-  },
+      {
+        path: "userDetails",
+        element: <UserDetails />,
+      },
     ],
-    
-
   },
 
- 
   {
     path: "*",
     element: <NotFound />,

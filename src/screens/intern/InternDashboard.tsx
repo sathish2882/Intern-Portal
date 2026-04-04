@@ -13,6 +13,7 @@ import {
   FiMoon,
   FiSunrise,
   FiZap,
+  FiAward,
 } from 'react-icons/fi'
 import { FaTasks } from 'react-icons/fa'
 
@@ -200,7 +201,7 @@ const InternDashboard = () => {
             <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
               <FiClock className="text-purple-600 text-base" />
             </div>
-            {taskStats.completionRate === 100 && <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">🎉</span>}
+            {taskStats.completionRate === 100 && <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-0.5"><FiAward className="text-xs" /> Done</span>}
           </div>
           <p className="text-xl lg:text-2xl font-extrabold">
             {taskStats.completionRate}<span className="text-sm font-bold text-mist ml-0.5">%</span>

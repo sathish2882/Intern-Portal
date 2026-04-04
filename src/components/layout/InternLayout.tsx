@@ -1,22 +1,18 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Outlet, useNavigate, useLocation, NavLink } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Button } from "antd";
 
 import { removeToken, removeUserType } from "../../utils/authCookies";
 import { getMeApi, logoutApi } from "../../services/authApi";
-import {
-  checkInApi,
-  checkOutApi,
-  userStatusApi,
-} from "../../services/attendanceApi";
+import { userStatusApi } from "../../services/attendanceApi";
 import { MdOutlineMenu } from "react-icons/md";
 
 import { CurrentUserProfile } from "../../types";
 import { capitalizeName } from "../../utils/formatName";
 import welcomeLogo from "../../assets/images/jpg/welcome-logo.jpg";
 import { IoTimeOutline } from "react-icons/io5";
-import { FaTasks } from "react-icons/fa";
+import { FaTasks} from "react-icons/fa";
+import { FiMessageSquare } from "react-icons/fi";
 
 const FALLBACK_USER = {
   name: "Intern",
@@ -52,6 +48,11 @@ const NAV_ITEMS = [
     label: "M-Guru Calendar",
     icon: <IoTimeOutline />,
   },
+  {
+    to: "/intern/feedback",
+    label: "Feedback",
+    icon: <FiMessageSquare />,
+  },
 ];
 
 const InternLayout = () => {
@@ -64,7 +65,6 @@ const InternLayout = () => {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [attendanceStatus, setAttendanceStatus] = useState<"IN" | "OUT">("OUT");
-  const [attendanceLoading, setAttendanceLoading] = useState(false);
 
   const lastPingRef = useRef(0);
 
@@ -116,42 +116,11 @@ const InternLayout = () => {
     };
   }, [profile]);
 
-  const handleAttendance = async () => {
-    if (attendanceLoading) return;
-
-    setAttendanceLoading(true);
-
-    try {
-      if (attendanceStatus === "OUT") {
-        await checkInApi();
-        setAttendanceStatus("IN");
-        localStorage.setItem("attendanceStatus", "IN");
-        window.dispatchEvent(new Event("attendanceUpdated"));
-        toast.success("Checked in successfully");
-      } else {
-        await checkOutApi();
-        setAttendanceStatus("OUT");
-        localStorage.setItem("attendanceStatus", "OUT");
-        window.dispatchEvent(new Event("attendanceUpdated"));
-        toast.success("Checked out successfully");
-      }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Attendance failed");
-    } finally {
-      setAttendanceLoading(false);
-    }
-  };
-
   const handleLogout = async () => {
     if (loggingOut) return;
     setLoggingOut(true);
 
     try {
-      if (attendanceStatus === "IN") {
-        await checkOutApi();
-        localStorage.setItem("attendanceStatus", "OUT");
-      }
-
       await logoutApi();
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || "Logout failed");
@@ -226,12 +195,20 @@ const InternLayout = () => {
             className={`flex items-center gap-2 ${compact ? "justify-center" : "px-1"}`}
           >
             <span className="inline-flex items-center w-[52px] h-[52px] justify-center rounded-xl bg-slate-100 overflow-hidden shadow-sm">
-              <img src={welcomeLogo} alt="Intern Logo" className="w-7 h-9 rounded" />
+              <img
+                src={welcomeLogo}
+                alt="Intern Logo"
+                className="w-7 h-9 rounded"
+              />
             </span>
             {!compact && (
               <div className="min-w-0">
-                <p className="font-syne font-extrabold text-xl text-navy leading-tight">M-Guru</p>
-                <p className="text-[11px] text-slate-500 font-medium">Intern Portal</p>
+                <p className="font-syne font-extrabold text-xl text-navy leading-tight">
+                  M-Guru
+                </p>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Intern Portal
+                </p>
               </div>
             )}
           </NavLink>
@@ -255,10 +232,16 @@ const InternLayout = () => {
                 }`
               }
             >
-              <span className={`w-5 text-center ${compact ? "text-[17px]" : "text-base"}`}>
+              <span
+                className={`w-5 text-center ${compact ? "text-[17px]" : "text-base"}`}
+              >
                 {item.icon}
               </span>
-              {!compact && <span className="text-sm font-semibold truncate">{item.label}</span>}
+              {!compact && (
+                <span className="text-sm font-semibold truncate">
+                  {item.label}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -281,8 +264,12 @@ const InternLayout = () => {
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-navy truncate">{user.name}</p>
-                  <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
+                  <p className="text-xs font-semibold text-navy truncate">
+                    {user.name}
+                  </p>
+                  <p className="text-[11px] text-slate-500 truncate">
+                    {user.email}
+                  </p>
                 </div>
               </div>
             )}
@@ -302,7 +289,12 @@ const InternLayout = () => {
               <div className="loader-btn loader-btn-sm" />
             ) : (
               <>
-                <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  width="15"
+                  height="15"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
                 </svg>
                 {!compact && <span>Sign Out</span>}
@@ -347,7 +339,12 @@ const InternLayout = () => {
               className="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
               aria-label="Open sidebar"
             >
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+              <svg
+                width="16"
+                height="16"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
               </svg>
             </button>
@@ -366,14 +363,17 @@ const InternLayout = () => {
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
-              <MdOutlineMenu className="w-5 h-5" /> 
+              <MdOutlineMenu className="w-5 h-5" />
             </button>
           </div>
 
           <div className="flex items-center gap-4">
-
             <div className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 cursor-pointer">
               <div className="w-8 h-8 rounded-full bg-blue text-white flex items-center justify-center text-xs font-bold">
                 {user.name.charAt(0).toUpperCase()}
