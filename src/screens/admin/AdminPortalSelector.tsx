@@ -5,11 +5,12 @@ import {
   TeamOutlined,
   ScheduleOutlined,
   AuditOutlined,
+  CommentOutlined
 } from "@ant-design/icons";
 
 const PORTALS = [
   {
-    title: "Assessment Dashboard",
+    title: "Interview Dashboard",
     route: "/admin/interview-dashboard",
     accent: "border-amber-400/20 bg-amber-500/10",
     icon: (
@@ -49,6 +50,17 @@ const PORTALS = [
       />
     ),
   },
+  {
+  title: "Feedback",
+  route: "/admin/feedback",
+  accent: "border-[#38bdf8]/20 bg-[#0ea5e9]/10",
+  icon: (
+    <CommentOutlined
+      style={{ fontSize: 28, color: "#38bdf8", marginBottom: 12 }}
+    />
+  ),
+}
+
 ];
 
 const AdminPortalSelector = () => {
@@ -70,7 +82,7 @@ const AdminPortalSelector = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {PORTALS.map((portal) => (
             <button
               key={portal.route}

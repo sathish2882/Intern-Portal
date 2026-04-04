@@ -29,6 +29,7 @@ import AdminDashboard from "../screens/admin/AdminDashboard";
 import SendEmail from "../screens/admin/SendEmail";
 import Customers from "../screens/admin/User";
 import EmailHistory from "../screens/admin/EmailHistory";
+import AdminFeedback from "../screens/admin/AdminFeedback";
 
 // Intern
 import InternLayout from "../components/layout/InternLayout";
@@ -80,6 +81,7 @@ export const router = createHashRouter([
       { path: "intern-dashboard", element: <AdminInternDashboard /> },
       { path: "attendance-dashboard", element: <UserAttendanceDashboard /> },
       { path: "interview-dashboard", element: <InterviewDashboard /> },
+      { path: "feedback", element: <AdminFeedback /> },
       {
         path: "payment",
         element: <AdminLayout />,
