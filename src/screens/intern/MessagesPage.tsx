@@ -1,12 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { getMeApi, getUserByBatchApi } from "../../services/authApi";
-import {
-  sendTelegramMessageApi,
-  getTelegramMessagesApi,
-  // TODO: Restore once backend /telegram/status is ready
-  // getTelegramStatusApi,
-} from "../../services/telegramApi";
+import chatSocket, { WsChatMessage } from "../../services/chatSocket";
 import {
   FiSearch,
   FiSend,
@@ -16,13 +11,11 @@ import {
   FiCheck,
   FiCheckCircle,
   FiMoreVertical,
-  FiLink,
-  FiExternalLink,
   FiRefreshCw,
+  FiMessageCircle,
   FiWifi,
   FiWifiOff,
 } from "react-icons/fi";
-import { FaTelegram } from "react-icons/fa";
 
 // ── Types ──────────────────────────────────────────
 interface BatchMember {
@@ -31,7 +24,6 @@ interface BatchMember {
   email: string;
   tech_stack: string | null;
   status?: number;
-  telegram_chat_id?: number | string | null;
 }
 
 interface ChatMessage {
@@ -42,7 +34,6 @@ interface ChatMessage {
   text: string;
   timestamp: number;
   status: "sending" | "sent" | "delivered" | "read" | "failed";
-  isTelegram: boolean;
 }
 
 type ChatType = "group" | "dm";
@@ -52,13 +43,10 @@ interface ChatTarget {
   id: string;
   name: string;
   member?: BatchMember;
-  telegramChatId?: number | string | null;
 }
 
 // ── Storage helpers (offline fallback) ─────────────
 const MSG_KEY = "intern_chat_messages";
-const TELEGRAM_LINKED_KEY = "intern_telegram_linked";
-const TELEGRAM_CHAT_ID_KEY = "intern_telegram_chat_id";
 
 const loadMessages = (): ChatMessage[] => {
   try {
@@ -125,18 +113,11 @@ const MessagesPage = () => {
   const [input, setInput] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [mobileShowChat, setMobileShowChat] = useState(false);
-  const [telegramLinked, setTelegramLinked] = useState(
-    () => localStorage.getItem(TELEGRAM_LINKED_KEY) === "true"
-  );
-  // TODO: Restore once backend is ready
-  // const [telegramConnecting, setTelegramConnecting] = useState(false);
-  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
   const [sendingMsg, setSendingMsg] = useState(false);
-  const [, setPollingActive] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Persist messages offline ──
   useEffect(() => {
@@ -167,16 +148,46 @@ const MessagesPage = () => {
     return () => window.removeEventListener("storage", handler);
   }, []);
 
-  // ── Check Telegram status ──
-  // TODO: Restore backend check once /telegram/status API is ready
-  const checkTelegramLink = useCallback(async (): Promise<boolean | null> => {
-    const localChatId = localStorage.getItem(TELEGRAM_CHAT_ID_KEY);
-    if (localChatId) {
-      setTelegramLinked(true);
-      localStorage.setItem(TELEGRAM_LINKED_KEY, "true");
-      return true;
-    }
-    return false;
+  // ── WebSocket connection & incoming messages ──
+  useEffect(() => {
+    chatSocket.connect();
+
+    const unsub = chatSocket.on((data: WsChatMessage) => {
+      if (data.type === "connected") {
+        setWsConnected(true);
+      } else if (data.type === "error") {
+        setWsConnected(false);
+      } else if (data.type === "new_message" && data.message) {
+        const incoming: ChatMessage = {
+          id: data.message.id,
+          chatId: data.message.chat_id,
+          senderId: data.message.sender_id,
+          senderName: data.message.sender_name,
+          text: data.message.text,
+          timestamp: new Date(data.message.timestamp).getTime(),
+          status: "delivered",
+        };
+        setMessages((prev) => {
+          if (prev.find((m) => m.id === incoming.id)) return prev;
+          return [...prev, incoming];
+        });
+        try {
+          channel?.postMessage({ type: "new_message", message: incoming });
+        } catch { /* ignore */ }
+      } else if (data.type === "message_sent" && data.message) {
+        // Confirm a message we sent
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === data.message!.id ? { ...m, status: "delivered" } : m
+          )
+        );
+      }
+    });
+
+    return () => {
+      unsub();
+      chatSocket.disconnect();
+    };
   }, []);
 
   // ── Load members ──
@@ -206,13 +217,9 @@ const MessagesPage = () => {
                 email: u.email ?? "",
                 tech_stack: u.tech_stack ?? null,
                 status: u.status,
-                telegram_chat_id: u.telegram_chat_id ?? null,
               }))
             : []
         );
-
-        // Check telegram link silently
-        checkTelegramLink();
       } catch (err: any) {
         console.error("Failed to load batch members:", err);
         toast.error("Failed to load batch members");
@@ -221,57 +228,7 @@ const MessagesPage = () => {
       }
     };
     load();
-  }, [checkTelegramLink]);
-
-  // ── Poll for new messages when chat is active & telegram linked ──
-  useEffect(() => {
-    if (!activeChat || !telegramLinked) {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-        setPollingActive(false);
-      }
-      return;
-    }
-
-    const poll = async () => {
-      try {
-        const chatId = activeChat.telegramChatId || activeChat.id;
-        const res = await getTelegramMessagesApi(chatId);
-        const incoming = res.data as any[];
-        if (Array.isArray(incoming) && incoming.length > 0) {
-          setMessages((prev) => {
-            const newMsgs: ChatMessage[] = incoming
-              .map((m: any) => ({
-                id: `tg_${m.message_id}`,
-                chatId: activeChat.id,
-                senderId: m.sender_id ?? 0,
-                senderName: m.sender_name ?? "Unknown",
-                text: m.text ?? "",
-                timestamp: new Date(m.timestamp).getTime(),
-                status: "delivered" as const,
-                isTelegram: true,
-              }))
-              .filter((nm) => !prev.find((p) => p.id === nm.id));
-            return newMsgs.length ? [...prev, ...newMsgs] : prev;
-          });
-          setPollingActive(true);
-        }
-      } catch {
-        // silently ignore poll errors
-      }
-    };
-
-    poll(); // immediate first poll
-    pollIntervalRef.current = setInterval(poll, 3000); // poll every 3s
-
-    return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-    };
-  }, [activeChat, telegramLinked]);
+  }, []);
 
   // ── Auto-scroll ──
   useEffect(() => {
@@ -291,7 +248,6 @@ const MessagesPage = () => {
         type: "group",
         id: makeGroupChatId(batchId),
         name: `Batch ${batchId} Group`,
-        telegramChatId: null,
       });
     }
 
@@ -304,7 +260,6 @@ const MessagesPage = () => {
             id: makeDmChatId(myUserId, m.user_id),
             name: m.username,
             member: m,
-            telegramChatId: m.telegram_chat_id,
           });
         }
       });
@@ -365,7 +320,6 @@ const MessagesPage = () => {
         text: text.trim(),
         timestamp: Date.now(),
         status: "sending",
-        isTelegram: telegramLinked,
       };
 
       setMessages((prev) => [...prev, msg]);
@@ -373,24 +327,25 @@ const MessagesPage = () => {
       setShowEmoji(false);
       setSendingMsg(true);
 
-      // Try sending via Telegram backend
-      const resolvedChatId = activeChat.telegramChatId || localStorage.getItem(TELEGRAM_CHAT_ID_KEY);
-      if (telegramLinked && resolvedChatId) {
-        try {
-          await sendTelegramMessageApi(resolvedChatId, text.trim());
+      // Send via WebSocket
+      if (chatSocket.isConnected) {
+        chatSocket.send({
+          type: "send_message",
+          chat_id: activeChat.id,
+          text: text.trim(),
+          sender_id: myUserId,
+          sender_name: myName,
+        });
+        // Status will update via "message_sent" WS event; fallback to "sent" after a brief delay
+        setTimeout(() => {
           setMessages((prev) =>
-            prev.map((m) => (m.id === msgId ? { ...m, status: "delivered" } : m))
+            prev.map((m) => (m.id === msgId && m.status === "sending" ? { ...m, status: "sent" } : m))
           );
-        } catch {
-          // Mark as sent locally even if Telegram fails
-          setMessages((prev) =>
-            prev.map((m) => (m.id === msgId ? { ...m, status: "sent" } : m))
-          );
-        }
+        }, 3000);
       } else {
-        // Offline/local mode — mark as delivered
+        // Offline — save locally and mark as sent
         setMessages((prev) =>
-          prev.map((m) => (m.id === msgId ? { ...m, status: "delivered" } : m))
+          prev.map((m) => (m.id === msgId ? { ...m, status: "sent" } : m))
         );
       }
 
@@ -402,7 +357,7 @@ const MessagesPage = () => {
         /* ignore */
       }
     },
-    [activeChat, myUserId, myName, telegramLinked]
+    [activeChat, myUserId, myName]
   );
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -469,30 +424,21 @@ const MessagesPage = () => {
         <div className="px-4 pt-4 pb-3 border-b border-line">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <FaTelegram className="text-[#0088cc] text-xl" />
+              <FiMessageCircle className="text-primary text-xl" />
               <h1 className="text-lg font-extrabold text-navy">Messages</h1>
             </div>
             <div className="flex items-center gap-1.5">
-              {/* Telegram status badge */}
+              {/* WebSocket status badge */}
               <div
                 className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${
-                  telegramLinked
+                  wsConnected
                     ? "bg-green-50 text-green-600"
                     : "bg-amber-50 text-amber-600"
                 }`}
               >
-                {telegramLinked ? <FiWifi className="text-[10px]" /> : <FiWifiOff className="text-[10px]" />}
-                {telegramLinked ? "Connected" : "Offline"}
+                {wsConnected ? <FiWifi className="text-[10px]" /> : <FiWifiOff className="text-[10px]" />}
+                {wsConnected ? "Connected" : "Offline"}
               </div>
-              {!telegramLinked && (
-                <button
-                  onClick={() => setShowLinkModal(true)}
-                  className="p-1.5 rounded-lg text-[#0088cc] hover:bg-sky transition-colors"
-                  title="Link Telegram"
-                >
-                  <FiLink className="text-sm" />
-                </button>
-              )}
             </div>
           </div>
 
@@ -503,7 +449,7 @@ const MessagesPage = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search conversations…"
-              className="w-full border border-line rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0088cc]/20 bg-lightbg"
+              className="w-full border border-line rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-lightbg"
             />
           </div>
         </div>
@@ -512,10 +458,10 @@ const MessagesPage = () => {
         <div className="flex-1 overflow-y-auto">
           {sortedChats.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-              <FaTelegram className="text-5xl text-[#0088cc]/20 mb-3" />
+              <FiMessageCircle className="text-5xl text-primary/20 mb-3" />
               <p className="text-sm text-mist">No conversations yet.</p>
               <p className="text-xs text-mist mt-1">
-                {telegramLinked ? "Start a chat with your batch mates." : "Link your Telegram to get started."}
+                Start a chat with your batch mates.
               </p>
             </div>
           ) : (
@@ -524,14 +470,12 @@ const MessagesPage = () => {
               const unread = unreadMap[chat.id] || 0;
               const isActive = activeChat?.id === chat.id;
               const initial = chat.type === "group" ? "G" : chat.name.charAt(0).toUpperCase();
-              const hasTelegram = chat.type === "group" || !!chat.telegramChatId;
-
               return (
                 <button
                   key={chat.id}
                   onClick={() => openChat(chat)}
                   className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors border-b border-line/50 ${
-                    isActive ? "bg-[#0088cc]/5" : "hover:bg-lightbg/60"
+                    isActive ? "bg-primary/5" : "hover:bg-lightbg/60"
                   }`}
                 >
                   {/* Avatar */}
@@ -539,7 +483,7 @@ const MessagesPage = () => {
                     <div
                       className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold ${
                         chat.type === "group"
-                          ? "bg-gradient-to-br from-[#0088cc] to-[#00b4d8]"
+                          ? "bg-gradient-to-br from-primary to-primary/80"
                           : "bg-gradient-to-br from-navy to-navy3"
                       }`}
                     >
@@ -548,12 +492,6 @@ const MessagesPage = () => {
                     {/* Online dot */}
                     {chat.member?.status === 1 && (
                       <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-                    )}
-                    {/* Telegram badge */}
-                    {hasTelegram && telegramLinked && (
-                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#0088cc] rounded-full flex items-center justify-center border border-white">
-                        <FaTelegram className="text-white text-[8px]" />
-                      </span>
                     )}
                   </div>
 
@@ -576,7 +514,7 @@ const MessagesPage = () => {
                           : chat.member?.tech_stack ?? "Start a conversation"}
                       </p>
                       {unread > 0 && (
-                        <span className="ml-2 min-w-[20px] h-5 flex items-center justify-center bg-[#0088cc] text-white text-[10px] font-bold rounded-full px-1.5">
+                            <span className="ml-2 min-w-[20px] h-5 flex items-center justify-center bg-primary text-white text-[10px] font-bold rounded-full px-1.5">
                           {unread}
                         </span>
                       )}
@@ -601,40 +539,32 @@ const MessagesPage = () => {
           /* Empty state */
           <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
             <div className="w-24 h-24 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center mb-5 shadow-sm">
-              <FaTelegram className="text-5xl text-[#0088cc]" />
+              <FiMessageCircle className="text-5xl text-primary" />
             </div>
             <h2 className="text-xl font-extrabold text-navy mb-2">M-Guru Chat</h2>
             <p className="text-sm text-slate max-w-sm mb-4">
-              Real-time messaging powered by Telegram. Send messages to your batch mates securely.
+              Real-time messaging with your batch mates. Select a conversation to get started.
             </p>
-            {!telegramLinked && (
-              <button
-                onClick={() => setShowLinkModal(true)}
-                className="flex items-center gap-2 bg-[#0088cc] hover:bg-[#006fa1] text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm"
-              >
-                <FaTelegram /> Connect Telegram
-              </button>
-            )}
             <div className="mt-6 flex flex-col gap-2 text-left max-w-xs">
               <div className="flex items-start gap-2.5 bg-white/60 backdrop-blur-sm rounded-xl px-4 py-3">
                 <span className="text-lg">🔐</span>
                 <div>
-                  <p className="text-xs font-bold text-navy">End-to-End Secure</p>
+                  <p className="text-xs font-bold text-navy">Secure</p>
                   <p className="text-[10px] text-slate">Messages routed through your backend</p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5 bg-white/60 backdrop-blur-sm rounded-xl px-4 py-3">
                 <span className="text-lg">⚡</span>
                 <div>
-                  <p className="text-xs font-bold text-navy">Real-time Notifications</p>
-                  <p className="text-[10px] text-slate">Get instant alerts on Telegram app</p>
+                  <p className="text-xs font-bold text-navy">Real-time</p>
+                  <p className="text-[10px] text-slate">Instant delivery via WebSocket</p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5 bg-white/60 backdrop-blur-sm rounded-xl px-4 py-3">
                 <span className="text-lg">📱</span>
                 <div>
                   <p className="text-xs font-bold text-navy">Cross-platform</p>
-                  <p className="text-[10px] text-slate">Chat from web, mobile, or desktop</p>
+                  <p className="text-[10px] text-slate">Chat from any device with a browser</p>
                 </div>
               </div>
             </div>
@@ -642,7 +572,7 @@ const MessagesPage = () => {
         ) : (
           <>
             {/* Chat header */}
-            <div className="flex items-center gap-3 px-4 py-3 bg-[#075e54] text-white">
+            <div className="flex items-center gap-3 px-4 py-3 bg-navy text-white">
               <button onClick={goBack} className="lg:hidden p-1.5 rounded-lg hover:bg-white/10 transition-colors">
                 <FiArrowLeft className="text-lg" />
               </button>
@@ -650,7 +580,7 @@ const MessagesPage = () => {
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
                   activeChat.type === "group"
-                    ? "bg-gradient-to-br from-[#0088cc] to-[#00b4d8]"
+                    ? "bg-gradient-to-br from-primary to-primary/80"
                     : "bg-white/20"
                 }`}
               >
@@ -665,7 +595,7 @@ const MessagesPage = () => {
                     : activeChat.member?.status === 1
                     ? "● Online"
                     : "Offline"}
-                  {telegramLinked && " · Telegram"}
+                  {wsConnected && " · Live"}
                 </p>
               </div>
 
@@ -673,10 +603,6 @@ const MessagesPage = () => {
                 <span className="text-[10px] font-bold text-white bg-white/15 px-2 py-0.5 rounded-full hidden sm:inline-block">
                   {activeChat.member.tech_stack}
                 </span>
-              )}
-
-              {telegramLinked && (
-                <FaTelegram className="text-xl text-white/60" title="Telegram connected" />
               )}
 
               <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
@@ -689,7 +615,7 @@ const MessagesPage = () => {
               {chatMessages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <div className="bg-white/70 backdrop-blur-sm rounded-xl px-5 py-4 shadow-sm">
-                    <FaTelegram className="text-3xl text-[#0088cc] mx-auto mb-2" />
+                    <FiMessageCircle className="text-3xl text-primary mx-auto mb-2" />
                     <p className="text-sm text-navy font-semibold">No messages yet</p>
                     <p className="text-xs text-slate mt-0.5">Send a message to start the conversation</p>
                   </div>
@@ -736,7 +662,7 @@ const MessagesPage = () => {
                           />
 
                           {showName && (
-                            <p className="text-[11px] font-bold text-[#0088cc] mb-0.5">{msg.senderName}</p>
+                            <p className="text-[11px] font-bold text-primary mb-0.5">{msg.senderName}</p>
                           )}
                           <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words pr-14">
                             {msg.text}
@@ -748,11 +674,11 @@ const MessagesPage = () => {
                                 {msg.status === "sending" ? (
                                   <FiRefreshCw className="text-[10px] text-slate/40 animate-spin" />
                                 ) : msg.status === "read" ? (
-                                  <FiCheckCircle className="text-[10px] text-[#0088cc]" />
+                                  <FiCheckCircle className="text-[10px] text-primary" />
                                 ) : msg.status === "delivered" ? (
                                   <span className="flex">
-                                    <FiCheck className="text-[10px] text-[#0088cc]" />
-                                    <FiCheck className="text-[10px] text-[#0088cc] -ml-1" />
+                                    <FiCheck className="text-[10px] text-primary" />
+                                    <FiCheck className="text-[10px] text-primary -ml-1" />
                                   </span>
                                 ) : msg.status === "failed" ? (
                                   <span className="text-[10px] text-red-500">!</span>
@@ -800,7 +726,7 @@ const MessagesPage = () => {
                 type="button"
                 onClick={() => setShowEmoji((v) => !v)}
                 className={`p-2.5 rounded-full transition-colors ${
-                  showEmoji ? "bg-[#0088cc]/10 text-[#0088cc]" : "text-[#54656f] hover:bg-white"
+                  showEmoji ? "bg-primary/10 text-primary" : "text-[#54656f] hover:bg-white"
                 }`}
               >
                 <FiSmile className="text-xl" />
@@ -812,13 +738,13 @@ const MessagesPage = () => {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Type a message"
                 maxLength={2000}
-                className="flex-1 bg-white border-none rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0088cc]/20 shadow-sm"
+                className="flex-1 bg-white border-none rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
               />
 
               <button
                 type="submit"
                 disabled={!input.trim() || sendingMsg}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-[#075e54] text-white hover:bg-[#064e46] disabled:opacity-30 transition-colors shadow-sm"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-navy text-white hover:bg-navy/90 disabled:opacity-30 transition-colors shadow-sm"
               >
                 <FiSend className="text-base" />
               </button>
@@ -827,93 +753,7 @@ const MessagesPage = () => {
         )}
       </div>
 
-      {/* ═══════ Telegram Link Modal ═══════ */}
-      {showLinkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fadeUp">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-12 h-12 rounded-full bg-[#0088cc]/10 flex items-center justify-center">
-                <FaTelegram className="text-2xl text-[#0088cc]" />
-              </div>
-              <div>
-                <h2 className="text-lg font-extrabold text-navy">Connect Telegram</h2>
-                <p className="text-xs text-slate">Link your Telegram account for real-time messaging</p>
-              </div>
-            </div>
 
-            <div className="space-y-4 mb-6">
-              <div className="flex items-start gap-3 bg-lightbg rounded-xl p-4">
-                <span className="w-7 h-7 rounded-full bg-[#0088cc] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">1</span>
-                <div>
-                  <p className="text-sm font-bold text-navy">Open Telegram</p>
-                  <p className="text-xs text-slate">Search for <strong>@MGuru_InternBot</strong></p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 bg-lightbg rounded-xl p-4">
-                <span className="w-7 h-7 rounded-full bg-[#0088cc] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">2</span>
-                <div>
-                  <p className="text-sm font-bold text-navy">Click Start</p>
-                  <p className="text-xs text-slate">Send <strong>/start</strong> to the bot</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 bg-lightbg rounded-xl p-4">
-                <span className="w-7 h-7 rounded-full bg-[#0088cc] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">3</span>
-                <div>
-                  <p className="text-sm font-bold text-navy">Link Account</p>
-                  <p className="text-xs text-slate">
-                    Send <strong>/link {myUserId}</strong> to connect your portal account
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 bg-lightbg rounded-xl p-4">
-                <span className="w-7 h-7 rounded-full bg-green-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">✓</span>
-                <div>
-                  <p className="text-sm font-bold text-navy">Done!</p>
-                  <p className="text-xs text-slate">Click "Verify Connection" below once linked</p>
-                </div>
-              </div>
-            </div>
-
-            <a
-              href="https://t.me/MGuru_InternBot"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full bg-[#0088cc] hover:bg-[#006fa1] text-white text-sm font-semibold py-3 rounded-lg transition-colors mb-3"
-            >
-              <FaTelegram className="text-lg" /> Open Bot in Telegram <FiExternalLink className="text-xs" />
-            </a>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowLinkModal(false)}
-                className="flex-1 text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  const fakeChatId = prompt("Enter your Telegram Chat ID (send /start to @MGuru_InternBot to get it):");
-                  if (fakeChatId && fakeChatId.trim()) {
-                    localStorage.setItem(TELEGRAM_CHAT_ID_KEY, fakeChatId.trim());
-                    localStorage.setItem(TELEGRAM_LINKED_KEY, "true");
-                    setTelegramLinked(true);
-                    setShowLinkModal(false);
-                    toast.success("Telegram connected successfully! 🎉");
-                  } else {
-                    toast.info("Connection cancelled. Enter a valid Chat ID to connect.");
-                  }
-                }}
-                className="flex-1 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 px-5 py-2.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-              >
-                <FiCheck /> Connect with Chat ID
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
