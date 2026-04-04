@@ -29,11 +29,11 @@ const ProtectedRoute = ({
   const userType = getUserType()
   const userId = getUserId()
 
-  // 🔥 EXAM USER CHECK
+  //  EXAM USER CHECK
   const isExamUserLoggedIn =
     userType === '3' && Boolean(userId)
 
-  // 🔥 FINAL LOGIN CHECK
+  //  FINAL LOGIN CHECK
   const isLoggedIn = Boolean(token) || isExamUserLoggedIn
 
   // 🔹 GUEST ONLY ROUTES (login page)

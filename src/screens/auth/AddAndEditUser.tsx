@@ -115,7 +115,7 @@ const AddUser = () => {
         toast.success("User added successfully");
       }
 
-      navigate("/admin/user-dashboard", { replace: true });
+      navigate("/admin/intern-dashboard", { replace: true });
     } catch (error: any) {
       const message = error?.response?.data?.detail || "Something went wrong";
       toast.error(message);
@@ -185,8 +185,9 @@ const AddUser = () => {
                     className="w-full h-[46px] rounded-[12px] bg-transparent border border-[#3b82f6] px-4 text-sm text-slate-900 outline-none transition-colors focus:border-[#3b82f6] focus:shadow-md cursor-pointer"
                   >
                     <option value="" disabled>Select role</option>
-                    <option value="Frontend">Frontend</option>
-                    <option value="Backend">Backend</option>
+                    <option value="React">React</option>
+                    <option value="Python">Python</option>
+                    <option value="IOT">IOT</option>
                     <option value="Others">Others</option>
                   </select>
                   <ErrorMessage name="roleType" component="p" className="text-red-400 text-[11px] mt-1" />
@@ -214,7 +215,7 @@ const AddUser = () => {
 
               <button
                 type="button"
-                onClick={() => navigate("/admin/user-dashboard")}
+                onClick={() => navigate("/admin/intern-dashboard")}
                 className="text-[#2563eb] text-sm hover:underline mx-auto"
               >
                 Back

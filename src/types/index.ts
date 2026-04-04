@@ -1,4 +1,3 @@
-
 // ── Auth ──────────────────────────────────────────
 export interface LoginPayload {
   email: string;
@@ -38,21 +37,15 @@ export interface CurrentUserProfile {
   created_by?: string;
 }
 
-
 // ── Customer ──────────────────────────────────────
 
 // Role options
-export type RoleType = 'Frontend' | 'Backend' | 'Others';
-
+export type RoleType = "Frontend" | "Backend" | "Others";
 
 // ── Email ──────────────────────────────────────────
-export type EmailType =
-  | 'invoice'
-  | 'reminder'
-  | 'confirmation'
-  | 'renewal';
+export type EmailType = "invoice" | "confirmation" | "reminder";
 
-export type EmailStatus = 'Sent' | 'Pending' | 'Failed';
+export type EmailStatus = "Sent" | "Pending" | "Failed";
 
 export interface EmailHistory {
   id: number;
@@ -64,7 +57,6 @@ export interface EmailHistory {
   status: EmailStatus;
 }
 
-
 // ── Test ──────────────────────────────────────────
 export interface Question {
   section: string;
@@ -73,15 +65,33 @@ export interface Question {
   ans: number;
 }
 
+export type CodingQuestion = {
+  id: number;
+  title: string;
+  difficulty: string;
+  description: string;
+  example: string;
+  testCases: { input: any; expected: any }[];
+};
+
 export interface TestData {
   title: string;
   subtitle: string;
   total: number;
   pass: number;
-  questions: Question[];
+  questions: Question[] ;
 }
 
-export type TestType = 'aptitude' | 'technical';
+export type CodingTestData = {
+  type: "coding";
+  title: string;
+  subtitle: string;
+  total: number;
+  pass: number;
+  questions: CodingQuestion[];
+};
+
+export type TestType = "aptitude" | "technical" | "coding";
 
 export interface TestResult {
   testType: TestType;
@@ -134,7 +144,6 @@ export interface TestState {
   error: string | null;
 }
 
-
 // ── Intern ────────────────────────────────────────
 export interface InternStep1 {
   fullName: string;
@@ -152,7 +161,6 @@ export interface InternStep3 {
   linkedIn: string;
   github: string;
 }
-
 
 // ── Signup ────────────────────────────────────────
 export interface SignupPayload {

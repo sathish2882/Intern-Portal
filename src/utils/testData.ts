@@ -1,4 +1,6 @@
-import { TestData, TestType } from '../types'
+import { CodingTestData, TestData, TestType } from '../types'
+import { CODING_TEST } from './codingTestData'
+import { CODING_SECTION_BREAKDOWN } from './codingTestData'
 
 export const APTITUDE_TEST: TestData = {
   title: 'Aptitude Test',
@@ -101,11 +103,18 @@ export const TEST_CONFIG = {
     durationSeconds: 30 * 60,
     route: '/user/test',
     resultRoute: '/user/result',
-  },
+  }, 
+  coding: {
+    data: CODING_TEST,
+    sectionBreakdown: CODING_SECTION_BREAKDOWN,
+    durationSeconds: 60 * 60,
+    route: '/user/coding-test',
+    resultRoute: '/user/result',
+  }
 } satisfies Record<
   TestType,
   {
-    data: TestData
+    data: TestData | CodingTestData
     sectionBreakdown: { name: string; total: number }[]
     durationSeconds: number
     route: string

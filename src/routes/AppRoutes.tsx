@@ -11,14 +11,15 @@ const ScrollToTopOutlet = () => {
 };
 import WelcomeScreen from "../screens/auth/WelcomeScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
-import AddUser from "../screens/auth/AddUser";
+import AddUser from "../screens/auth/AddAndEditUser";
+import NotFound from "../screens/NotFound";
 
 // Admin
 import AdminLayout from "../components/layout/AdminLayout";
 import AdminPortalSelector from "../screens/admin/AdminPortalSelector";
-import AdminUserDashboard from "../screens/admin/AdminUserDashboard";
+import AdminInternDashboard from "../screens/admin/AdminInternDashboard";
 import UserAttendanceDashboard from "../screens/admin/UserAttendanceDashboard";
-import InterviewDashboard from "../screens/admin/InterviewDashboard";
+import InterviewDashboard from "../screens/admin/AssesmentDashboard";
 import AdminDashboard from "../screens/admin/AdminDashboard";
 import SendEmail from "../screens/admin/SendEmail";
 import Customers from "../screens/admin/User";
@@ -27,6 +28,9 @@ import EmailHistory from "../screens/admin/EmailHistory";
 // Intern
 import InternLayout from "../components/layout/InternLayout";
 import InternDashboard from "../screens/intern/InternDashboard";
+import TasksPage from "../screens/intern/TasksPage";
+import MessagesPage from "../screens/intern/MessagesPage";
+import CalendarPage from "../screens/intern/CalendarPage";
 
 // User
 import UserLayout from "../components/layout/UserLayout";
@@ -35,6 +39,7 @@ import TestPage from "../screens/user/TestPage";
 import ResultPage from "../screens/user/ResultPage";
 import ProtectedRoute from "../components/ui/ProtectedRoute"; 
 import UserDetails from "../screens/auth/userDetails";
+import CodingTest from "../screens/user/CodingTestPage";
 
 export const router = createHashRouter([
   {
@@ -69,7 +74,7 @@ export const router = createHashRouter([
     children: [
       { index: true, element: <Navigate to="portals" replace /> },
       { path: "portals", element: <AdminPortalSelector /> },
-      { path: "user-dashboard", element: <AdminUserDashboard /> },
+      { path: "intern-dashboard", element: <AdminInternDashboard /> },
       { path: "attendance-dashboard", element: <UserAttendanceDashboard /> },
       { path: "interview-dashboard", element: <InterviewDashboard /> },
       {
@@ -97,6 +102,9 @@ export const router = createHashRouter([
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <InternDashboard /> },
+      { path: "tasks", element: <TasksPage /> },
+      { path: "messages", element: <MessagesPage /> },
+      { path: "calendar", element: <CalendarPage /> },
     ],
   },
 
@@ -113,6 +121,7 @@ export const router = createHashRouter([
       { path: "dashboard", element: <UserDashboard /> },
       { path: "test", element: <TestPage /> },
       { path: "result", element: <ResultPage /> },
+      { path: "coding-test", element: <CodingTest /> },
        { 
     path:"userDetails", 
     element:<UserDetails/>
@@ -125,6 +134,6 @@ export const router = createHashRouter([
  
   {
     path: "*",
-    element: <Navigate to="/" replace />,
+    element: <NotFound />,
   },
 ]);

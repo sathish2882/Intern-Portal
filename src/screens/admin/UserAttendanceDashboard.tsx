@@ -207,13 +207,13 @@ const UserAttendanceDashboard = () => {
       res?.data
 
     // ✅ TRANSFORM BACKEND → UI FORMAT
-    const normalized = Array.isArray(payload)
-      ? payload.map((item: any) => ({
-          login: item.check_in ?? null,
-          logout: item.check_out ?? null,
-          ideal_time: item.productive_minutes ?? null,
-        }))
-      : []
+   const normalized = Array.isArray(payload)
+  ? payload.map((item: any) => ({
+      login: item.check_in ?? null,
+      logout: item.check_out ?? null,
+      ideal_time: item.productive_minutes ?? null,
+    }))
+  : []
 
     setAttendanceDetails(normalized)
   } catch (error: any) {
@@ -372,8 +372,8 @@ const UserAttendanceDashboard = () => {
                   onClick={() =>
                     downloadExcel(
                       attendanceDetails.map((d) => ({
-                        Login: formatDateTime(d.login),
-                        Logout: formatDateTime(d.logout),
+                        Checkin: formatDateTime(d.login),
+                        checkout: formatDateTime(d.logout),
                         'Idle Time': formatHours(d.ideal_time),
                       })),
                       {

@@ -18,6 +18,7 @@ interface BatchUser {
   phone: string
   batch: string
   techStack: string
+  total_fee: number | null
 }
 
 const PAGE_SIZE = 10
@@ -66,6 +67,12 @@ const normalizeUsers = (payload: unknown, batchLabel?: string): BatchUser[] => {
 
       if (!Number.isFinite(rawId)) return null
 
+      let feeVal = null;
+      if (typeof user.total_fee === 'number') feeVal = user.total_fee;
+      else if (typeof user.fee === 'number') feeVal = user.fee;
+      else if (typeof user.total_fee === 'string' && user.total_fee.trim() !== '') feeVal = Number(user.total_fee);
+      else if (typeof user.fee === 'string' && user.fee.trim() !== '') feeVal = Number(user.fee);
+
       return {
         id: rawId,
         username: String(user.username ?? ''),
@@ -73,6 +80,7 @@ const normalizeUsers = (payload: unknown, batchLabel?: string): BatchUser[] => {
         phone: String(user.phone ?? user.phno ?? '-'),
         batch: String(user.batch ?? batchLabel ?? '-'),
         techStack: String(user.tech_stack ?? user.domain ?? '-'),
+        total_fee: Number.isFinite(feeVal) ? (feeVal as number) : null,
       }
     })
     .filter((user): user is BatchUser => Boolean(user))
@@ -108,7 +116,7 @@ const DeleteIcon = () => (
   </svg>
 )
 
-const AdminUserDashboard = () => {
+const AdminInternDashboard = () => {
   const navigate = useNavigate()
   const [batches, setBatches] = useState<BatchOption[]>([])
   const [selectedBatchId, setSelectedBatchId] = useState('all')
@@ -182,21 +190,21 @@ const AdminUserDashboard = () => {
 
   const stats = useMemo(() => {
     return [
-      { label: 'Visible Users', value: String(users.length), hint: selectedBatchId === 'all' ? `${selectedBatchLabel} - page ${page}` : selectedBatchLabel, valueClass: 'text-white' },
-      { label: 'Total Users', value: String(totalUsers), hint: 'Current filter count', valueClass: 'text-sky-300' },
+      { label: 'Visible Interns', value: String(users.length), hint: selectedBatchId === 'all' ? `${selectedBatchLabel} - page ${page}` : selectedBatchLabel, valueClass: 'text-white' },
+      { label: 'Total Interns', value: String(totalUsers), hint: 'Current filter count', valueClass: 'text-sky-300' },
     ]
   }, [page, selectedBatchId, selectedBatchLabel, totalUsers, users])
 
   const handleDeleteUser = async (user: BatchUser) => {
     if (deletingUserId !== null) return
 
-    const shouldDelete = window.confirm(`Delete user ${user.username} (#${user.id})?`)
+    const shouldDelete = window.confirm(`Delete intern ${user.username} (#${user.id})?`)
     if (!shouldDelete) return
 
     try {
       setDeletingUserId(user.id)
       await deleteUser(user.id)
-      toast.success('User deleted successfully')
+      toast.success('Intern deleted successfully')
 
       if (selectedBatchId === 'all') {
         const isLastItemOnPage = users.length === 1 && page > 1
@@ -251,7 +259,7 @@ const AdminUserDashboard = () => {
             </select>
           </div>
 
-          <Button onClick={() => navigate('/add-user')} className="self-start lg:self-auto" type="primary">
+          <Button onClick={() => navigate('/add-user')} className="self-start lg:self-auto !bg-blue font-bold" type="primary">
             Add Intern
           </Button>
         </div>
@@ -269,7 +277,7 @@ const AdminUserDashboard = () => {
         <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
           <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-sm font-bold">User Information</h2>
+              <h2 className="text-sm font-bold">Intern Information</h2>
               <p className="mt-1 text-xs text-slate-400">{selectedBatchLabel}</p>
             </div>
             <div className="text-xs text-slate-400">
@@ -280,7 +288,7 @@ const AdminUserDashboard = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  {['Username', 'Email', 'Batch', 'Phone', 'Tech Stack', 'View', 'Edit', 'Delete'].map((heading) => (
+                  {['Intern Name', 'Email', 'Batch', 'Phone', 'Tech Stack', 'View', 'Edit', 'Delete'].map((heading) => (
                     <th key={heading} className="text-left px-5 py-3 text-[11px] uppercase tracking-[0.14em] text-slate-400 font-medium">
                       {heading}
                     </th>
@@ -290,11 +298,11 @@ const AdminUserDashboard = () => {
               <tbody>
                 {loadingUsers ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-8 text-center text-sm text-slate-400">Loading users...</td>
+                    <td colSpan={8} className="px-5 py-8 text-center text-sm text-slate-400">Loading interns...</td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-8 text-center text-sm text-slate-400">No users found.</td>
+                    <td colSpan={8} className="px-5 py-8 text-center text-sm text-slate-400">No interns found.</td>
                   </tr>
                 ) : (
                   users.map((user) => {
@@ -348,7 +356,7 @@ const AdminUserDashboard = () => {
 
           {selectedBatchId === 'all' && (
             <div className="px-5 py-3 border-t border-white/10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-slate-400">Showing page {page} of {totalPages} for {totalUsers} users.</p>
+              <p className="text-xs text-slate-400">Showing page {page} of {totalPages} for {totalUsers} interns.</p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -391,11 +399,12 @@ const AdminUserDashboard = () => {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {[
                 { label: 'User ID', value: `#${selectedUser.id}` },
-                { label: 'Username', value: selectedUser.username },
+                { label: 'Name', value: selectedUser.username },
                 { label: 'Email', value: selectedUser.email },
                 { label: 'Batch', value: selectedUser.batch },
                 { label: 'Phone', value: selectedUser.phone },
                 { label: 'Tech Stack', value: selectedUser.techStack },
+                { label: 'Total Fee', value: selectedUser.total_fee ?? '-' },
               ].map((item) => (
                 <div key={item.label} className="rounded-xl border border-white/10 bg-white/5 p-4">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">{item.label}</p>
@@ -410,4 +419,4 @@ const AdminUserDashboard = () => {
   )
 }
 
-export default AdminUserDashboard
+export default AdminInternDashboard

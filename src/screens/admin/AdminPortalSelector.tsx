@@ -5,11 +5,12 @@ import {
   TeamOutlined,
   ScheduleOutlined,
   AuditOutlined,
+  CommentOutlined
 } from "@ant-design/icons";
 
 const PORTALS = [
   {
-    title: "Assesment Dashboard",
+    title: "Interview Dashboard",
     route: "/admin/interview-dashboard",
     accent: "border-amber-400/20 bg-amber-500/10",
     icon: (
@@ -21,7 +22,7 @@ const PORTALS = [
 
   {
     title: "Intern Dashboard",
-    route: "/admin/user-dashboard",
+    route: "/admin/intern-dashboard",
     accent: "border-red-400/30 bg-red-500/10",
     icon: (
       <TeamOutlined
@@ -49,6 +50,17 @@ const PORTALS = [
       />
     ),
   },
+  {
+  title: "Feedback",
+  route: "/admin/feedback",
+  accent: "border-[#38bdf8]/20 bg-[#0ea5e9]/10",
+  icon: (
+    <CommentOutlined
+      style={{ fontSize: 28, color: "#38bdf8", marginBottom: 12 }}
+    />
+  ),
+}
+
 ];
 
 const AdminPortalSelector = () => {
@@ -59,36 +71,40 @@ const AdminPortalSelector = () => {
       <div className="mx-auto max-w-[1200px]">
         <div className="mb-8 flex flex-col gap-3 rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] px-6 py-7 shadow-[0_18px_50px_rgba(0,0,0,0.22)]">
           <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-slate-400">
-            Control Center
+            Admin Workspace
           </p>
           <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="text-3xl font-extrabold tracking-tight text-white">
-                Select Workspace
+                Access Your Dashboard
               </h2>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {PORTALS.map((portal) => (
-          <button
-            key={portal.route}
-            onClick={() => navigate(portal.route)}
-            className={`group relative flex min-h-[220px] flex-col items-start overflow-hidden rounded-[26px] border p-6 text-left shadow-[0_18px_40px_rgba(0,0,0,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_24px_55px_rgba(0,0,0,0.24)] ${portal.accent}`}
-          >
-            <div className="mb-10 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-black/10 backdrop-blur-sm">
-              {portal.icon}
-            </div>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {PORTALS.map((portal) => (
+            <button
+              key={portal.route}
+              onClick={() => navigate(portal.route)}
+              className={`group relative flex min-h-[220px] flex-col items-start overflow-hidden rounded-[26px] border p-6 text-left shadow-[0_18px_40px_rgba(0,0,0,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_24px_55px_rgba(0,0,0,0.24)] ${portal.accent}`}
+            >
+              <div className="mb-10 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-black/10 backdrop-blur-sm">
+                {portal.icon}
+              </div>
 
-            <p className="mb-2 text-lg font-bold text-white">{portal.title}</p>
+              <p className="mb-2 text-lg font-bold text-white">
+                {portal.title}
+              </p>
 
-            <div className="mt-auto flex items-center gap-2 pt-6 text-sm font-semibold text-white">
-              <span>Go To Dashboard</span>
-              <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
-            </div>
-          </button>
-        ))}
+              <div className="mt-auto flex items-center gap-2 pt-6 text-sm font-semibold text-white">
+                <span>Go to Dashboard</span>
+                <span className="transition-transform duration-200 group-hover:translate-x-1">
+                  →
+                </span>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
     </AdminPortalShell>

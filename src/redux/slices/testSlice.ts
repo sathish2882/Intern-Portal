@@ -1,5 +1,11 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
-import { TestResult, TestState, TestType, BackendTestResult, UserProfile } from "../../types";
+import {
+  TestResult,
+  TestState,
+  TestType,
+  BackendTestResult,
+  UserProfile,
+} from "../../types";
 import { TEST_CONFIG } from "../../utils/testData";
 import { getTestStatusApi } from "../../services/testApi";
 
@@ -19,14 +25,14 @@ export const getResult = createAsyncThunk(
       console.error("❌ getResult Thunk Error:", error);
       return rejectWithValue(error?.message || "Failed to fetch test results");
     }
-  }
+  },
 );
 
 // ==============================
 // ✅ INITIAL STATE CREATOR
 // ==============================
 const createInitialState = (
-  testType: TestType = DEFAULT_TEST_TYPE
+  testType: TestType = DEFAULT_TEST_TYPE,
 ): TestState => {
   const config = TEST_CONFIG[testType];
 
@@ -54,20 +60,17 @@ interface SelectAnswerPayload {
 const initialState: TestState = createInitialState();
 
 // ==============================
-// ✅ SLICE
+// SLICE
 // ==============================
 const testSlice = createSlice({
   name: "test",
   initialState,
   reducers: {
     // ==========================
-    // ✅ START TEST
+    // START TEST
     // ==========================
     startTest: (state, action: PayloadAction<TestType | undefined>) => {
       const testType = action.payload ?? DEFAULT_TEST_TYPE;
-
-      // 🔥 prevent retake if already completed
-      if (state.resultsByType[testType]) return;
 
       Object.assign(state, createInitialState(testType), {
         testStarted: true,
@@ -75,7 +78,7 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ RESTART TEST
+    // RESTART TEST
     // ==========================
     restartTest: (state, action: PayloadAction<TestType | undefined>) => {
       const testType =
@@ -85,20 +88,19 @@ const testSlice = createSlice({
 
       Object.assign(state, createInitialState(testType), {
         testStarted: true,
-        resultsByType: previousResults, // 🔥 keep previous results
+        resultsByType: previousResults, // keep previous results
       });
     },
 
     // ==========================
-    // ✅ ANSWER SELECT
+    // ANSWER SELECT
     // ==========================
     selectAnswer: (state, action: PayloadAction<SelectAnswerPayload>) => {
-      state.answers[action.payload.questionIndex] =
-        action.payload.answer;
+      state.answers[action.payload.questionIndex] = action.payload.answer;
     },
 
     // ==========================
-    // ✅ NAVIGATION
+    // NAVIGATION
     // ==========================
     goToQuestion: (state, action: PayloadAction<number>) => {
       state.currentQuestion = action.payload;
@@ -119,7 +121,7 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ TIMER
+    // TIMER
     // ==========================
     tickTimer: (state) => {
       if (state.timeLeft > 0) {
@@ -128,37 +130,32 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ SUBMIT TEST (MAIN)
+    // SUBMIT TEST (MAIN)
     // ==========================
     submitTest: (state, action: PayloadAction<TestResult>) => {
       state.testSubmitted = true;
       state.testStarted = false;
       state.result = action.payload;
 
-      // 🔥 store per test result
-      state.resultsByType[action.payload.testType] =
-        action.payload;
+      // store per test result
+      state.resultsByType[action.payload.testType] = action.payload;
     },
 
     // ==========================
-    // ✅ ASYNC STATES (OPTIONAL)
+    // ASYNC STATES (OPTIONAL)
     // ==========================
     submitTestStart: (state) => {
       state.loading = true;
       state.error = null;
     },
 
-    submitTestSuccess: (
-      state,
-      action: PayloadAction<TestResult>
-    ) => {
+    submitTestSuccess: (state, action: PayloadAction<TestResult>) => {
       state.loading = false;
       state.testSubmitted = true;
       state.testStarted = false;
       state.result = action.payload;
 
-      state.resultsByType[action.payload.testType] =
-        action.payload;
+      state.resultsByType[action.payload.testType] = action.payload;
     },
 
     submitTestFailure: (state, action: PayloadAction<string>) => {
@@ -167,18 +164,20 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ SYNC FROM BACKEND (🔥 NEW)
+    // SYNC FROM BACKEND (NEW)
     // ==========================
     syncResultsFromBackend: (
       state,
       action: PayloadAction<{
         aptitude_score: number;
         technical_score: number;
-      }>
+      }>,
     ) => {
       const { aptitude_score, technical_score } = action.payload;
 
-      if (aptitude_score > 0) {
+      state.resultsByType = {}; // CLEAR OLD DATA FIRST
+
+      if (aptitude_score != null) {
         state.resultsByType["aptitude"] = {
           testType: "aptitude",
           correct: aptitude_score,
@@ -190,7 +189,7 @@ const testSlice = createSlice({
         };
       }
 
-      if (technical_score > 0) {
+      if (technical_score != null) {
         state.resultsByType["technical"] = {
           testType: "technical",
           correct: technical_score,
@@ -204,15 +203,15 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ RESET TEST
+    // RESET TEST
     // ==========================
     resetTest: (state) => {
       Object.assign(state, {
         ...createInitialState(state.activeTestType),
-        resultsByType: state.resultsByType, // 🔥 keep results
+        resultsByType: state.resultsByType, // keep results
         result: state.result,
         testSubmitted: state.testSubmitted,
-        backendResult: state.backendResult, // 🔥 keep backend result
+        backendResult: state.backendResult, // backend result
       });
     },
 
@@ -225,7 +224,7 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ CLEAR ALL TEST DATA (FOR LOGOUT)
+    //  CLEAR ALL TEST DATA (FOR LOGOUT)
     // ==========================
     clearTestData: (state) => {
       Object.assign(state, createInitialState());
@@ -234,25 +233,27 @@ const testSlice = createSlice({
   },
 
   // ==============================
-  // ✅ EXTRA REDUCERS - HANDLE THUNK
+  // EXTRA REDUCERS - HANDLE THUNK
   // ==============================
   extraReducers: (builder) => {
     builder
-      // 🔥 Pending
+      // Pending
       .addCase(getResult.pending, (state) => {
         state.loading = true;
         state.error = null;
-        console.log("⏳ getResult: Loading...");
+        console.log("getResult: Loading...");
       })
-      // 🔥 Fulfilled
+      // Fulfilled
       .addCase(getResult.fulfilled, (state, action) => {
         state.loading = false;
-        state.backendResult = action.payload; // 🔥 Store backend result in Redux
-        
-        // 🔥 SYNC: Update resultsByType so UI displays completed tests
+        state.backendResult = action.payload; // Store backend result in Redux
+
+        // SYNC: Update resultsByType so UI displays completed tests
         const { aptitude_score, technical_score } = action.payload;
-        
-        if (aptitude_score > 0 && !state.resultsByType["aptitude"]) {
+
+        state.resultsByType = {}; // VERY IMPORTANT (clear old data)
+
+        if (aptitude_score != null) {
           state.resultsByType["aptitude"] = {
             testType: "aptitude",
             correct: aptitude_score,
@@ -263,8 +264,8 @@ const testSlice = createSlice({
             timeTaken: "",
           };
         }
-        
-        if (technical_score > 0 && !state.resultsByType["technical"]) {
+
+        if (technical_score != null) {
           state.resultsByType["technical"] = {
             testType: "technical",
             correct: technical_score,
@@ -275,10 +276,13 @@ const testSlice = createSlice({
             timeTaken: "",
           };
         }
-        
-        console.log("✅ getResult: Success + Synced to resultsByType", action.payload);
+
+        console.log(
+          "getResult: Success + Synced to resultsByType",
+          action.payload,
+        );
       })
-      // 🔥 Rejected
+      // Rejected
       .addCase(getResult.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
@@ -288,7 +292,7 @@ const testSlice = createSlice({
 });
 
 // ==============================
-// ✅ EXPORTS
+// EXPORTS
 // ==============================
 export const {
   startTest,

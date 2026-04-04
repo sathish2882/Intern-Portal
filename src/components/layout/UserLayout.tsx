@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ReadOutlined } from '@ant-design/icons'
+
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { capitalizeName } from '../../utils/formatName'
@@ -7,6 +7,7 @@ import { capitalizeName } from '../../utils/formatName'
 import { useAppDispatch } from '../../redux/hooks'
 import { clearTestData, setCurrentUser } from '../../redux/slices/testSlice'
 import { getUserByIdApi, examLogoutApi } from '../../services/authApi'
+import welcomeLogo from "../../assets/images/jpg/welcome-logo.jpg";
 
 import {
   getUserId,
@@ -21,7 +22,7 @@ const UserLayout = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
 
-  // ✅ Scroll to top on route change
+  // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [location.pathname])
@@ -31,7 +32,7 @@ const UserLayout = () => {
 
   const showAssessmentHeader = location.pathname === '/user/dashboard'
 
-  // 🔥 LOAD USER (ONLY EXAM USER FLOW)
+  // LOAD USER (ONLY EXAM USER FLOW)
   useEffect(() => {
   const loadUser = async () => {
     const userId = getUserId()
@@ -55,7 +56,7 @@ const UserLayout = () => {
         email: userEmail,
       })
 
-      // 🔥 Store user info in Redux for access in UserDashboard
+      // Store user info in Redux for access in UserDashboard
       dispatch(setCurrentUser({ name: userName, email: userEmail }))
     } catch (error: any) {
       console.error('Failed to load user:', error)
@@ -64,8 +65,8 @@ const UserLayout = () => {
   }
 
   loadUser()
-}, [location.pathname]) // 🔥 IMPORTANT
-  // 🔥 LOGOUT
+}, [location.pathname]) // IMPORTANT
+  // LOGOUT
   const handleLogout = async () => {
     if (loggingOut) return
 
@@ -80,10 +81,10 @@ const UserLayout = () => {
       console.error('Logout failed:', error)
       toast.error(error?.response?.data?.detail || 'Logout failed')
     } finally {
-      // 🔥 Clear test data from Redux
+      // Clear test data from Redux
       dispatch(clearTestData())
       
-      // 🔥 Clear test data from localStorage
+      // Clear test data from localStorage
       localStorage.removeItem('redux-test-state')
       console.log("🧹 Cleared test data on logout")
 
@@ -105,9 +106,13 @@ const UserLayout = () => {
           
           {/* LEFT */}
           <div className="flex items-center gap-2.5">
-            <div className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-blue text-[17px] text-white">
-              <ReadOutlined />
-            </div>
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-text overflow-hidden">
+                            <img
+                              src={welcomeLogo}
+                              alt="Admin Logo"
+                              className=" w-8 h-10"
+                            />
+                          </span>
             <span className="hidden text-[17px] font-extrabold text-navy sm:block">
               Assessment Portal
             </span>
@@ -133,7 +138,7 @@ const UserLayout = () => {
             <button
               onClick={handleLogout}
               disabled={loggingOut}
-              className="flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-[13px] font-semibold text-slate transition-all hover:border-danger hover:bg-red-50 hover:text-danger lg:px-4"
+              className="flex h-[36px] items-center gap-2 rounded-lg bg-red-500 px-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-red-600 active:scale-95"
             >
               <span className="flex min-h-5 min-w-[72px] items-center justify-center gap-1.5">
                 {loggingOut ? (
