@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Input, Button } from "antd";
-import intern from "../../assets/images/png/Welcome to M-Intern illustration.png";
+import intern from "../../assets/images/png/Welcome to M-Guru illustration.png";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -42,7 +42,9 @@ function UserDetails() {
         });
       } catch (error: any) {
         console.error(error);
-        toast.error(error?.response?.data?.detail || "Failed to load user details");
+        toast.error(
+          error?.response?.data?.detail || "Failed to load user details",
+        );
       }
     };
 
@@ -62,7 +64,7 @@ function UserDetails() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-indigo-100 to-purple-200 p-4">
       <div className="flex flex-col md:flex-row w-full max-w-[900px] md:h-[540px] rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_rgba(0,0,0,0.15)] transition-all duration-300">
         {/* LEFT */}
         <div className="w-full md:w-1/2 bg-gradient-to-br from-[#0f0f0f] to-[#1a1a1a] flex flex-col justify-center px-6 sm:px-12 py-8 sm:py-10 text-white user-form">

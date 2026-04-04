@@ -7,6 +7,7 @@ import {
   FaCheckCircle,
   FaClock,
   FaTrophy,
+  FaCogs 
 } from "react-icons/fa";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { startTest, getResult } from "../../redux/slices/testSlice";
@@ -31,9 +32,16 @@ const ASSESSMENTS: {
     id: "technical",
     name: TEST_CONFIG.technical.data.title,
     meta: `${TEST_CONFIG.technical.data.total} Qs · 30 min · Medium`,
-    icon: <FaCode className="w-5 h-5 text-blue" />,
+    icon: <FaCogs className="w-5 h-5 text-blue" />,
     active: true,
   },
+    {
+    id: "coding",
+    name: TEST_CONFIG.coding.data.title,
+    meta: `${TEST_CONFIG.coding.data.total} Qs · 60 min · Medium`,
+    icon: <FaCode className="w-5 h-5 text-blue" />,
+    active: true,
+  },  
 ];
 
 const UserDashboard = () => {
@@ -80,6 +88,10 @@ const UserDashboard = () => {
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleStart = (testType: TestType) => {
+    if (testType === "coding") {
+      navigate("/user/coding-test");
+      return null;
+    }
     dispatch(startTest(testType));
     navigate("/user/test");
   };
@@ -192,12 +204,29 @@ const UserDashboard = () => {
                 {ASSESSMENTS.map((a) => {
                   // Per-row: did THIS specific test get attempted?
                   const isAttempted =
-                    a.id === "aptitude" ? hasAptitude : hasTechnical;
+                    a.id === "aptitude"
+                      ? hasAptitude
+                      : a.id === "technical"
+                        ? hasTechnical
+                        : false;
                   let displayStatus: "Completed" | "Attempted" | "New" = "New";
                   let displayProgress = 0;
                   let actionButton = null;
-                  // Scenario 3: Both done
-                  if (isCompleted) {
+
+                  // Coding test should stay startable independently.
+                  if (a.id === "coding") {
+                    displayStatus = "New";
+                    displayProgress = 0;
+                    actionButton = (
+                      <button
+                        onClick={() => handleStart(a.id)}
+                        className="border flex items-center gap-1 border-blue rounded-lg px-3 py-1.5 text-xs font-bold text-blue hover:bg-sky hover:border-blue transition-all"
+                      >
+                        Start <span>-&gt;</span>
+                      </button>
+                    );
+                  } else if (isCompleted) {
+                    // Scenario 3: Both done
                     displayStatus = "Completed";
                     displayProgress = 100;
                     actionButton = (

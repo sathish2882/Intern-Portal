@@ -50,7 +50,7 @@ const AdminLayout = () => {
   const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
-  // ✅ Scroll to top on route change
+  //Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);

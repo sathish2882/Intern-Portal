@@ -28,6 +28,9 @@ import EmailHistory from "../screens/admin/EmailHistory";
 // Intern
 import InternLayout from "../components/layout/InternLayout";
 import InternDashboard from "../screens/intern/InternDashboard";
+import TasksPage from "../screens/intern/TasksPage";
+import MessagesPage from "../screens/intern/MessagesPage";
+import CalendarPage from "../screens/intern/CalendarPage";
 
 // User
 import UserLayout from "../components/layout/UserLayout";
@@ -36,6 +39,7 @@ import TestPage from "../screens/user/TestPage";
 import ResultPage from "../screens/user/ResultPage";
 import ProtectedRoute from "../components/ui/ProtectedRoute"; 
 import UserDetails from "../screens/auth/userDetails";
+import CodingTest from "../screens/user/CodingTestPage";
 
 export const router = createHashRouter([
   {
@@ -98,6 +102,9 @@ export const router = createHashRouter([
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <InternDashboard /> },
+      { path: "tasks", element: <TasksPage /> },
+      { path: "messages", element: <MessagesPage /> },
+      { path: "calendar", element: <CalendarPage /> },
     ],
   },
 
@@ -114,6 +121,7 @@ export const router = createHashRouter([
       { path: "dashboard", element: <UserDashboard /> },
       { path: "test", element: <TestPage /> },
       { path: "result", element: <ResultPage /> },
+      { path: "coding-test", element: <CodingTest /> },
        { 
     path:"userDetails", 
     element:<UserDetails/>

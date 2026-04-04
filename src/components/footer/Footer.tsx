@@ -7,11 +7,16 @@ import Fevicon from "../../assets/images/png/fevicon.png";
 function Footer() {
   return (
     <footer className="w-full rounded-tl-3xl rounded-tr-3xl">
-      <div className="w-full bg-[#ffffff] text-white py-6 flex flex-col items-center justify-center text-center rounded-tl-3xl rounded-tr-3xl">
+      <div className="w-full bg-[#ffffff] text-white py-6 flex flex-col items-center justify-center text-center rounded-tl-3xl rounded-tr-3xl gap-3">
         <div className="w-full px-4 flex flex-col md:flex-row items-center justify-center">
           <div className="flex space-x-4 items-center mb-4 md:mb-0">
-            <a href="https://www.mguru.org/" target="_blank" rel="noopener noreferrer" className="h-[40px] w-[40px] text-white hover:text-red-600 transition-colors rounded-full p-2 mb-3">
-                <img src={Fevicon} alt="website" />
+            <a
+              href="https://www.mguru.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-[40px] w-[40px] text-white hover:text-red-600 transition-colors rounded-full p-2 mb-3"
+            >
+              <img src={Fevicon} alt="website" />
             </a>
             <a
               href="https://www.facebook.com/profile.php?id=61560348459686"
@@ -47,20 +52,15 @@ function Footer() {
             </a>
           </div>
         </div>
-        <div className="flex space-x-6 my-1">
-          <p className="cursor-pointer text-[#000000] hover:text-[#1e3a8a] text-md">
-            Careers
-          </p>
-          <p className="cursor-pointer text-[#000000] hover:text-[#1e3a8a] text-md">
-            Privacy Statement
-          </p>
-          <p className="cursor-pointer text-[#000000] hover:text-[#1e3a8a] text-md">
-            Terms of Use
-          </p>
-        </div>
 
-        <p className="text-[#000000] text-md">By using this site, you agree that we can place cookies on your device. See <a href="https://www.mguru.org/" className="text-[#1e3a8a] hover:underline">Privacy Statement</a> for more details.</p>
-        <p className="text-gray-500 font-medium  text-lg">Copyright © {new Date().getFullYear()} Velava Foundation. All Rights Reserved.</p>
+        <p className="text-[#000000] text-lg font-400">
+          By using this website, you consent to the use of cookies to enhance
+          your browsing experience and provide better services.
+        </p>
+
+        <p className="text-gray-500 font-medium  text-lg">
+          Copyright © 2025 Velava Foundation. All Rights Reserved.
+        </p>
       </div>
     </footer>
   );

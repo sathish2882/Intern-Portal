@@ -60,14 +60,14 @@ interface SelectAnswerPayload {
 const initialState: TestState = createInitialState();
 
 // ==============================
-// ✅ SLICE
+// SLICE
 // ==============================
 const testSlice = createSlice({
   name: "test",
   initialState,
   reducers: {
     // ==========================
-    // ✅ START TEST
+    // START TEST
     // ==========================
     startTest: (state, action: PayloadAction<TestType | undefined>) => {
       const testType = action.payload ?? DEFAULT_TEST_TYPE;
@@ -78,7 +78,7 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ RESTART TEST
+    // RESTART TEST
     // ==========================
     restartTest: (state, action: PayloadAction<TestType | undefined>) => {
       const testType =
@@ -88,19 +88,19 @@ const testSlice = createSlice({
 
       Object.assign(state, createInitialState(testType), {
         testStarted: true,
-        resultsByType: previousResults, // 🔥 keep previous results
+        resultsByType: previousResults, // keep previous results
       });
     },
 
     // ==========================
-    // ✅ ANSWER SELECT
+    // ANSWER SELECT
     // ==========================
     selectAnswer: (state, action: PayloadAction<SelectAnswerPayload>) => {
       state.answers[action.payload.questionIndex] = action.payload.answer;
     },
 
     // ==========================
-    // ✅ NAVIGATION
+    // NAVIGATION
     // ==========================
     goToQuestion: (state, action: PayloadAction<number>) => {
       state.currentQuestion = action.payload;
@@ -121,7 +121,7 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ TIMER
+    // TIMER
     // ==========================
     tickTimer: (state) => {
       if (state.timeLeft > 0) {
@@ -130,19 +130,19 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ SUBMIT TEST (MAIN)
+    // SUBMIT TEST (MAIN)
     // ==========================
     submitTest: (state, action: PayloadAction<TestResult>) => {
       state.testSubmitted = true;
       state.testStarted = false;
       state.result = action.payload;
 
-      // 🔥 store per test result
+      // store per test result
       state.resultsByType[action.payload.testType] = action.payload;
     },
 
     // ==========================
-    // ✅ ASYNC STATES (OPTIONAL)
+    // ASYNC STATES (OPTIONAL)
     // ==========================
     submitTestStart: (state) => {
       state.loading = true;
@@ -164,7 +164,7 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ SYNC FROM BACKEND (🔥 NEW)
+    // SYNC FROM BACKEND (NEW)
     // ==========================
     syncResultsFromBackend: (
       state,
@@ -175,7 +175,7 @@ const testSlice = createSlice({
     ) => {
       const { aptitude_score, technical_score } = action.payload;
 
-      state.resultsByType = {}; // 🔥 CLEAR OLD DATA FIRST
+      state.resultsByType = {}; // CLEAR OLD DATA FIRST
 
       if (aptitude_score != null) {
         state.resultsByType["aptitude"] = {
@@ -203,15 +203,15 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ RESET TEST
+    // RESET TEST
     // ==========================
     resetTest: (state) => {
       Object.assign(state, {
         ...createInitialState(state.activeTestType),
-        resultsByType: state.resultsByType, // 🔥 keep results
+        resultsByType: state.resultsByType, // keep results
         result: state.result,
         testSubmitted: state.testSubmitted,
-        backendResult: state.backendResult, // 🔥 keep backend result
+        backendResult: state.backendResult, // backend result
       });
     },
 
@@ -224,7 +224,7 @@ const testSlice = createSlice({
     },
 
     // ==========================
-    // ✅ CLEAR ALL TEST DATA (FOR LOGOUT)
+    //  CLEAR ALL TEST DATA (FOR LOGOUT)
     // ==========================
     clearTestData: (state) => {
       Object.assign(state, createInitialState());
@@ -233,25 +233,25 @@ const testSlice = createSlice({
   },
 
   // ==============================
-  // ✅ EXTRA REDUCERS - HANDLE THUNK
+  // EXTRA REDUCERS - HANDLE THUNK
   // ==============================
   extraReducers: (builder) => {
     builder
-      // 🔥 Pending
+      // Pending
       .addCase(getResult.pending, (state) => {
         state.loading = true;
         state.error = null;
-        console.log("⏳ getResult: Loading...");
+        console.log("getResult: Loading...");
       })
-      // 🔥 Fulfilled
+      // Fulfilled
       .addCase(getResult.fulfilled, (state, action) => {
         state.loading = false;
-        state.backendResult = action.payload; // 🔥 Store backend result in Redux
+        state.backendResult = action.payload; // Store backend result in Redux
 
-        // 🔥 SYNC: Update resultsByType so UI displays completed tests
+        // SYNC: Update resultsByType so UI displays completed tests
         const { aptitude_score, technical_score } = action.payload;
 
-        state.resultsByType = {}; // 🔥 VERY IMPORTANT (clear old data)
+        state.resultsByType = {}; // VERY IMPORTANT (clear old data)
 
         if (aptitude_score != null) {
           state.resultsByType["aptitude"] = {
@@ -278,11 +278,11 @@ const testSlice = createSlice({
         }
 
         console.log(
-          "✅ getResult: Success + Synced to resultsByType",
+          "getResult: Success + Synced to resultsByType",
           action.payload,
         );
       })
-      // 🔥 Rejected
+      // Rejected
       .addCase(getResult.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
@@ -292,7 +292,7 @@ const testSlice = createSlice({
 });
 
 // ==============================
-// ✅ EXPORTS
+// EXPORTS
 // ==============================
 export const {
   startTest,
