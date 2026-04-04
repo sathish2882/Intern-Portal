@@ -137,7 +137,7 @@ const InternLayout = () => {
           //  ACTIVE → do nothing
           if (data === 'time_added') return
 
-          // 🔥 AUTO CHECKOUT FROM BACKEND
+          //  AUTO CHECKOUT FROM BACKEND
           if (data === 'time_out' && attendanceStatus === 'IN') {
             setAttendanceStatus('OUT')
             localStorage.setItem('attendanceStatus', 'OUT')
