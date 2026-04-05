@@ -48,6 +48,13 @@ import ProtectedRoute from "../components/ui/ProtectedRoute";
 import UserDetails from "../screens/auth/userDetails";
 import CodingTest from "../screens/user/CodingTestPage";
 
+// Mentor
+import MentorLayout from "../components/layout/MentorLayout";
+import MentorDashboard from "../screens/mentor/MentorDashboard";
+import TechnicalAssessment from "../screens/mentor/TechnicalAssessment";
+import PresentationAssessment from "../screens/mentor/PresentationAssessment";
+import SoftSkillsAssessment from "../screens/mentor/SoftSkillsAssessment";
+
 export const router = createHashRouter([
   {
     path: "/",
@@ -130,6 +137,22 @@ export const router = createHashRouter([
         path: "userDetails",
         element: <UserDetails />,
       },
+    ],
+  },
+
+  {
+    path: "/mentor",
+    element: (
+      <ProtectedRoute role="4">
+        <MentorLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
+      { path: "dashboard", element: <MentorDashboard /> },
+      { path: "technical", element: <TechnicalAssessment /> },
+      { path: "presentation", element: <PresentationAssessment /> },
+      { path: "softskills", element: <SoftSkillsAssessment /> },
     ],
   },
 

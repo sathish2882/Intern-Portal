@@ -28,44 +28,67 @@ const UserLayout = () => {
   }, [location.pathname])
 
   const [loggingOut, setLoggingOut] = useState(false)
+  const [loadingUser, setLoadingUser] = useState(true)
   const [user, setUser] = useState({ name: 'User', email: '' })
 
   const showAssessmentHeader = location.pathname === '/user/dashboard'
 
   // LOAD USER (ONLY EXAM USER FLOW)
   useEffect(() => {
-  const loadUser = async () => {
-    const userId = getUserId()
+    let isMounted = true
 
-    // block invalid access
-    if (!isExamUser() || !userId) {
-      navigate('/login', { replace: true })
-      return
+    const loadUser = async () => {
+      setLoadingUser(true)
+      const userId = getUserId()
+
+      // block invalid access
+      if (!isExamUser() || !userId) {
+        navigate('/login', { replace: true })
+        return
+      }
+
+      try {
+        const response = await getUserByIdApi(userId as string)
+
+        const payload = response?.data ?? {}
+
+        const userName = capitalizeName(String(payload.name ?? payload.username ?? 'User'))
+        const userEmail = String(payload.email ?? '')
+
+        if (!isMounted) return
+
+        setUser({
+          name: userName,
+          email: userEmail,
+        })
+
+        // Store user info in Redux for access in UserDashboard
+        dispatch(setCurrentUser({ name: userName, email: userEmail }))
+      } catch (error: any) {
+        console.error('Failed to load user:', error)
+        toast.error(error?.response?.data?.detail || 'Failed to load user')
+      } finally {
+        if (isMounted) {
+          setLoadingUser(false)
+        }
+      }
     }
 
-    try {
-      const response = await getUserByIdApi(userId as string)
+    loadUser()
 
-      const payload = response?.data ?? {}
-
-      const userName = capitalizeName(String(payload.name ?? payload.username ?? 'User'))
-      const userEmail = String(payload.email ?? '')
-
-      setUser({
-        name: userName,
-        email: userEmail,
-      })
-
-      // Store user info in Redux for access in UserDashboard
-      dispatch(setCurrentUser({ name: userName, email: userEmail }))
-    } catch (error: any) {
-      console.error('Failed to load user:', error)
-      toast.error(error?.response?.data?.detail || 'Failed to load user')
+    return () => {
+      isMounted = false
     }
+}, [location.pathname]) // IMPORTANT
+  if (loadingUser) {
+    return (
+      <div className="min-h-screen bg-lightbg font-jakarta text-navy flex flex-col items-center justify-center">
+        <div className="loader" />
+        <p className="text-sm text-slate mt-4 animate-pulse">Loading...</p>
+      </div>
+    )
   }
 
-  loadUser()
-}, [location.pathname]) // IMPORTANT
   // LOGOUT
   const handleLogout = async () => {
     if (loggingOut) return

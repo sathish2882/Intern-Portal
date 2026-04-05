@@ -17,6 +17,7 @@ const getRedirectByUserType = (userType?: string) => {
   if (userType === '1') return '/admin/portals'
   if (userType === '2') return '/intern/dashboard'
   if (userType === '3') return '/user/dashboard'
+  if (userType === '4') return '/mentor/dashboard'
   return '/login'
 }
 

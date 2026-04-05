@@ -1,37 +1,27 @@
-import { useState, useMemo, useCallback } from "react";
-import { FiChevronLeft, FiChevronRight, FiCircle, FiClock, FiCheckCircle } from "react-icons/fi";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { FiChevronLeft, FiChevronRight, FiCircle, FiClock, FiCheckCircle, FiLoader, FiAlertCircle, FiRefreshCw } from "react-icons/fi";
+import { getTasksApi } from "../../services/internApi";
 
-// ── Reuse the same task shape & storage from TasksPage ──
-type TaskStatus = "not-started" | "in-progress" | "paused" | "completed";
-
+// ── Types ──────────────────────────────────────────
 interface Task {
-  id: string;
+  task_id: number;
+  user_id: number;
   title: string;
-  description: string;
-  status: TaskStatus;
-  createdAt: number;
-  startedAt: number | null;
-  completedAt: number | null;
-  elapsedSeconds: number;
-  lastResumedAt: number | null;
+  status: number; // 1=To Do, 2=In Progress, 3=Completed
+  start_time: string | null;
+  completion_time: string | null;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  due_time: string;
+  is_editable: boolean;
+  is_overdue: boolean;
 }
 
-const STORAGE_KEY = "intern_tasks";
-
-const loadTasks = (): Task[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const STATUS_COLORS: Record<TaskStatus, { dot: string; bg: string; text: string; label: string }> = {
-  "not-started": { dot: "bg-gray-400",  bg: "bg-gray-100",  text: "text-mist", label: "Not Started" },
-  "in-progress": { dot: "bg-blue",      bg: "bg-sky",       text: "text-blue", label: "In Progress" },
-  paused:        { dot: "bg-amber-500",  bg: "bg-amber-50",  text: "text-amber-600", label: "Paused" },
-  completed:     { dot: "bg-green-500",  bg: "bg-green-50",  text: "text-green-600", label: "Completed" },
+const STATUS_COLORS: Record<number, { dot: string; bg: string; text: string; label: string }> = {
+  1: { dot: "bg-amber-500",  bg: "bg-amber-50",  text: "text-amber-600", label: "To Do" },
+  2: { dot: "bg-blue",       bg: "bg-sky",        text: "text-blue",      label: "In Progress" },
+  3: { dot: "bg-green-500",  bg: "bg-green-50",   text: "text-green-600", label: "Completed" },
 };
 
 const MONTHS = [
@@ -44,26 +34,43 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const toDateKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-const formatDuration = (totalSeconds: number) => {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-};
+const formatDate = (d: string) =>
+  new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
 // ── Component ──────────────────────────────────────
 const CalendarPage = () => {
-  const [tasks] = useState<Task[]>(loadTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(toDateKey(today));
 
-  // Map date → tasks (by createdAt date)
+  // ── Fetch tasks from API ──
+  const fetchTasks = async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const res = await getTasksApi();
+      setTasks(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  // Map date → tasks (by due_time date)
   const tasksByDate = useMemo(() => {
     const map: Record<string, Task[]> = {};
     tasks.forEach((t) => {
-      const key = toDateKey(new Date(t.createdAt));
+      if (!t.due_time) return;
+      const key = t.due_time.split("T")[0];
       if (!map[key]) map[key] = [];
       map[key].push(t);
     });
@@ -126,6 +133,32 @@ const CalendarPage = () => {
 
   const selectedTasks = selectedDate ? (tasksByDate[selectedDate] ?? []) : [];
 
+  // ── Loading state ──
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 font-jakarta">
+        <FiLoader className="text-3xl text-blue animate-spin mb-3" />
+        <p className="text-sm text-slate animate-pulse">Loading calendar…</p>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 font-jakarta text-center">
+        <FiAlertCircle className="text-4xl text-red-400 mb-3" />
+        <p className="text-sm text-slate mb-3">Failed to load tasks</p>
+        <button
+          onClick={fetchTasks}
+          className="flex items-center gap-2 text-sm font-semibold text-blue hover:text-bluelt transition-colors"
+        >
+          <FiRefreshCw className="text-sm" /> Try Again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[1160px] mx-auto px-4 lg:px-8 py-8 font-jakarta text-navy animate-fadeUp">
       <p className="text-xs text-mist font-mono mb-6">
@@ -180,9 +213,9 @@ const CalendarPage = () => {
 
               // Count by status
               const cellTasks = tasksByDate[cell.key] ?? [];
-              const completedCount = cellTasks.filter((t) => t.status === "completed").length;
-              const inProgressCount = cellTasks.filter((t) => t.status === "in-progress" || t.status === "paused").length;
-              const notStartedCount = cellTasks.filter((t) => t.status === "not-started").length;
+              const completedCount = cellTasks.filter((t) => t.status === 3).length;
+              const inProgressCount = cellTasks.filter((t) => t.status === 2).length;
+              const notStartedCount = cellTasks.filter((t) => t.status === 1).length;
 
               return (
                 <button
@@ -230,11 +263,11 @@ const CalendarPage = () => {
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-blue" />
-              <span className="text-[11px] text-slate">In Progress / Paused</span>
+              <span className="text-[11px] text-slate">In Progress</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-gray-400" />
-              <span className="text-[11px] text-slate">Not Started</span>
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="text-[11px] text-slate">To Do</span>
             </div>
           </div>
         </div>
@@ -265,31 +298,30 @@ const CalendarPage = () => {
           ) : (
             <div className="divide-y divide-line max-h-[480px] overflow-y-auto">
               {selectedTasks.map((task) => {
-                const cfg = STATUS_COLORS[task.status];
+                const cfg = STATUS_COLORS[task.status] || { dot: "bg-gray-400", bg: "bg-gray-100", text: "text-mist", label: "Unknown" };
                 return (
-                  <div key={task.id} className="px-5 py-3.5">
+                  <div key={task.task_id} className="px-5 py-3.5">
                     <div className="flex items-start gap-2">
                       <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${cfg.dot}`} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-navy truncate">{task.title}</p>
-                        {task.description && (
-                          <p className="text-xs text-slate mt-0.5 line-clamp-2">{task.description}</p>
-                        )}
-                        <div className="flex items-center gap-3 mt-1.5">
+                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
                             {cfg.label}
                           </span>
-                          {task.elapsedSeconds > 0 && (
-                            <span className="flex items-center gap-1 text-[10px] text-mist">
-                              <FiClock className="text-[10px]" /> {formatDuration(task.elapsedSeconds)}
-                            </span>
+                          {task.is_overdue && (
+                            <span className="text-[10px] font-bold text-red-500">Overdue</span>
                           )}
-                          {task.status === "completed" && (
+                          {task.status === 3 && (
                             <span className="flex items-center gap-1 text-[10px] text-green-600">
                               <FiCheckCircle className="text-[10px]" /> Done
                             </span>
                           )}
+                          <span className="flex items-center gap-1 text-[10px] text-mist">
+                            <FiClock className="text-[10px]" /> Due {formatDate(task.due_time)}
+                          </span>
                         </div>
+                        <span className="text-[10px] text-mist mt-1 block">by {task.created_by}</span>
                       </div>
                     </div>
                   </div>

@@ -1,155 +1,274 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { FiPlus, FiPlay, FiPause, FiSquare, FiClock, FiCheckCircle, FiCircle, FiTrash2, FiEye } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import {
+  FiPlus,
+  FiPlay,
+  FiPause,
+  FiSquare,
+  FiCheckCircle,
+  FiCircle,
+  FiCalendar,
+  FiLoader,
+  FiAlertCircle,
+  FiRefreshCw,
+  FiEdit2,
+} from "react-icons/fi";
+import { toast } from "react-toastify";
+import {
+  createTaskApi,
+  getTasksApi,
+  startTaskApi,
+  pauseTaskApi,
+  endTaskApi,
+  updateTaskApi,
+} from "../../services/internApi";
+import { getMeApi } from "../../services/authApi";
 
 // ── Types ──────────────────────────────────────────
-type TaskStatus = "not-started" | "in-progress" | "paused" | "completed";
-
 interface Task {
-  id: string;
+  task_id: number;
+  user_id: number;
   title: string;
-  description: string;
-  status: TaskStatus;
-  createdAt: number;
-  startedAt: number | null;
-  completedAt: number | null;
-  elapsedSeconds: number;       // accumulated time
-  lastResumedAt: number | null;  // timestamp when last resumed/started
+  status: number;
+  start_time: string | null;
+  completion_time: string | null;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  due_time: string;
+  is_editable: boolean;
+  is_overdue: boolean;
 }
 
-const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; bg: string; dot: string }> = {
-  "not-started": { label: "Not Started", color: "text-mist",  bg: "bg-gray-100",  dot: "bg-gray-400" },
-  "in-progress": { label: "In Progress", color: "text-blue",  bg: "bg-sky",       dot: "bg-blue" },
-  paused:        { label: "Paused",      color: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" },
-  completed:     { label: "Completed",   color: "text-green-600", bg: "bg-green-50", dot: "bg-green-500" },
+interface UserInfo {
+  user_id: number;
+  username: string;
+}
+
+const STATUS_CONFIG: Record<number, { label: string; color: string; bg: string; dot: string }> = {
+  1: { label: "To Do",        color: "text-amber-600",  bg: "bg-amber-50",  dot: "bg-amber-500" },
+  2: { label: "In Progress",  color: "text-blue",       bg: "bg-sky",       dot: "bg-blue" },
+  3: { label: "Completed",    color: "text-green-600",  bg: "bg-green-50",  dot: "bg-green-500" },
 };
 
-const generateId = () => `task_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-// ── Helpers ────────────────────────────────────────
-const formatDuration = (totalSeconds: number) => {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  if (h > 0) return `${h}h ${m}m ${s}s`;
-  if (m > 0) return `${m}m ${s}s`;
-  return `${s}s`;
-};
-
-const STORAGE_KEY = "intern_tasks";
-
-const loadTasks = (): Task[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveTasks = (tasks: Task[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-};
+const getStatusCfg = (status: number) =>
+  STATUS_CONFIG[status] || { label: "Unknown", color: "text-mist", bg: "bg-gray-100", dot: "bg-gray-400" };
 
 // ── Component ──────────────────────────────────────
 const TasksPage = () => {
-  const [tasks, setTasks] = useState<Task[]>(loadTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [user, setUser] = useState<UserInfo | null>(null);
+
   const [showCreate, setShowCreate] = useState(false);
-  const [viewTask, setViewTask] = useState<Task | null>(null);
+  const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newDesc, setNewDesc] = useState("");
-  const [filter, setFilter] = useState<"all" | TaskStatus>("all");
-  const [, setTick] = useState(0);       // forces re-render for live timer
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [dueDate, setDueDate] = useState("");
+  const [filter, setFilter] = useState<"all" | number>("all");
 
-  // persist on change
-  useEffect(() => { saveTasks(tasks); }, [tasks]);
+  // Pause reason modal
+  const [pauseTarget, setPauseTarget] = useState<Task | null>(null);
+  const [pauseReason, setPauseReason] = useState("");
+  const [pausing, setPausing] = useState(false);
 
-  // live timer tick every second if any task is in-progress
-  useEffect(() => {
-    const hasRunning = tasks.some((t) => t.status === "in-progress");
-    if (hasRunning && !tickRef.current) {
-      tickRef.current = setInterval(() => setTick((n) => n + 1), 1000);
-    } else if (!hasRunning && tickRef.current) {
-      clearInterval(tickRef.current);
-      tickRef.current = null;
+  // Track which task action is in-flight
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+  // Edit task modal
+  const [editTarget, setEditTarget] = useState<Task | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDueDate, setEditDueDate] = useState("");
+  const [updating, setUpdating] = useState(false);
+
+  // ── Fetch user + tasks ──
+  const fetchData = async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const meRes = await getMeApi();
+      const u: UserInfo = {
+        user_id: meRes.data.user_id,
+        username: meRes.data.username,
+      };
+      setUser(u);
+
+      try {
+        const tasksRes = await getTasksApi();
+        setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
+      } catch {
+        setTasks([]);
+      }
+    } catch {
+      setLoadError(true);
+      toast.error("Failed to load user info");
+    } finally {
+      setLoading(false);
     }
-    return () => { if (tickRef.current) clearInterval(tickRef.current); };
-  }, [tasks]);
+  };
 
-  // ── Live elapsed ──
-  const liveElapsed = useCallback((task: Task) => {
-    if (task.status !== "in-progress" || !task.lastResumedAt) return task.elapsedSeconds;
-    return task.elapsedSeconds + Math.floor((Date.now() - task.lastResumedAt) / 1000);
+  // Silent refresh — no full-page loader
+  const refreshTasks = async () => {
+    try {
+      const tasksRes = await getTasksApi();
+      setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
+    } catch {
+      // keep current list
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
-  // ── Actions ──
-  const addTask = () => {
-    if (!newTitle.trim()) return;
-    const task: Task = {
-      id: generateId(),
-      title: newTitle.trim(),
-      description: newDesc.trim(),
-      status: "not-started",
-      createdAt: Date.now(),
-      startedAt: null,
-      completedAt: null,
-      elapsedSeconds: 0,
-      lastResumedAt: null,
-    };
-    setTasks((prev) => [task, ...prev]);
-    setNewTitle("");
-    setNewDesc("");
-    setShowCreate(false);
+  // ── Create task ──
+  const addTask = async () => {
+    if (!newTitle.trim() || !dueDate || !user) return;
+    setCreating(true);
+    try {
+      const payload = {
+        user_id: user.user_id,
+        title: newTitle.trim(),
+        status: 1,
+        created_by: user.username,
+        due_time: dueDate,
+      };
+      await createTaskApi(payload);
+      setNewTitle("");
+      setDueDate("");
+      setShowCreate(false);
+      toast.success("Task created successfully");
+      await refreshTasks();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to create task");
+    } finally {
+      setCreating(false);
+    }
   };
 
-  const startTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === id
-          ? { ...t, status: "in-progress" as const, startedAt: t.startedAt ?? Date.now(), lastResumedAt: Date.now() }
-          : t
-      )
-    );
+  // ── Start task ──
+  const handleStart = async (task: Task) => {
+    setActionLoading(task.task_id);
+    try {
+      await startTaskApi(task.task_id);
+      toast.success("Task started");
+      await refreshTasks();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to start task");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const pauseTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== id || t.status !== "in-progress") return t;
-        const additional = t.lastResumedAt ? Math.floor((Date.now() - t.lastResumedAt) / 1000) : 0;
-        return { ...t, status: "paused" as const, elapsedSeconds: t.elapsedSeconds + additional, lastResumedAt: null };
-      })
-    );
+  // ── Pause task — open reason popup ──
+  const openPauseModal = (task: Task) => {
+    setPauseTarget(task);
+    setPauseReason("");
   };
 
-  const endTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== id) return t;
-        const additional = t.status === "in-progress" && t.lastResumedAt
-          ? Math.floor((Date.now() - t.lastResumedAt) / 1000) : 0;
-        return { ...t, status: "completed" as const, elapsedSeconds: t.elapsedSeconds + additional, lastResumedAt: null, completedAt: Date.now() };
-      })
-    );
+  const confirmPause = async () => {
+    if (!pauseTarget || !pauseReason.trim()) return;
+    setPausing(true);
+    try {
+      await pauseTaskApi(pauseTarget.task_id, pauseReason.trim());
+      toast.success("Task paused");
+      setPauseTarget(null);
+      setPauseReason("");
+      await refreshTasks();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to pause task");
+    } finally {
+      setPausing(false);
+    }
   };
 
-  const deleteTask = (id: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-    if (viewTask?.id === id) setViewTask(null);
+  // ── End task ──
+  const handleEnd = async (task: Task) => {
+    setActionLoading(task.task_id);
+    try {
+      await endTaskApi(task.task_id);
+      toast.success("Task completed");
+      await refreshTasks();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to end task");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  // ── Filtered ──
+  // ── Edit task ──
+  const openEditModal = (task: Task) => {
+    setEditTarget(task);
+    setEditTitle(task.title);
+    setEditDueDate(task.due_time ? task.due_time.split("T")[0] : "");
+  };
+
+  const confirmEdit = async () => {
+    if (!editTarget || !editTitle.trim() || !editDueDate) return;
+    setUpdating(true);
+    try {
+      const payload: { title?: string; status?: number; due_time?: string } = {};
+      if (editTitle.trim() !== editTarget.title) payload.title = editTitle.trim();
+      if (editDueDate !== editTarget.due_time?.split("T")[0]) payload.due_time = new Date(editDueDate + "T23:59:59").toISOString();
+      if (Object.keys(payload).length === 0) {
+        setEditTarget(null);
+        return;
+      }
+      await updateTaskApi(editTarget.task_id, payload);
+      toast.success("Task updated");
+      setEditTarget(null);
+      await refreshTasks();
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      const msg = Array.isArray(detail) ? detail.map((d: any) => d.msg).join(", ") : detail || "Failed to update task";
+      toast.error(msg);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // ── Filters ──
   const filtered = filter === "all" ? tasks : tasks.filter((t) => t.status === filter);
-
   const counts = {
     all: tasks.length,
-    "not-started": tasks.filter((t) => t.status === "not-started").length,
-    "in-progress": tasks.filter((t) => t.status === "in-progress").length,
-    paused: tasks.filter((t) => t.status === "paused").length,
-    completed: tasks.filter((t) => t.status === "completed").length,
+    1: tasks.filter((t) => t.status === 1).length,
+    2: tasks.filter((t) => t.status === 2).length,
+    3: tasks.filter((t) => t.status === 3).length,
   };
 
-  // ── Render ───────────────────────────────────────
+  // ── Due date helpers ──
+  const isDueToday = (d: string) => {
+    const today = new Date().toISOString().split("T")[0];
+    return d?.split("T")[0] === today;
+  };
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+  // ── Loading state ──
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 font-jakarta">
+        <FiLoader className="text-3xl text-blue animate-spin mb-3" />
+        <p className="text-sm text-slate animate-pulse">Loading tasks…</p>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 font-jakarta text-center">
+        <FiAlertCircle className="text-4xl text-red-400 mb-3" />
+        <p className="text-sm text-slate mb-3">Failed to load tasks</p>
+        <button
+          onClick={fetchData}
+          className="flex items-center gap-2 text-sm font-semibold text-blue hover:text-bluelt transition-colors"
+        >
+          <FiRefreshCw className="text-sm" /> Try Again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[1160px] mx-auto px-4 lg:px-8 py-8 font-jakarta text-navy animate-fadeUp">
       <p className="text-xs text-mist font-mono mb-6">
@@ -170,34 +289,38 @@ const TasksPage = () => {
         </button>
       </div>
 
-      {/* KPI */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4 mb-6">
-        {(["all", "not-started", "in-progress", "paused", "completed"] as const).map((key) => {
-          const isActive = filter === key;
-          const cfg = key === "all" ? { label: "All Tasks", color: "text-navy", bg: "bg-white", dot: "bg-navy" } : STATUS_CONFIG[key];
+      {/* KPI Filter Tabs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
+        {([
+          { key: "all" as const, label: "All Tasks", color: "text-navy", bg: "bg-white", dot: "bg-navy" },
+          { key: 1 as const, ...STATUS_CONFIG[1] },
+          { key: 2 as const, ...STATUS_CONFIG[2] },
+          { key: 3 as const, ...STATUS_CONFIG[3] },
+        ]).map((tab) => {
+          const isActive = filter === tab.key;
           return (
             <button
-              key={key}
-              onClick={() => setFilter(key)}
+              key={tab.key}
+              onClick={() => setFilter(tab.key)}
               className={`text-left border rounded-xl p-4 transition-all ${
                 isActive ? "border-blue ring-2 ring-blue/20 bg-sky/40" : "border-line bg-white hover:border-blue/30"
               }`}
             >
-              <p className="text-2xl font-extrabold">{counts[key]}</p>
+              <p className="text-2xl font-extrabold">{counts[tab.key]}</p>
               <div className="flex items-center gap-1.5 mt-1">
-                <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-                <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
+                <span className={`w-2 h-2 rounded-full ${tab.dot}`} />
+                <span className={`text-xs font-medium ${tab.color}`}>{tab.label}</span>
               </div>
             </button>
           );
         })}
       </div>
 
-      {/* Create Modal */}
+      {/* ═══ Create Task Modal ═══ */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-fadeUp">
-            <h2 className="text-lg font-extrabold text-navy mb-4">Create New Task</h2>
+            <h2 className="text-lg font-extrabold text-navy mb-5">Create New Task</h2>
 
             <label className="block text-xs font-bold text-slate mb-1.5">Task Title *</label>
             <input
@@ -208,11 +331,50 @@ const TasksPage = () => {
               className="w-full border border-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-4"
             />
 
-            <label className="block text-xs font-bold text-slate mb-1.5">Description</label>
+            <label className="block text-xs font-bold text-slate mb-1.5">Due Date *</label>
+            <div className="relative mb-5">
+              <FiCalendar className="absolute left-3.5 top-1/2 -translate-y-1/2 text-mist text-sm pointer-events-none" />
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => { setShowCreate(false); setNewTitle(""); setDueDate(""); }}
+                className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addTask}
+                disabled={!newTitle.trim() || !dueDate || creating}
+                className="text-sm font-semibold text-white bg-blue hover:bg-bluelt disabled:opacity-40 px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+              >
+                {creating && <FiLoader className="animate-spin text-sm" />}
+                {creating ? "Creating…" : "Create Task"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Pause Reason Modal ═══ */}
+      {pauseTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fadeUp">
+            <h2 className="text-lg font-extrabold text-navy mb-1">Pause Task</h2>
+            <p className="text-xs text-mist mb-4 truncate">{pauseTarget.title}</p>
+
+            <label className="block text-xs font-bold text-slate mb-1.5">Reason *</label>
             <textarea
-              value={newDesc}
-              onChange={(e) => setNewDesc(e.target.value)}
-              placeholder="Describe what needs to be done…"
+              value={pauseReason}
+              onChange={(e) => setPauseReason(e.target.value)}
+              placeholder="Why are you pausing this task?"
               rows={3}
               maxLength={500}
               className="w-full border border-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-5 resize-none"
@@ -220,79 +382,84 @@ const TasksPage = () => {
 
             <div className="flex justify-end gap-3">
               <button
-                onClick={() => { setShowCreate(false); setNewTitle(""); setNewDesc(""); }}
+                onClick={() => { setPauseTarget(null); setPauseReason(""); }}
                 className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={addTask}
-                disabled={!newTitle.trim()}
-                className="text-sm font-semibold text-white bg-blue hover:bg-bluelt disabled:opacity-40 px-5 py-2.5 rounded-lg transition-colors"
+                onClick={confirmPause}
+                disabled={!pauseReason.trim() || pausing}
+                className="text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 disabled:opacity-40 px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
               >
-                Create Task
+                {pausing && <FiLoader className="animate-spin text-sm" />}
+                {pausing ? "Pausing…" : "OK"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* View Task Detail Modal */}
-      {viewTask && (
+      {/* ═══ Edit Task Modal ═══ */}
+      {editTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-fadeUp">
-            <div className="flex items-start justify-between mb-4">
-              <h2 className="text-lg font-extrabold text-navy">{viewTask.title}</h2>
-              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${STATUS_CONFIG[viewTask.status].bg} ${STATUS_CONFIG[viewTask.status].color}`}>
-                {STATUS_CONFIG[viewTask.status].label}
-              </span>
+            <h2 className="text-lg font-extrabold text-navy mb-5">Edit Task</h2>
+
+            <label className="block text-xs font-bold text-slate mb-1.5">Task Title *</label>
+            <input
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="e.g. Build login page"
+              maxLength={120}
+              className="w-full border border-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-4"
+            />
+
+            <label className="block text-xs font-bold text-slate mb-1.5">Due Date *</label>
+            <div className="relative mb-5">
+              <FiCalendar className="absolute left-3.5 top-1/2 -translate-y-1/2 text-mist text-sm pointer-events-none" />
+              <input
+                type="date"
+                value={editDueDate}
+                onChange={(e) => setEditDueDate(e.target.value)}
+                min={new Date(new Date().getTime() + 86400000).toISOString().split("T")[0]}
+                className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30"
+              />
             </div>
 
-            {viewTask.description && (
-              <p className="text-sm text-slate mb-4 leading-relaxed">{viewTask.description}</p>
-            )}
-
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              <div className="bg-lightbg rounded-lg p-3">
-                <p className="text-[11px] text-mist font-bold mb-0.5">Created</p>
-                <p className="text-sm font-semibold">{new Date(viewTask.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
-              </div>
-              <div className="bg-lightbg rounded-lg p-3">
-                <p className="text-[11px] text-mist font-bold mb-0.5">Time Spent</p>
-                <p className="text-sm font-semibold">{formatDuration(liveElapsed(viewTask))}</p>
-              </div>
-              {viewTask.startedAt && (
-                <div className="bg-lightbg rounded-lg p-3">
-                  <p className="text-[11px] text-mist font-bold mb-0.5">Started</p>
-                  <p className="text-sm font-semibold">{new Date(viewTask.startedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
-                </div>
-              )}
-              {viewTask.completedAt && (
-                <div className="bg-lightbg rounded-lg p-3">
-                  <p className="text-[11px] text-mist font-bold mb-0.5">Completed</p>
-                  <p className="text-sm font-semibold">{new Date(viewTask.completedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-3">
               <button
-                onClick={() => setViewTask(null)}
+                onClick={() => setEditTarget(null)}
                 className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
               >
-                Close
+                Cancel
+              </button>
+              <button
+                onClick={confirmEdit}
+                disabled={!editTitle.trim() || !editDueDate || updating}
+                className="text-sm font-semibold text-white bg-blue hover:bg-bluelt disabled:opacity-40 px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+              >
+                {updating && <FiLoader className="animate-spin text-sm" />}
+                {updating ? "Updating…" : "Update Task"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Tasks List */}
+      {/* ═══ Tasks List ═══ */}
       <div className="bg-white border border-line rounded-[13px] overflow-hidden">
         <div className="px-5 py-4 border-b border-line flex items-center justify-between">
           <span className="text-sm font-extrabold text-navy">
-            {filter === "all" ? "All Tasks" : STATUS_CONFIG[filter].label} ({filtered.length})
+            {filter === "all" ? "All Tasks" : STATUS_CONFIG[filter]?.label ?? "Tasks"} ({filtered.length})
           </span>
+          <button
+            onClick={refreshTasks}
+            className="p-2 text-slate hover:text-blue hover:bg-sky rounded-lg transition-colors"
+            title="Refresh"
+          >
+            <FiRefreshCw className="text-sm" />
+          </button>
         </div>
 
         {filtered.length === 0 ? (
@@ -304,95 +471,91 @@ const TasksPage = () => {
         ) : (
           <div className="divide-y divide-line">
             {filtered.map((task) => {
-              const cfg = STATUS_CONFIG[task.status];
-              const elapsed = liveElapsed(task);
+              const cfg = getStatusCfg(task.status);
+              const overdue = task.is_overdue;
+              const dueToday = isDueToday(task.due_time);
+              const busy = actionLoading === task.task_id;
+
               return (
-                <div key={task.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:bg-lightbg/50 transition-colors">
+                <div key={task.task_id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:bg-lightbg/50 transition-colors">
                   {/* Left: Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} />
                       <span className="text-sm font-bold text-navy truncate">{task.title}</span>
                     </div>
-                    {task.description && (
-                      <p className="text-xs text-slate truncate pl-[18px]">{task.description}</p>
-                    )}
-                    <div className="flex items-center gap-4 mt-1.5 pl-[18px]">
+
+                    <div className="flex flex-wrap items-center gap-3 mt-1.5 pl-[18px]">
                       <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>
                         {cfg.label}
                       </span>
-                      <span className="flex items-center gap-1 text-[11px] text-mist">
-                        <FiClock className="text-xs" /> {formatDuration(elapsed)}
+
+                      <span className={`flex items-center gap-1 text-[11px] ${
+                        overdue ? "text-red-500 font-bold" : dueToday ? "text-amber-600 font-semibold" : "text-mist"
+                      }`}>
+                        <FiCalendar className="text-xs" />
+                        {overdue ? "Overdue · " : dueToday ? "Today · " : ""}
+                        {formatDate(task.due_time)}
                       </span>
+
+                      <span className="text-[11px] text-mist">
+                        by {task.created_by}
+                      </span>
+
+                      {task.status === 1 && (
+                        <button
+                          onClick={() => openEditModal(task)}
+                          className="flex items-center gap-1 text-[11px] font-semibold text-blue hover:text-bluelt transition-colors"
+                        >
+                          <FiEdit2 className="text-xs" /> Edit
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  {/* Right: Actions */}
+                  {/* Right: Action buttons */}
                   <div className="flex items-center gap-2 sm:flex-shrink-0">
-                    {task.status === "not-started" && (
+                    {/* Status 1 = To Do → Start */}
+                    {task.status === 1 && (
                       <button
-                        onClick={() => startTask(task.id)}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue hover:bg-bluelt px-3.5 py-2 rounded-lg transition-colors"
+                        onClick={() => handleStart(task)}
+                        disabled={busy}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue hover:bg-bluelt disabled:opacity-50 px-3.5 py-2 rounded-lg transition-colors"
                       >
-                        <FiPlay className="text-sm" /> Start
+                        {busy ? <FiLoader className="animate-spin text-sm" /> : <FiPlay className="text-sm" />}
+                        Start
                       </button>
                     )}
 
-                    {task.status === "in-progress" && (
+                    {/* Status 2 = In Progress → Pause + End */}
+                    {task.status === 2 && (
                       <>
                         <button
-                          onClick={() => pauseTask(task.id)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3.5 py-2 rounded-lg transition-colors"
+                          onClick={() => openPauseModal(task)}
+                          disabled={busy}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 disabled:opacity-50 px-3.5 py-2 rounded-lg transition-colors"
                         >
-                          <FiPause className="text-sm" /> Pause
+                          {busy ? <FiLoader className="animate-spin text-sm" /> : <FiPause className="text-sm" />}
+                          Pause
                         </button>
                         <button
-                          onClick={() => endTask(task.id)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-3.5 py-2 rounded-lg transition-colors"
+                          onClick={() => handleEnd(task)}
+
+                          disabled={busy}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 px-3.5 py-2 rounded-lg transition-colors"
                         >
-                          <FiSquare className="text-sm" /> End Task
+                          {busy ? <FiLoader className="animate-spin text-sm" /> : <FiSquare className="text-sm" />}
+                          End
                         </button>
                       </>
                     )}
 
-                    {task.status === "paused" && (
-                      <>
-                        <button
-                          onClick={() => startTask(task.id)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue hover:bg-bluelt px-3.5 py-2 rounded-lg transition-colors"
-                        >
-                          <FiPlay className="text-sm" /> Resume
-                        </button>
-                        <button
-                          onClick={() => endTask(task.id)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-3.5 py-2 rounded-lg transition-colors"
-                        >
-                          <FiSquare className="text-sm" /> End Task
-                        </button>
-                      </>
-                    )}
-
-                    {task.status === "completed" && (
+                    {/* Status 3 = Completed */}
+                    {task.status === 3 && (
                       <span className="flex items-center gap-1 text-xs font-semibold text-green-600">
                         <FiCheckCircle /> Done
                       </span>
                     )}
-
-                    {/* View & Delete — always visible */}
-                    <button
-                      onClick={() => setViewTask(task)}
-                      className="p-2 text-slate hover:text-blue rounded-lg hover:bg-sky transition-colors"
-                      title="View Details"
-                    >
-                      <FiEye className="text-sm" />
-                    </button>
-                    <button
-                      onClick={() => deleteTask(task.id)}
-                      className="p-2 text-slate hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
-                      title="Delete Task"
-                    >
-                      <FiTrash2 className="text-sm" />
-                    </button>
                   </div>
                 </div>
               );

@@ -20,3 +20,16 @@ export const runCodingCodeApi = (data: {
   return API.post(endpoint, data);
 };
 
+export const getTestQuestionsApi = () => {
+  return API.get("/test/tech-questions");
+};
+
+export const runCodeApi = (data:any) => {
+  return API.post("/test/test/run-code", data);
+}
+
+export const submitCodeApi = (data:any) => {
+  const userId = getUserId();
+  return API.post(`/test/test/submit-code/${userId}`, data);
+}
+

@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMeApi } from '../../services/authApi'
+import { getTasksApi } from '../../services/internApi'
 import { capitalizeName } from '../../utils/formatName'
 import {
   FiClock,
@@ -19,11 +20,12 @@ import { FaTasks } from 'react-icons/fa'
 
 // ── Types ──────────────────────────────────────────
 interface TaskItem {
-  id: string
+  task_id: number
   title: string
-  status: 'not-started' | 'in-progress' | 'paused' | 'completed'
-  elapsedSeconds: number
-  createdAt: number
+  status: number
+  due_time: string
+  is_overdue: boolean
+  created_by: string
 }
 
 // ── Helpers ────────────────────────────────────────
@@ -34,22 +36,13 @@ const getGreeting = () => {
   return { text: 'Good Evening', icon: <FiMoon className="text-indigo-400" /> }
 }
 
-const loadTasks = (): TaskItem[] => {
-  try {
-    const raw = localStorage.getItem('intern_tasks')
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
 // ── Component ──────────────────────────────────────
 const InternDashboard = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState('')
   const [liveTime, setLiveTime] = useState(new Date())
-  const [tasks, setTasks] = useState<TaskItem[]>(loadTasks)
+  const [tasks, setTasks] = useState<TaskItem[]>([])
 
   // ── Live clock ──
   useEffect(() => {
@@ -57,17 +50,24 @@ const InternDashboard = () => {
     return () => clearInterval(id)
   }, [])
 
-  // ── Reload tasks on focus ──
+  // ── Fetch tasks from API ──
+  const fetchTasks = async () => {
+    try {
+      const res = await getTasksApi()
+      setTasks(Array.isArray(res.data) ? res.data : [])
+    } catch {
+      setTasks([])
+    }
+  }
+
+  // Reload tasks on window focus
   useEffect(() => {
-    const handler = () => setTasks(loadTasks())
+    const handler = () => { fetchTasks() }
     window.addEventListener('focus', handler)
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'intern_tasks') setTasks(loadTasks())
-    })
     return () => window.removeEventListener('focus', handler)
   }, [])
 
-  // ── Fetch profile ──
+  // ── Fetch profile + tasks ──
   useEffect(() => {
     const load = async () => {
       try {
@@ -80,17 +80,18 @@ const InternDashboard = () => {
       }
     }
     load()
+    fetchTasks()
   }, [])
 
   // ── Derived data ──
   const greeting = getGreeting()
 
-  // ── Task stats ──
+  // ── Task stats (numeric: 1=ToDo, 2=InProgress, 3=Completed) ──
   const taskStats = useMemo(() => {
     const total = tasks.length
-    const completed = tasks.filter((t) => t.status === 'completed').length
-    const inProgress = tasks.filter((t) => t.status === 'in-progress' || t.status === 'paused').length
-    const notStarted = tasks.filter((t) => t.status === 'not-started').length
+    const completed = tasks.filter((t) => t.status === 3).length
+    const inProgress = tasks.filter((t) => t.status === 2).length
+    const notStarted = tasks.filter((t) => t.status === 1).length
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
     return { total, completed, inProgress, notStarted, completionRate }
   }, [tasks])
@@ -340,21 +341,20 @@ const InternDashboard = () => {
 
           <div className="divide-y divide-line">
             {tasks.slice(0, 4).map((task) => {
-              const statusMap = {
-                'not-started': { label: 'Not Started', color: 'text-mist', bg: 'bg-gray-100', dot: 'bg-gray-400' },
-                'in-progress': { label: 'In Progress', color: 'text-blue', bg: 'bg-sky', dot: 'bg-blue' },
-                paused: { label: 'Paused', color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-500' },
-                completed: { label: 'Completed', color: 'text-green-600', bg: 'bg-green-50', dot: 'bg-green-500' },
+              const statusMap: Record<number, { label: string; color: string; bg: string; dot: string }> = {
+                1: { label: 'To Do', color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-500' },
+                2: { label: 'In Progress', color: 'text-blue', bg: 'bg-sky', dot: 'bg-blue' },
+                3: { label: 'Completed', color: 'text-green-600', bg: 'bg-green-50', dot: 'bg-green-500' },
               }
-              const cfg = statusMap[task.status]
+              const cfg = statusMap[task.status] || { label: 'Unknown', color: 'text-mist', bg: 'bg-gray-100', dot: 'bg-gray-400' }
               return (
-                <div key={task.id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-lightbg/50 transition-colors">
+                <div key={task.task_id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-lightbg/50 transition-colors">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} />
                   <span className="text-sm font-semibold text-navy truncate flex-1">{task.title}</span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>
                     {cfg.label}
                   </span>
-                  {task.status === 'completed' && <FiCheckCircle className="text-green-500 text-sm flex-shrink-0" />}
+                  {task.status === 3 && <FiCheckCircle className="text-green-500 text-sm flex-shrink-0" />}
                 </div>
               )
             })}
