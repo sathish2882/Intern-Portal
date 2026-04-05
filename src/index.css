@@ -301,4 +301,61 @@ footer {
 .role-dropdown {
   width: 100px !important; /* control dropdown width */
 }
+/* Dropdown container */
+/* Select (closed) */
+.custom-select .ant-select-selector {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+}
 
+/* Selected text */
+.custom-select .ant-select-selection-item {
+  color: #ffffff !important;
+}
+
+/* Arrow */
+.custom-select .ant-select-arrow {
+  color: #ffffff !important;
+}
+
+/* Select (closed) */
+.custom-select .ant-select-selector {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+}
+
+/* Selected text */
+.custom-select .ant-select-selection-item {
+  color: #ffffff !important;
+}
+
+/* Arrow */
+.custom-select .ant-select-arrow {
+  color: #ffffff !important;
+}
+
+/* Dropdown */
+.assessment-filter-dropdown {
+  background-color: #000000 !important;
+  border: 1px solid #ffffff !important;
+}
+
+/* Options */
+.assessment-filter-dropdown .ant-select-item {
+  color: #ffffff !important;
+  background-color: #000000 !important;
+  transition: all 0.2s ease;
+}
+
+/* 🔵 Hover (blue) */
+.assessment-filter-dropdown .ant-select-item-option-active {
+  background-color: rgba(59, 130, 246, 0.2) !important; /* blue-500/20 */
+}
+
+/* 🔵 Selected */
+.assessment-filter-dropdown .ant-select-item-option-selected {
+  background-color: rgba(59, 130, 246, 0.3) !important; /* blue-500/30 */
+  color: #ffffff !important;
+}

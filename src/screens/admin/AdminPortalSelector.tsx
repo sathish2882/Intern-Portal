@@ -5,7 +5,8 @@ import {
   TeamOutlined,
   ScheduleOutlined,
   AuditOutlined,
-  CommentOutlined
+  CommentOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 
 const PORTALS = [
@@ -19,7 +20,16 @@ const PORTALS = [
       />
     ),
   },
-
+  {
+    title: "Mentor Dashboard",
+    route: "/admin/mentor-dashboard",
+    accent: "border-[#60A5FA]/40 bg-[#3B82F6]/20",
+    icon: (
+      <UserOutlined
+        style={{ fontSize: 28, color: "#60a5fa", marginBottom: 12 }}
+      />
+    ),
+  },
   {
     title: "Intern Dashboard",
     route: "/admin/intern-dashboard",
@@ -51,16 +61,15 @@ const PORTALS = [
     ),
   },
   {
-  title: "Feedback",
-  route: "/admin/feedback",
-  accent: "border-[#38bdf8]/20 bg-[#0ea5e9]/10",
-  icon: (
-    <CommentOutlined
-      style={{ fontSize: 28, color: "#38bdf8", marginBottom: 12 }}
-    />
-  ),
-}
-
+    title: "Feedback",
+    route: "/admin/feedback",
+    accent: "border-cyan-400/20 bg-cyan-500/10",
+    icon: (
+      <CommentOutlined
+        style={{ fontSize: 28, color: "#22d3ee", marginBottom: 12 }}
+      />
+    ),
+  },
 ];
 
 const AdminPortalSelector = () => {
@@ -85,7 +94,7 @@ const AdminPortalSelector = () => {
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {PORTALS.map((portal) => (
             <button
-              key={portal.route}
+              key={`${portal.title}-${portal.route}`}
               onClick={() => navigate(portal.route)}
               className={`group relative flex min-h-[220px] flex-col items-start overflow-hidden rounded-[26px] border p-6 text-left shadow-[0_18px_40px_rgba(0,0,0,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_24px_55px_rgba(0,0,0,0.24)] ${portal.accent}`}
             >
@@ -100,7 +109,7 @@ const AdminPortalSelector = () => {
               <div className="mt-auto flex items-center gap-2 pt-6 text-sm font-semibold text-white">
                 <span>Go to Dashboard</span>
                 <span className="transition-transform duration-200 group-hover:translate-x-1">
-                  →
+                  -&gt;
                 </span>
               </div>
             </button>

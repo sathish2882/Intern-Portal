@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import AdminPortalShell from "../../components/layout/AdminPortalShell";
 import { getExamSummaryApi, resetExamDataApi } from "../../services/authApi";
-import { Button } from "antd";
+import { Button, Select } from "antd";
 import { downloadExcel } from "../../utils/download";
 import { capitalizeName } from "../../utils/formatName";
 
@@ -20,6 +20,9 @@ interface ExamUser {
   result: string;
 }
 
+type FilterStatus = "ALL" | "PASS" | "FAIL";
+type FilterOption = FilterStatus | "RESET";
+
 const STATUS_CLASSES: Record<string, string> = {
   PASS: "bg-emerald-500/15 text-emerald-300 border border-emerald-400/20",
   FAIL: "bg-red-500/15 text-red-300 border border-red-400/20",
@@ -30,6 +33,7 @@ const InterviewDashboard = () => {
   const [data, setData] = useState<ExamUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("ALL");
 
   useEffect(() => {
     const load = async () => {
@@ -55,14 +59,14 @@ const InterviewDashboard = () => {
   const avgAptitude =
     totalUsers > 0
       ? (
-          data.reduce((s, u) => s + u.aptitude_percentage, 0) / totalUsers
-        ).toFixed(1)
+        data.reduce((s, u) => s + u.aptitude_percentage, 0) / totalUsers
+      ).toFixed(1)
       : "0";
   const avgTechnical =
     totalUsers > 0
       ? (
-          data.reduce((s, u) => s + u.technical_percentage, 0) / totalUsers
-        ).toFixed(1)
+        data.reduce((s, u) => s + u.technical_percentage, 0) / totalUsers
+      ).toFixed(1)
       : "0";
   const topScore =
     totalUsers > 0 ? Math.max(...data.map((u) => u.total_score)) : 0;
@@ -93,6 +97,13 @@ const InterviewDashboard = () => {
       valueClass: "text-amber-300",
     },
   ];
+
+  const filteredData =
+    filterStatus === "PASS"
+      ? data.filter((u) => u.result === "PASS")
+      : filterStatus === "FAIL"
+        ? data.filter((u) => u.result === "FAIL")
+        : data;
 
   const handleResetExam = async () => {
     const confirmed = window.confirm(
@@ -137,16 +148,29 @@ const InterviewDashboard = () => {
               </div>
             ))}
           </div>
-
-          <div className="flex justify-end mb-4">
-            <button
-              type="button"
-              disabled={resetting}
-              onClick={() => void handleResetExam()}
-              className="inline-flex items-center gap-2 rounded-lg border border-red-400/25 bg-red-500/10 px-3.5 py-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {resetting ? "Resetting..." : "Reset Exam Data"}
-            </button>
+          <div className="mb-2">
+             <Select<FilterOption>
+            className="w-[190px] custom-select"
+            value={filterStatus}
+            disabled={resetting}
+            onChange={(value: FilterOption) => {
+              if (value === "RESET") {
+                void handleResetExam();
+                return;
+              }
+              setFilterStatus(value);
+            }}
+            options={[
+              { label: "All", value: "ALL" },
+              { label: "Pass", value: "PASS" },
+              { label: "Fail", value: "FAIL" },
+              {
+                label: resetting ? "Resetting..." : "Reset Exam Data",
+                value: "RESET",
+              },
+            ]}
+            popupClassName="assessment-filter-dropdown"
+          />
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
@@ -176,7 +200,7 @@ const InterviewDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.length === 0 && (
+                  {filteredData.length === 0 && (
                     <tr>
                       <td
                         colSpan={7}
@@ -186,7 +210,7 @@ const InterviewDashboard = () => {
                       </td>
                     </tr>
                   )}
-                  {data.map((user) => (
+                  {filteredData.map((user) => (
                     <tr
                       key={user.user_id}
                       className="border-b border-white/5 last:border-b-0 hover:bg-white/[0.03] transition-colors"

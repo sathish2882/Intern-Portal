@@ -19,15 +19,36 @@ interface SignupFormValues {
 
 const ROLE_OPTIONS = ["Frontend", "Backend", "Others"];
 
+interface UserFormState {
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+    phone: string;
+    batch: string;
+    techStack: string;
+    fees?: number;
+  };
+  userKind?: "intern" | "mentor";
+  returnTo?: string;
+}
+
 const AddUser = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const pageState = (location.state ?? {}) as UserFormState;
 
-  const editUser = location.state?.user as
-    | { id: number; username: string; email: string; phone: string; batch: string; techStack: string; fees?: number }
-    | undefined;
+  const editUser = pageState.user;
   const isEdit = Boolean(editUser);
+  const userKind = pageState.userKind ?? "intern";
+  const entityLabel = userKind === "mentor" ? "Mentor" : "Intern";
+  const submitLabel = isEdit ? `Update ${entityLabel}` : `Add ${entityLabel}`;
+  const returnPath =
+    pageState.returnTo ??
+    (userKind === "mentor"
+      ? "/admin/mentor-dashboard"
+      : "/admin/intern-dashboard");
 
   const resolveRoleType = (techStack?: string) => {
     if (!techStack) return { roleType: "", customRole: "" };
@@ -98,7 +119,7 @@ const AddUser = () => {
         }
 
         await updateUserApi(editUser!.id, payload);
-        toast.success("User updated successfully");
+        toast.success(`${entityLabel} updated successfully`);
       } else {
         const payload = {
           username: values.username,
@@ -112,10 +133,10 @@ const AddUser = () => {
         };
 
         await signupApi(payload);
-        toast.success("User added successfully");
+        toast.success(`${entityLabel} added successfully`);
       }
 
-      navigate("/admin/intern-dashboard", { replace: true });
+      navigate(returnPath, { replace: true });
     } catch (error: any) {
       const message = error?.response?.data?.detail || "Something went wrong";
       toast.error(message);
@@ -137,7 +158,7 @@ const AddUser = () => {
         shadow-[0_20px_60px_rgba(15,23,42,0.12)]"
       >
         <h2 className="text-[26px] font-heading font-semibold text-slate-900 mb-5">
-          {isEdit ? "Edit" : "Add"} <span className="text-[#2563eb]">Intern</span>
+          {isEdit ? "Edit" : "Add"} <span className="text-[#2563eb]">{entityLabel}</span>
         </h2>
 
         <Formik
@@ -209,13 +230,13 @@ const AddUser = () => {
                 flex items-center justify-center gap-2"
               >
                 <span className="flex h-6 w-[120px] items-center justify-center">
-                  {loading ? <div className="loader-btn loader-btn-sm" /> : isEdit ? "Update User" : "Add Intern"}
+                  {loading ? <div className="loader-btn loader-btn-sm" /> : submitLabel}
                 </span>
               </button>
 
               <button
                 type="button"
-                onClick={() => navigate("/admin/intern-dashboard")}
+                onClick={() => navigate(returnPath)}
                 className="text-[#2563eb] text-sm hover:underline mx-auto"
               >
                 Back
