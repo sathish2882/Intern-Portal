@@ -16,6 +16,7 @@ import {
   FiWifi,
   FiWifiOff,
 } from "react-icons/fi";
+import { messageApi } from "../../services/chatApi";
 
 // ── Types ──────────────────────────────────────────
 interface BatchMember {
@@ -307,58 +308,65 @@ const MessagesPage = () => {
   }, [activeChat, myUserId, messages.length]);
 
   // ── Send message ──
-  const sendMessage = useCallback(
-    async (text: string) => {
-      if (!text.trim() || !activeChat || !myUserId) return;
+ const sendMessage = useCallback(
+  async (text: string) => {
+    if (!text.trim() || !activeChat || !myUserId) return;
 
-      const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      const msg: ChatMessage = {
-        id: msgId,
-        chatId: activeChat.id,
-        senderId: myUserId,
-        senderName: myName,
-        text: text.trim(),
-        timestamp: Date.now(),
-        status: "sending",
-      };
+    const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-      setMessages((prev) => [...prev, msg]);
-      setInput("");
-      setShowEmoji(false);
-      setSendingMsg(true);
+    const msg: ChatMessage = {
+      id: msgId,
+      chatId: activeChat.id,
+      senderId: myUserId,
+      senderName: myName,
+      text: text.trim(),
+      timestamp: Date.now(),
+      status: "sending",
+    };
 
-      // Send via WebSocket
-      if (chatSocket.isConnected) {
-        chatSocket.send({
-          type: "send_message",
-          chat_id: activeChat.id,
-          text: text.trim(),
-          sender_id: myUserId,
-          sender_name: myName,
-        });
-        // Status will update via "message_sent" WS event; fallback to "sent" after a brief delay
-        setTimeout(() => {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === msgId && m.status === "sending" ? { ...m, status: "sent" } : m))
-          );
-        }, 3000);
-      } else {
-        // Offline — save locally and mark as sent
-        setMessages((prev) =>
-          prev.map((m) => (m.id === msgId ? { ...m, status: "sent" } : m))
-        );
-      }
+    // 🔹 1. Add message instantly
+    setMessages((prev) => [...prev, msg]);
+    setInput("");
+    setShowEmoji(false);
+    setSendingMsg(true);
 
+    try {
+      // 🔹 2. Extract conversation_id
+      const conversationId = Number(activeChat.id.split("_")[1]);
+
+      // 🔹 3. Call API
+      const res = await messageApi(conversationId, text.trim());
+      const serverMsg = res.data;
+
+      // 🔹 4. Update message with backend response
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === msgId
+            ? {
+                ...m,
+                id: serverMsg.message_id.toString(),
+                text: serverMsg.content,
+                timestamp: new Date(serverMsg.created_on).getTime(),
+                senderName: serverMsg.sender_name,
+                status: "delivered",
+              }
+            : m
+        )
+      );
+    } catch (err: any) {
+      // 🔴 Fail case
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === msgId ? { ...m, status: "failed" } : m
+        )
+      );
+      toast.error(err?.response?.data?.detail || "Failed to send message");
+    } finally {
       setSendingMsg(false);
-
-      try {
-        channel?.postMessage({ type: "new_message", message: { ...msg, status: "delivered" } });
-      } catch {
-        /* ignore */
-      }
-    },
-    [activeChat, myUserId, myName]
-  );
+    }
+  },
+  [activeChat, myUserId, myName]
+);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -386,8 +394,7 @@ const MessagesPage = () => {
       }),
     [filteredChats, lastMessageMap]
   );
-
-  const groupedMessages = useMemo(() => {
+const groupedMessages = useMemo(() => {
     const groups: { label: string; messages: ChatMessage[] }[] = [];
     let currentLabel = "";
     chatMessages.forEach((msg) => {

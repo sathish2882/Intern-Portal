@@ -18,6 +18,7 @@ import {
   getTasksApi,
   startTaskApi,
   pauseTaskApi,
+  resumeTaskApi,
   endTaskApi,
   updateTaskApi,
 } from "../../services/internApi";
@@ -32,11 +33,12 @@ interface Task {
   start_time: string | null;
   completion_time: string | null;
   created_at: string;
-  created_by: string;
+  created_by: number;
   updated_at: string;
   due_time: string;
   is_editable: boolean;
   is_overdue: boolean;
+  is_paused?: boolean;
 }
 
 interface UserInfo {
@@ -45,9 +47,10 @@ interface UserInfo {
 }
 
 const STATUS_CONFIG: Record<number, { label: string; color: string; bg: string; dot: string }> = {
-  1: { label: "To Do",        color: "text-amber-600",  bg: "bg-amber-50",  dot: "bg-amber-500" },
-  2: { label: "In Progress",  color: "text-blue",       bg: "bg-sky",       dot: "bg-blue" },
-  3: { label: "Completed",    color: "text-green-600",  bg: "bg-green-50",  dot: "bg-green-500" },
+  1: { label: "To Do", color: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" },
+  2: { label: "In Progress", color: "text-blue", bg: "bg-sky", dot: "bg-blue" },
+  3: { label: "Completed", color: "text-green-600", bg: "bg-green-50", dot: "bg-green-500" },
+  4: { label: "paused", color: "text-orange-6oo", bg: "bg-orange-50", dot: "bg-orange-500" },
 };
 
 const getStatusCfg = (status: number) =>
@@ -129,7 +132,7 @@ const TasksPage = () => {
         user_id: user.user_id,
         title: newTitle.trim(),
         status: 1,
-        created_by: user.username,
+        created_by: user.user_id,
         due_time: dueDate,
       };
       await createTaskApi(payload);
@@ -178,6 +181,18 @@ const TasksPage = () => {
       toast.error(err?.response?.data?.detail || "Failed to pause task");
     } finally {
       setPausing(false);
+    }
+  };
+  const handleResume = async (task: Task) => {
+    setActionLoading(task.task_id);
+    try {
+      await resumeTaskApi(task.task_id);
+      toast.success("Task resumed");
+      await refreshTasks();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to resume task");
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -302,9 +317,8 @@ const TasksPage = () => {
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
-              className={`text-left border rounded-xl p-4 transition-all ${
-                isActive ? "border-blue ring-2 ring-blue/20 bg-sky/40" : "border-line bg-white hover:border-blue/30"
-              }`}
+              className={`text-left border rounded-xl p-4 transition-all ${isActive ? "border-blue ring-2 ring-blue/20 bg-sky/40" : "border-line bg-white hover:border-blue/30"
+                }`}
             >
               <p className="text-2xl font-extrabold">{counts[tab.key]}</p>
               <div className="flex items-center gap-1.5 mt-1">
@@ -490,9 +504,8 @@ const TasksPage = () => {
                         {cfg.label}
                       </span>
 
-                      <span className={`flex items-center gap-1 text-[11px] ${
-                        overdue ? "text-red-500 font-bold" : dueToday ? "text-amber-600 font-semibold" : "text-mist"
-                      }`}>
+                      <span className={`flex items-center gap-1 text-[11px] ${overdue ? "text-red-500 font-bold" : dueToday ? "text-amber-600 font-semibold" : "text-mist"
+                        }`}>
                         <FiCalendar className="text-xs" />
                         {overdue ? "Overdue · " : dueToday ? "Today · " : ""}
                         {formatDate(task.due_time)}
@@ -528,21 +541,45 @@ const TasksPage = () => {
                     )}
 
                     {/* Status 2 = In Progress → Pause + End */}
+                    {/* In Progress */}
                     {task.status === 2 && (
                       <>
                         <button
                           onClick={() => openPauseModal(task)}
                           disabled={busy}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 disabled:opacity-50 px-3.5 py-2 rounded-lg transition-colors"
+                          className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3.5 py-2 rounded-lg"
                         >
                           {busy ? <FiLoader className="animate-spin text-sm" /> : <FiPause className="text-sm" />}
                           Pause
                         </button>
+
                         <button
                           onClick={() => handleEnd(task)}
-
                           disabled={busy}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 px-3.5 py-2 rounded-lg transition-colors"
+                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-3.5 py-2 rounded-lg"
+                        >
+                          {busy ? <FiLoader className="animate-spin text-sm" /> : <FiSquare className="text-sm" />}
+                          End
+                        </button>
+                      </>
+                    )}
+
+                    {/* Paused */}
+                    {task.status === 4 && (
+                      <>
+                        <button
+                          onClick={() => handleResume(task)}
+                          disabled={busy}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue hover:bg-bluelt px-3.5 py-2 rounded-lg"
+                        >
+                          {busy ? <FiLoader className="animate-spin text-sm" /> : <FiPlay className="text-sm" />}
+                          Resume
+                        </button>
+
+                        <button
+                          onClick={() => handleEnd(task)}
+                          disabled={busy}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-3.5 py-2 rounded-lg"
                         >
                           {busy ? <FiLoader className="animate-spin text-sm" /> : <FiSquare className="text-sm" />}
                           End

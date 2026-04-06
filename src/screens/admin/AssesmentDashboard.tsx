@@ -148,7 +148,7 @@ const InterviewDashboard = () => {
               </div>
             ))}
           </div>
-          <div className="mb-2">
+          <div className=" flex justify-end mb-2">
              <Select<FilterOption>
             className="w-[190px] custom-select"
             value={filterStatus}
