@@ -109,6 +109,7 @@ export interface BackendTestResult {
   status: "in_progress" | "completed";
   aptitude_score: number;
   technical_score: number;
+  coding_score: number;
   total_score: number;
   percentage: number;
   submitted_at: string;

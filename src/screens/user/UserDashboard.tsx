@@ -7,12 +7,13 @@ import {
   FaCheckCircle,
   FaClock,
   FaTrophy,
-  FaCogs 
+  FaCogs,
 } from "react-icons/fa";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { startTest, getResult } from "../../redux/slices/testSlice";
 import { TEST_CONFIG } from "../../utils/testData";
 import { TestType } from "../../types";
+import { startTestApi } from "../../services/testApi";
 
 const ASSESSMENTS: {
   id: TestType;
@@ -24,24 +25,24 @@ const ASSESSMENTS: {
   {
     id: "aptitude",
     name: TEST_CONFIG.aptitude.data.title,
-    meta: `${TEST_CONFIG.aptitude.data.total} Qs · 45 min · Above Medium`,
+    meta: `${TEST_CONFIG.aptitude.data.total} Qs · 45 min · Pass: ${TEST_CONFIG.aptitude.data.pass}/${TEST_CONFIG.aptitude.data.total}`,
     icon: <FaCalculator className="w-5 h-5 text-blue" />,
     active: true,
   },
   {
     id: "technical",
     name: TEST_CONFIG.technical.data.title,
-    meta: `${TEST_CONFIG.technical.data.total} Qs · 30 min · Medium`,
+    meta: `${TEST_CONFIG.technical.data.total} Qs · 30 min · Pass: ${TEST_CONFIG.technical.data.pass}/${TEST_CONFIG.technical.data.total}`,
     icon: <FaCogs className="w-5 h-5 text-blue" />,
     active: true,
   },
-    {
+  {
     id: "coding",
     name: TEST_CONFIG.coding.data.title,
-    meta: `${TEST_CONFIG.coding.data.total} Qs · 60 min · Medium`,
+    meta: `${TEST_CONFIG.coding.data.total} Qs · 30 min · 5 marks each · Pass: ${TEST_CONFIG.coding.data.pass}/${TEST_CONFIG.coding.data.total}`,
     icon: <FaCode className="w-5 h-5 text-blue" />,
     active: true,
-  },  
+  },
 ];
 
 const UserDashboard = () => {
@@ -58,11 +59,13 @@ const UserDashboard = () => {
 
   const hasAptitude = backendResult?.aptitude_score != null;
   const hasTechnical = backendResult?.technical_score != null;
+  const hasCoding = backendResult?.coding_score != null;
 
-  const attemptedCount = (hasAptitude ? 1 : 0) + (hasTechnical ? 1 : 0);
+  const attemptedCount =
+    (hasAptitude ? 1 : 0) + (hasTechnical ? 1 : 0) + (hasCoding ? 1 : 0);
 
-  const isCompleted = attemptedCount === 2;
-  const isInProgress = attemptedCount === 1;
+  const isCompleted = attemptedCount === 3;
+  const isInProgress = attemptedCount > 0 && !isCompleted;
   // (isNew removed, not used)
   const pending = ASSESSMENTS.length - attemptedCount;
 
@@ -72,9 +75,12 @@ const UserDashboard = () => {
   if (isCompleted) {
     const totalCorrect =
       (backendResult?.aptitude_score ?? 0) +
-      (backendResult?.technical_score ?? 0);
+      (backendResult?.technical_score ?? 0) +
+      (backendResult?.coding_score ?? 0);
     const totalQuestions =
-      TEST_CONFIG.aptitude.data.total + TEST_CONFIG.technical.data.total;
+      TEST_CONFIG.aptitude.data.total +
+      TEST_CONFIG.technical.data.total +
+      TEST_CONFIG.coding.data.total;
     bestPct =
       totalQuestions > 0
         ? Math.round((totalCorrect / totalQuestions) * 100)
@@ -87,13 +93,21 @@ const UserDashboard = () => {
   }, [dispatch]);
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
-  const handleStart = (testType: TestType) => {
-    if (testType === "coding") {
-      navigate("/user/coding-test");
-      return null;
+  const handleStart = async (testType: TestType) => {
+    // Only call startTestApi if no attempt exists yet (status is null)
+    // If already in_progress, just navigate directly
+    if (!backendResult) {
+      const response = await startTestApi();
+      if (!response?.data?.attempt_id) return;
     }
-    dispatch(startTest(testType));
-    navigate("/user/test");
+
+    if (testType === "coding") {
+      dispatch(startTest(testType));
+      navigate("/user/coding-test");
+    } else {
+      dispatch(startTest(testType));
+      navigate("/user/test");
+    }
   };
 
   const handleViewResults = () => {
@@ -112,14 +126,14 @@ const UserDashboard = () => {
     {
       icon: <FaCheckCircle className="w-5 h-5 text-asuccess" />,
       label: "Completed",
-      value: String(isCompleted ? 2 : isInProgress ? 1 : 0),
+      value: String(attemptedCount),
       badgeClass: "bg-[#ecfdf5] text-asuccess",
       badge: "Done",
     },
     {
       icon: <FaClock className="w-5 h-5 text-[#e07b00]" />,
       label: "Pending",
-      value: String(isCompleted ? 0 : isInProgress ? 1 : 2),
+      value: String(pending),
       badgeClass: "bg-[#fff7ed] text-[#e07b00]",
       badge: "Pending",
     },
@@ -208,25 +222,13 @@ const UserDashboard = () => {
                       ? hasAptitude
                       : a.id === "technical"
                         ? hasTechnical
-                        : false;
+                        : hasCoding;
                   let displayStatus: "Completed" | "Attempted" | "New" = "New";
                   let displayProgress = 0;
                   let actionButton = null;
 
-                  // Coding test should stay startable independently.
-                  if (a.id === "coding") {
-                    displayStatus = "New";
-                    displayProgress = 0;
-                    actionButton = (
-                      <button
-                        onClick={() => handleStart(a.id)}
-                        className="border flex items-center gap-1 border-blue rounded-lg px-3 py-1.5 text-xs font-bold text-blue hover:bg-sky hover:border-blue transition-all"
-                      >
-                        Start <span>-&gt;</span>
-                      </button>
-                    );
-                  } else if (isCompleted) {
-                    // Scenario 3: Both done
+                  if (isCompleted) {
+                    // All 3 done
                     displayStatus = "Completed";
                     displayProgress = 100;
                     actionButton = (
@@ -289,7 +291,6 @@ const UserDashboard = () => {
                           </span>
                         ) : displayStatus === "Completed" ? (
                           <span className="flex items-center gap-1 h-6 text-[11px] font-bold px-2.5 rounded-full bg-[#ecfdf5] text-asuccess">
-
                             <span>✓</span> <span>Completed</span>
                           </span>
                         ) : displayStatus === "Attempted" ? (

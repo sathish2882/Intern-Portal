@@ -21,7 +21,6 @@ interface ExamUser {
 }
 
 type FilterStatus = "ALL" | "PASS" | "FAIL";
-type FilterOption = FilterStatus | "RESET";
 
 const STATUS_CLASSES: Record<string, string> = {
   PASS: "bg-emerald-500/15 text-emerald-300 border border-emerald-400/20",
@@ -148,29 +147,29 @@ const InterviewDashboard = () => {
               </div>
             ))}
           </div>
-          <div className="mb-2">
-             <Select<FilterOption>
+          <div className="mb-2 flex items-center justify-between">
+             <Select<FilterStatus>
             className="w-[190px] custom-select"
             value={filterStatus}
             disabled={resetting}
-            onChange={(value: FilterOption) => {
-              if (value === "RESET") {
-                void handleResetExam();
-                return;
-              }
+            onChange={(value: FilterStatus) => {
               setFilterStatus(value);
             }}
             options={[
               { label: "All", value: "ALL" },
               { label: "Pass", value: "PASS" },
               { label: "Fail", value: "FAIL" },
-              {
-                label: resetting ? "Resetting..." : "Reset Exam Data",
-                value: "RESET",
-              },
             ]}
             popupClassName="assessment-filter-dropdown"
           />
+            <Button
+              danger
+              type="primary"
+              loading={resetting}
+              onClick={handleResetExam}
+            >
+              Reset Exam Data
+            </Button>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
