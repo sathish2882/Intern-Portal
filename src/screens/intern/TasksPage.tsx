@@ -356,6 +356,45 @@ const TasksPage = () => {
                 className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30"
               />
             </div>
+            <label className="block text-xs font-bold text-slate mb-1.5">Due Time</label>
+            <div className="relative mb-5">
+              <input type="time"
+               className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30"/>
+            </div>
+
+            <label className="block text-xs font-bold text-slate mb-1.5">
+              Status
+            </label>
+            <div className="relative mb-5">
+              <select>
+                <option value="inprogress">Inprogress</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+
+            <label className="block text-xs font-bold text-slate mb-1.5">Task Owner</label>
+            <div className="relative mb-5">
+               <select>
+               <option value="owner1">Owner1</option>
+               <option value="owner2">Owner2</option>
+               <option value="owner3">Owner3</option>
+            </select>
+            </div>
+           
+            <label className="block text-xs font-bold text-slate mb-1.5">Priority</label>
+            <div className="relative mb-5">
+             <select>
+              <option value="high">High</option>
+              <option value="low">Low</option>
+              <option value="normal">Normal</option>
+            </select>
+            </div>
+           
+
+            <label className="block text-xs font-bold text-slate mb-1.5">Descreption</label>
+            <div className="relative mb-5 w-full">
+                <textarea placeholder="add any extranotes" className="w-full"></textarea>
+            </div>
 
             <div className="flex justify-end gap-3">
               <button
