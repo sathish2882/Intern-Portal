@@ -69,6 +69,7 @@ class ChatSocketManager {
 
     this.intentionallyClosed = false;
     const token = Cookies.get("token");
+    console.log("WS TOKEN:", token);
     const url = token
       ? `${getWsUrl()}?token=${encodeURIComponent(token)}`
       : getWsUrl();

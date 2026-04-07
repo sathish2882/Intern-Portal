@@ -148,22 +148,26 @@ const InterviewDashboard = () => {
             ))}
           </div>
           <div className="mb-2 flex items-center justify-between">
-             <Select<FilterStatus>
-            className="w-[190px] custom-select"
-            value={filterStatus}
-            disabled={resetting}
-            onChange={(value: FilterStatus) => {
-              setFilterStatus(value);
-            }}
-            options={[
-              { label: "All", value: "ALL" },
-              { label: "Pass", value: "PASS" },
-              { label: "Fail", value: "FAIL" },
-            ]}
-            popupClassName="assessment-filter-dropdown"
-          />
+            <Select<FilterStatus>
+              className="w-[190px] custom-select"
+              value={filterStatus}
+              disabled={resetting}
+              onChange={(value: FilterStatus) => {
+                setFilterStatus(value);
+              }}
+              options={[
+                { label: "All", value: "ALL" },
+                { label: "Pass", value: "PASS" },
+                { label: "Fail", value: "FAIL" },
+              ]}
+              classNames={{
+                popup: {
+                  root: "assessment-filter-dropdown"
+                }
+              }}
+            />
             <Button
-              danger
+              className="bg-red-500/30"
               type="primary"
               loading={resetting}
               onClick={handleResetExam}

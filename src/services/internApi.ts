@@ -9,15 +9,19 @@ export const getTasksApi = () => {
 }
 
 export const startTaskApi = (taskId: number) => {
-  return API.put(`/task/${taskId}/start`)
+  return API.post(`/task/${taskId}/start`)
 }
 
 export const pauseTaskApi = (taskId: number, reason: string) => {
-  return API.put(`/task/${taskId}/pause`, { reason })
+  return API.post(`/task/${taskId}/pause`, { reason })
+}
+
+export const resumeTaskApi = (taskId: number,) =>{
+  return API.post(`/task/${taskId}/resume`)
 }
 
 export const endTaskApi = (taskId: number) => {
-  return API.put(`/task/${taskId}/end`)
+  return API.post(`/task/${taskId}/stop`)
 }
 
 export const updateTaskApi = (taskId: number, data: { title?: string; status?: number; due_time?: string }) => {
