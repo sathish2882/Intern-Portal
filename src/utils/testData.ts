@@ -4,9 +4,9 @@ import { CODING_SECTION_BREAKDOWN, CODING_MARKS_PER_Q } from "./codingTestData";
 
 export const APTITUDE_TEST: TestData = {
   title: "Aptitude Test",
-  subtitle: "15 Questions - 15 min - 1 mark each - Pass: 5/15",
+  subtitle: "15 Questions - 15 min - 1 mark each - Pass: 7/15",
   total: 15,
-  pass: 5,
+  pass: 7,
   questions: [
     {
       section: "Quantitative - Number System",
@@ -128,9 +128,9 @@ export const SECTION_BREAKDOWN = [
 
 export const TECHNICAL_TEST: TestData = {
   title: "Technical Test - General Programming",
-  subtitle: "15 Questions - 15 min - 1 mark each - Pass: 5/15",
+  subtitle: "15 Questions - 15 min - 1 mark each - Pass: 6/15",
   total: 15,
-  pass: 5,
+  pass: 6,
   questions: [
     {
       section: "Programming Fundamentals",
@@ -243,8 +243,8 @@ export const TECHNICAL_SECTION_BREAKDOWN = [
 ];
 
 // ─── Overall Pass & Scholarship ────────────────────────────────────────────
-export const OVERALL_PASS_MARK = 20;
-export const SCHOLARSHIP_THRESHOLD = 20; // scored more than 20 = eligible
+export const OVERALL_PASS_MARK = 23;
+export const SCHOLARSHIP_THRESHOLD = 23; // scored more than 23 = eligible
 export const TOTAL_MARKS = APTITUDE_TEST.total + TECHNICAL_TEST.total + (CODING_TEST.total * CODING_MARKS_PER_Q); // 15+15+20 = 50
 export { CODING_MARKS_PER_Q };
 

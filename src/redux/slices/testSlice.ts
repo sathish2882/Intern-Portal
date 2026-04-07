@@ -12,14 +12,14 @@ import { getTestStatusApi } from "../../services/testApi";
 const DEFAULT_TEST_TYPE: TestType = "aptitude";
 
 // ==============================
-// ✅ REDUX THUNK - FETCH RESULTS
+// REDUX THUNK - FETCH RESULTS
 // ==============================
 export const getResult = createAsyncThunk(
   "test/getResult",
   async (_, { rejectWithValue }) => {
     try {
       const res = await getTestStatusApi();
-      console.log("🔥 getResult Thunk - API Response:", res?.data);
+      console.log("getResult Thunk - API Response:", res?.data);
       return res?.data as BackendTestResult;
     } catch (error: any) {
       console.error("❌ getResult Thunk Error:", error);
@@ -29,7 +29,7 @@ export const getResult = createAsyncThunk(
 );
 
 // ==============================
-// ✅ INITIAL STATE CREATOR
+//INITIAL STATE CREATOR
 // ==============================
 const createInitialState = (
   testType: TestType = DEFAULT_TEST_TYPE,
@@ -43,9 +43,9 @@ const createInitialState = (
     testStarted: false,
     testSubmitted: false,
     result: null,
-    resultsByType: {}, // 🔥 stores per test result
-    backendResult: null, // 🔥 stores backend API result - SINGLE SOURCE OF TRUTH
-    currentUser: null, // 🔥 stores current user profile
+    resultsByType: {}, //stores per test result
+    backendResult: null, //stores backend API result - SINGLE SOURCE OF TRUTH
+    currentUser: null, //stores current user profile
     timeLeft: config.durationSeconds,
     loading: false,
     error: null,
@@ -311,7 +311,7 @@ const testSlice = createSlice({
       .addCase(getResult.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-        console.error("❌ getResult: Failed", action.payload);
+        console.error("getResult: Failed", action.payload);
       });
   },
 });

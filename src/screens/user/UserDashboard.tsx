@@ -9,7 +9,8 @@ import {
   FaTrophy,
   FaCogs,
 } from "react-icons/fa";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { useAppDispatch } from "../../redux/hooks";
+import { useSelector } from "react-redux";
 import { startTest, getResult } from "../../redux/slices/testSlice";
 import { TEST_CONFIG } from "../../utils/testData";
 import { TestType } from "../../types";
@@ -50,7 +51,7 @@ const UserDashboard = () => {
   const dispatch = useAppDispatch();
 
   // ─── Redux State ───────────────────────────────────────────────────────────
-  const { backendResult, currentUser } = useAppSelector((s) => s.test);
+  const { backendResult, currentUser } = useSelector((s: any) => s.test);
 
   // ─── Scenario flags ────────────────────────────────────────────────────────
   // Scenario 1: No test attempted (both scores null/undefined)

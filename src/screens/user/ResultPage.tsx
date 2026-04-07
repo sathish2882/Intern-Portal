@@ -23,12 +23,12 @@ const ResultPage = () => {
   // Validate status and check for test completion
   useEffect(() => {
     if (!loading && backendResult && backendResult.status !== "completed") {
-      console.log("⚠️ Status is not 'completed':", backendResult.status);
+      console.log("Status is not 'completed':", backendResult.status);
       navigate("/user/dashboard", { replace: true });
     }
   }, [backendResult, loading, navigate]);
 
-  // ✅ ALERT MESSAGE
+  //ALERT MESSAGE
   useEffect(() => {
     const pendingAlert = sessionStorage.getItem("test_alert_message");
     if (pendingAlert) {
@@ -48,7 +48,7 @@ const ResultPage = () => {
   if (!backendResult) return null;
 
   // =========================
-  // 🔥 INDIVIDUAL TEST RESULTS - Use Backend Data Directly
+  // INDIVIDUAL TEST RESULTS - Use Backend Data Directly
   // =========================
 
   // Get data for each test from BACKEND (not local Redux calculations)
@@ -91,7 +91,7 @@ const ResultPage = () => {
   const cumulativePassed = totalScore >= OVERALL_PASS_MARK;
   const scholarshipEligible = totalScore > SCHOLARSHIP_THRESHOLD;
 
-  console.log("📊 ResultPage - Calculated Percentage:", {
+  console.log("ResultPage - Calculated Percentage:", {
     totalScore,
     TOTAL_MARKS,
     totalPercentage,
@@ -99,7 +99,7 @@ const ResultPage = () => {
   });
 
   // =========================
-  // ✅ NO RETAKES - Only one attempt per test
+  // NO RETAKES - Only one attempt per test
   // =========================
 
   return (
