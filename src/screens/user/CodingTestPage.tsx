@@ -23,10 +23,10 @@ import {
 } from "react-icons/fi";
 import { submitTest } from "../../redux/slices/testSlice";
 import { useAppDispatch } from "../../redux/hooks";
-import { CODING_TEST } from "../../utils/codingTestData";
 
 type SupportedLanguage = "javascript" | "python" | "java" | "cpp" | "c";
 type SubmitMode = "manual" | "violation";
+const CODING_MARKS_PER_QUESTION = 5;
 
 interface ApiCodingTestCase {
   input: string;
@@ -303,6 +303,10 @@ function CodingTest() {
     async (mode: SubmitMode = "manual") => {
       if (isSubmittingRef.current) return;
 
+      const isDefaultCode = (code: string, lang: SupportedLanguage) => {
+        return code.trim() === CODE_TEMPLATES[lang].trim();
+      };
+
       isSubmittingRef.current = true;
       setSubmitMode(mode);
       setIsSubmitting(true);
@@ -319,14 +323,19 @@ function CodingTest() {
           languageMapRef.current[question.question_id] = language;
         }
 
-        // Submit ALL questions that have code written
-        const answers = questions
-          .filter((q) => codeMapRef.current[q.question_id]?.trim())
-          .map((q) => ({
+        // Submit ALL questions - user's code if written, otherwise default template
+        const answers = questions.map((q) => {
+          const lang = languageMapRef.current[q.question_id] ?? language;
+          const rawCode = codeMapRef.current[q.question_id] || "";
+          const isEmpty = !rawCode.trim() || isDefaultCode(rawCode, lang);
+
+          const userCode = isEmpty ? "" : rawCode;
+          return {
             question_id: q.question_id,
-            code: codeMapRef.current[q.question_id],
-            language: languageMapRef.current[q.question_id] ?? language,
-          }));
+            code: userCode,
+            language: lang,
+          };
+        });
         console.log("Submitting answers:", answers);
         const response = await submitCodeApi(answers);
         console.log("Submit API response:", response?.data);
@@ -345,14 +354,16 @@ function CodingTest() {
 
         // update redux
 
-        const passMark = CODING_TEST.pass * 5; // Each coding question is worth 5 marks
+        const totalCodingMarks = questions.length * CODING_MARKS_PER_QUESTION;
+        const passQuestionCount = Math.ceil(questions.length / 2);
+        const passMark = passQuestionCount * CODING_MARKS_PER_QUESTION;
         dispatch(
           submitTest({
             testType: "coding",
             correct: codingScore,
             wrong: 0,
             skipped: 0,
-            total: CODING_TEST.total * 5,
+            total: totalCodingMarks,
             passed: codingScore >= passMark,
             timeTaken: "",
           }),
@@ -498,7 +509,12 @@ function CodingTest() {
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!testStarted || isSubmittingRef.current || fullscreenExitingRef.current) return;
+      if (
+        !testStarted ||
+        isSubmittingRef.current ||
+        fullscreenExitingRef.current
+      )
+        return;
 
       if (showFullscreenRestore && document.hidden) {
         handleSubmit("violation");
@@ -621,7 +637,12 @@ function CodingTest() {
 
   useEffect(() => {
     const handleBlur = () => {
-      if (!testStarted || isSubmittingRef.current || fullscreenExitingRef.current) return;
+      if (
+        !testStarted ||
+        isSubmittingRef.current ||
+        fullscreenExitingRef.current
+      )
+        return;
 
       if (showFullscreenRestore) {
         handleSubmit("violation");
@@ -684,7 +705,6 @@ function CodingTest() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 font-jakarta">
-
       {showGuidelines && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-[92%] max-w-lg animate-fadeUp rounded-2xl bg-white p-7 shadow-2xl">

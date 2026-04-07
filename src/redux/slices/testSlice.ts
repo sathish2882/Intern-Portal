@@ -19,10 +19,10 @@ export const getResult = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await getTestStatusApi();
-      console.log("getResult Thunk - API Response:", res?.data);
+      console.log("TestStatus API Response:", res?.data);
       return res?.data as BackendTestResult;
     } catch (error: any) {
-      console.error("❌ getResult Thunk Error:", error);
+      console.error("getResult Thunk Error:", error);
       return rejectWithValue(error?.message || "Failed to fetch test results");
     }
   },

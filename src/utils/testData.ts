@@ -14,56 +14,53 @@ export const APTITUDE_TEST: TestData = {
       opts: ["1", "3", "7", "9"],
       ans: 3,
     },
-
     {
       section: "Logical - Series",
       q: "Find the next term: 3, 9, 27, 81, ?",
       opts: ["162", "243", "324", "361"],
       ans: 1,
     },
-
     {
       section: "Verbal - Synonyms",
       q: 'Choose the synonym of "Abundant".',
       opts: ["Scarce", "Plenty", "Rare", "Empty"],
       ans: 1,
     },
-
     {
       section: "Quantitative - Percentages",
-      q: "A number is increased by 20% and then decreased by 20%. What is the net change?",
-      opts: ["0%", "4% decrease", "4% increase", "2% decrease"],
+      q: "A number is increased by 20 percent and then decreased by 20 percent. What is the net change?",
+      opts: [
+        "0 percent",
+        "4 percent decrease",
+        "4 percent increase",
+        "2 percent decrease",
+      ],
       ans: 1,
     },
-
     {
       section: "Logical - Coding Decoding",
-      q: "If PEN is coded as 123 and BOOK is coded as 4567, then POKE is coded as:",
-      opts: ["1458", "1548", "1568", "1457"],
+      q: "If CAT is coded as 3120 and DOG is coded as 4157, then COD is coded as:",
+      opts: ["3415", "3451", "3145", "3514"],
       ans: 0,
     },
-
     {
       section: "Verbal - Antonyms",
       q: 'Choose the antonym of "Expand".',
       opts: ["Increase", "Extend", "Contract", "Grow"],
       ans: 2,
     },
-
     {
       section: "Quantitative - Time and Work",
       q: "A can complete work in 8 days and B in 12 days. In how many days can they complete together?",
       opts: ["4.8", "5", "6", "7"],
       ans: 0,
     },
-
     {
       section: "Logical - Direction Sense",
       q: "A person walks 10m south, then 10m west, then 10m north. How far from starting point?",
       opts: ["0m", "10m", "20m", "30m"],
       ans: 1,
     },
-
     {
       section: "Verbal - Grammar",
       q: "Choose the correct sentence.",
@@ -75,42 +72,36 @@ export const APTITUDE_TEST: TestData = {
       ],
       ans: 1,
     },
-
     {
       section: "Quantitative - Profit and Loss",
-      q: "A shopkeeper marks goods 20% above cost and gives 10% discount. Profit percentage is:",
-      opts: ["8%", "10%", "12%", "15%"],
+      q: "A shopkeeper marks goods 20 percent above cost and gives 10 percent discount. Profit percentage is:",
+      opts: ["8 percent", "10 percent", "12 percent", "15 percent"],
       ans: 0,
     },
-
     {
       section: "Logical - Seating Arrangement",
-      q: "Five people A, B, C, D, E sit in a row. A is left of B, B is left of C. Who is in middle?",
+      q: "Five people A, B, C, D, E sit in a row. C is in the middle position. Who is in the middle?",
       opts: ["A", "B", "C", "D"],
-      ans: 1,
+      ans: 2,
     },
-
     {
       section: "Verbal - Sentence Completion",
-      q: "Although he was tired, ____ he continued working.",
+      q: "Although he was tired, he continued working.",
       opts: ["but", "so", "yet", "because"],
       ans: 2,
     },
-
     {
       section: "Quantitative - Averages",
       q: "The average of 10 numbers is 50. If one number 100 is removed, new average is:",
-      opts: ["45", "46", "48", "50"],
-      ans: 1,
+      opts: ["44", "45", "46", "48"],
+      ans: 0,
     },
-
     {
       section: "Logical - Blood Relation",
       q: "A is the father of B. B is the sister of C. How is A related to C?",
       opts: ["Father", "Brother", "Uncle", "Grandfather"],
       ans: 0,
     },
-
     {
       section: "Verbal - Vocabulary",
       q: 'Choose the word closest in meaning to "Reluctant".',
@@ -200,7 +191,7 @@ export const TECHNICAL_TEST: TestData = {
     },
     {
       section: "JavaScript Basics",
-      q: "What does === check in JavaScript?",
+      q: "What does triple equals operator check in JavaScript?",
       opts: [
         "Value only",
         "Reference only",
@@ -245,7 +236,10 @@ export const TECHNICAL_SECTION_BREAKDOWN = [
 // ─── Overall Pass & Scholarship ────────────────────────────────────────────
 export const OVERALL_PASS_MARK = 23;
 export const SCHOLARSHIP_THRESHOLD = 23; // scored more than 23 = eligible
-export const TOTAL_MARKS = APTITUDE_TEST.total + TECHNICAL_TEST.total + (CODING_TEST.total * CODING_MARKS_PER_Q); // 15+15+20 = 50
+export const TOTAL_MARKS =
+  APTITUDE_TEST.total +
+  TECHNICAL_TEST.total +
+  CODING_TEST.total * CODING_MARKS_PER_Q; // 15+15+20 = 50
 export { CODING_MARKS_PER_Q };
 
 export const TEST_CONFIG = {

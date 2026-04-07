@@ -12,7 +12,7 @@ import {
 import { useAppDispatch } from "../../redux/hooks";
 import { useSelector } from "react-redux";
 import { startTest, getResult } from "../../redux/slices/testSlice";
-import { TEST_CONFIG } from "../../utils/testData";
+import { TEST_CONFIG, TOTAL_MARKS } from "../../utils/testData";
 import { TestType } from "../../types";
 import { startTestApi } from "../../services/testApi";
 
@@ -78,13 +78,9 @@ const UserDashboard = () => {
       (backendResult?.aptitude_score ?? 0) +
       (backendResult?.technical_score ?? 0) +
       (backendResult?.coding_score ?? 0);
-    const totalQuestions =
-      TEST_CONFIG.aptitude.data.total +
-      TEST_CONFIG.technical.data.total +
-      TEST_CONFIG.coding.data.total;
     bestPct =
-      totalQuestions > 0
-        ? Math.round((totalCorrect / totalQuestions) * 100)
+      TOTAL_MARKS > 0
+        ? Math.round((totalCorrect / TOTAL_MARKS) * 100)
         : 0;
   }
 

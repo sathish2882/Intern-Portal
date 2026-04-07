@@ -147,9 +147,9 @@ const InterviewDashboard = () => {
               </div>
             ))}
           </div>
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex md:items-center justify-between max-md:flex-col border-none gap-3">
             <Select<FilterStatus>
-              className="w-[190px] custom-select"
+              className="w-[190px] rounded-xl custom-select border border-white/10 bg-white/5 text-slate-300 mb-2"
               value={filterStatus}
               disabled={resetting}
               onChange={(value: FilterStatus) => {
@@ -167,7 +167,7 @@ const InterviewDashboard = () => {
               }}
             />
             <Button
-              className="bg-red-500/30"
+              className="bg-red-500/30 !w-[190px]"
               type="primary"
               loading={resetting}
               onClick={handleResetExam}

@@ -68,13 +68,20 @@ const ResultPage = () => {
     const testPercentage =
       testTotal > 0 ? Math.round((backendScore / testTotal) * 100) : 0;
 
+    // For display: show questions passed / total questions
+    const questionsCorrect = isCoding
+      ? Math.round(backendScore / marksPerQuestion)
+      : backendScore;
+
     return {
       testType,
-      score: backendScore, // From backend
-      total: testTotal, // From test config
-      pass: testPass, // From test config
+      score: backendScore, // From backend (marks)
+      total: testTotal, // Total marks for this test
+      pass: testPass, // Pass marks
       percentage: testPercentage, // Calculate from backend score
       name: TEST_CONFIG[testType].data.title,
+      questionsCorrect, // Number of questions passed
+      totalQuestions, // Number of questions
     };
   };
 
@@ -158,7 +165,7 @@ const ResultPage = () => {
               <p className="text-xl font-bold text-navy">
                 {totalScore} / {TOTAL_MARKS}
               </p>
-              <p className="text-xs text-slate mt-1">Questions Correct</p>
+              <p className="text-xs text-slate mt-1">Total Marks</p>
             </div>
           </div>
         </div>
@@ -202,7 +209,7 @@ const ResultPage = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-navy">
-                        {testResult.score} / {testResult.total}
+                        {testResult.questionsCorrect} / {testResult.totalQuestions}
                       </p>
                       <p className="text-xs text-slate mt-0.5">Questions</p>
                     </div>
