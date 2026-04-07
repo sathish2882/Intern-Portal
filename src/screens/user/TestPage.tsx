@@ -12,7 +12,7 @@ import {
 } from "../../redux/slices/testSlice";
 import { TEST_CONFIG } from "../../utils/testData";
 import { TestResult } from "../../types";
-import { getTestStatusApi, submitResultApi } from "../../services/testApi";
+import { getTestStatusApi, saveScoresApi } from "../../services/testApi";
 
 function TestPage() {
   const dispatch = useAppDispatch();
@@ -86,10 +86,7 @@ function TestPage() {
     try {
       const { correct, wrong, skipped } = calculateResult();
 
-      const elapsed = durationSeconds - timeLeft;
-
-      // Pass mark is 25 correct answers for both tests
-      const passMark = 25;
+      const passMark = TEST_CONFIG[activeTestType].data.pass;
       const result: TestResult = {
         testType: activeTestType,
         correct,
@@ -103,17 +100,15 @@ function TestPage() {
       // send to backend
       const submitPayload = {
         test_type: activeTestType,
+        score: correct,
         correct_answers: correct,
         wrong_answers: wrong,
         skipped_answers: skipped,
-        total_questions: questions.length,
-        score: correct,
-        time_taken: elapsed,
       };
 
       console.log("📤 Submitting test payload:", submitPayload);
 
-      await submitResultApi(submitPayload);
+      await saveScoresApi(submitPayload);
 
       console.log("✅ Test submitted successfully");
 

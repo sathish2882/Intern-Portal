@@ -171,9 +171,10 @@ const testSlice = createSlice({
       action: PayloadAction<{
         aptitude_score: number;
         technical_score: number;
+        coding_score: number;
       }>,
     ) => {
-      const { aptitude_score, technical_score } = action.payload;
+      const { aptitude_score, technical_score, coding_score } = action.payload;
 
       state.resultsByType = {}; // CLEAR OLD DATA FIRST
 
@@ -196,6 +197,18 @@ const testSlice = createSlice({
           wrong: 0,
           skipped: 0,
           total: TEST_CONFIG.technical.data.total,
+          passed: false,
+          timeTaken: "",
+        };
+      }
+
+      if (coding_score != null) {
+        state.resultsByType["coding"] = {
+          testType: "coding",
+          correct: coding_score,
+          wrong: 0,
+          skipped: 0,
+          total: TEST_CONFIG.coding.data.total,
           passed: false,
           timeTaken: "",
         };
@@ -249,7 +262,7 @@ const testSlice = createSlice({
         state.backendResult = action.payload; // Store backend result in Redux
 
         // SYNC: Update resultsByType so UI displays completed tests
-        const { aptitude_score, technical_score } = action.payload;
+        const { aptitude_score, technical_score,coding_score } = action.payload;
 
         state.resultsByType = {}; // VERY IMPORTANT (clear old data)
 
@@ -272,6 +285,18 @@ const testSlice = createSlice({
             wrong: 0,
             skipped: 0,
             total: TEST_CONFIG.technical.data.total,
+            passed: false,
+            timeTaken: "",
+          };
+        }
+
+        if (coding_score != null) {
+          state.resultsByType["coding"] = {
+            testType: "coding",
+            correct: coding_score,
+            wrong: 0,
+            skipped: 0,
+            total: TEST_CONFIG.coding.data.total,
             passed: false,
             timeTaken: "",
           };

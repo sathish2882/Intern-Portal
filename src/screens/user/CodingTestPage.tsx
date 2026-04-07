@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Editor from "@monaco-editor/react";
-import { getTestQuestionsApi, runCodeApi, submitCodeApi } from "../../services/testApi";
+
+import {
+  getTestQuestionsApi,
+  getTestStatusApi,
+  runCodeApi,
+  submitCodeApi,
+} from "../../services/testApi";
 import {
   FiPlay,
   FiSend,
@@ -15,8 +21,11 @@ import {
   FiShield,
   FiTerminal,
 } from "react-icons/fi";
+import { submitTest } from "../../redux/slices/testSlice";
+import { useAppDispatch } from "../../redux/hooks";
+import { CODING_TEST } from "../../utils/codingTestData";
 
-type SupportedLanguage = "javascript" | "python" | "java" | "cpp";
+type SupportedLanguage = "javascript" | "python" | "java" | "cpp" | "c";
 type SubmitMode = "manual" | "violation";
 
 interface ApiCodingTestCase {
@@ -47,50 +56,54 @@ interface CodingQuestionItem {
   testCases: ApiCodingTestCase[];
 }
 
-const CODING_TEST_DURATION = 3600; // 60 minutes
+const CODING_TEST_DURATION = 1800; // 30 minutes
 
-const CODE_TEMPLATES: Record<SupportedLanguage, string> = {
-  javascript: `function solve(input) {
-  // Write your logic
-  return input;
-}`,
+const CODE_TEMPLATES = {
+  javascript: `const input = require("fs").readFileSync(0, "utf-8").trim();
 
-  python: `def solve(input):
-    # Write your logic
-    return input`,
+// Write your logic here
+console.log(input);`,
+
+  python: `input_data = input().strip()
+
+# Write your logic here
+print(input_data)`,
 
   java: `import java.util.*;
 
-public class Solution {
+public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         String input = sc.nextLine();
-        System.out.println(solve(input));
-    }
 
-    public static String solve(String input) {
-        // Write your logic
-        return input;
+        // Write your logic here
+        System.out.println(input);
     }
 }`,
 
   cpp: `#include <iostream>
 using namespace std;
 
-string solve(string input) {
-    // Write your logic
-    return input;
-}
-
 int main() {
     string input;
     getline(cin, input);
-    cout << solve(input);
+
+    // Write your logic here
+    cout << input;
+    return 0;
+}`,
+
+  c: `#include <stdio.h>
+
+int main() {
+    char input[1000];
+    fgets(input, sizeof(input), stdin);
+
+    // Write your logic here
+    printf("%s", input);
     return 0;
 }`,
 };
-
-
 
 const formatBackendOutput = (data: any) => {
   if (typeof data === "string") return data;
@@ -166,6 +179,7 @@ const normalizeCodingQuestions = (payload: any): CodingQuestionItem[] => {
 };
 
 function CodingTest() {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const [current, setCurrent] = useState(0);
@@ -191,6 +205,7 @@ function CodingTest() {
   const blurStartRef = useRef<number | null>(null);
   const codeMapRef = useRef<Record<number, string>>({});
   const inputMapRef = useRef<Record<number, string>>({});
+  const languageMapRef = useRef<Record<number, SupportedLanguage>>({});
 
   const [questions, setQuestions] = useState<CodingQuestionItem[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
@@ -220,16 +235,36 @@ function CodingTest() {
   }, [current, questions.length]);
 
   const question = questions[current] || null;
+  useEffect(() => {
+    if (
+      question &&
+      question.testCases.length > 0 &&
+      !inputMapRef.current[question.question_id]
+    ) {
+      const defaultInput = question.testCases[0].input;
+
+      setInputData(defaultInput);
+      inputMapRef.current[question.question_id] = defaultInput;
+    }
+  }, [question]);
+
   const totalQuestions = questions.length;
   const visibleTestCases = question?.testCases.filter((tc) => !tc.hidden) ?? [];
   const hiddenTestCaseCount =
     question?.testCases.filter((tc) => tc.hidden).length ?? 0;
 
   const navigateToQuestion = (index: number) => {
+    if (question) {
+      languageMapRef.current[question.question_id] = language;
+    }
     setCurrent(index);
     const nextQ = questions[index];
     if (nextQ) {
-      setCode(codeMapRef.current[nextQ.question_id] ?? CODE_TEMPLATES[language]);
+      const nextLang = languageMapRef.current[nextQ.question_id] ?? language;
+      setLanguage(nextLang);
+      setCode(
+        codeMapRef.current[nextQ.question_id] ?? CODE_TEMPLATES[nextLang],
+      );
       setInputData(inputMapRef.current[nextQ.question_id] ?? "");
     }
     setOutput("");
@@ -264,58 +299,85 @@ function CodingTest() {
     warningTimeoutRef.current = setTimeout(() => setWarningMsg(null), duration);
   }, []);
 
-const handleSubmit = useCallback(
-  async (mode: SubmitMode = "manual") => {
-    if (isSubmittingRef.current) return;
+  const handleSubmit = useCallback(
+    async (mode: SubmitMode = "manual") => {
+      if (isSubmittingRef.current) return;
 
-    isSubmittingRef.current = true;
-    setSubmitMode(mode);
-    setIsSubmitting(true);
+      isSubmittingRef.current = true;
+      setSubmitMode(mode);
+      setIsSubmitting(true);
 
-    try {
-      // exit fullscreen
-      if (document.fullscreenElement) {
-        await document.exitFullscreen().catch(() => {});
-      }
+      try {
+        // exit fullscreen
+        if (document.fullscreenElement) {
+          await document.exitFullscreen().catch(() => {});
+        }
 
-      // Save current question code before submitting
-      if (question) {
-        codeMapRef.current[question.question_id] = code;
-      }
+        // Save current question code and language before submitting
+        if (question) {
+          codeMapRef.current[question.question_id] = code;
+          languageMapRef.current[question.question_id] = language;
+        }
 
-      // Submit ALL questions that have code written
-      const submissions = questions
-        .map((q) => {
-          const savedCode = codeMapRef.current[q.question_id];
-          if (!savedCode || !savedCode.trim()) return null;
-          return submitCodeApi({
+        // Submit ALL questions that have code written
+        const answers = questions
+          .filter((q) => codeMapRef.current[q.question_id]?.trim())
+          .map((q) => ({
             question_id: q.question_id,
-            code: savedCode,
-            language,
-            input_data: inputMapRef.current[q.question_id] || "",
-          });
-        })
-        .filter(Boolean);
+            code: codeMapRef.current[q.question_id],
+            language: languageMapRef.current[q.question_id] ?? language,
+          }));
+        console.log("Submitting answers:", answers);
+        const response = await submitCodeApi(answers);
+        console.log("Submit API response:", response?.data);
 
-      if (submissions.length > 0) {
-        await Promise.allSettled(submissions as Promise<any>[]);
+        // fetch latest status
+        const statusRes = await getTestStatusApi();
+        const status = statusRes?.data?.status;
+        const codingScore = statusRes?.data?.coding_score ?? 0;
+
+        console.log(
+          "After submit - Status:",
+          status,
+          "Response:",
+          statusRes?.data,
+        );
+
+        // update redux
+
+        const passMark = CODING_TEST.pass * 5; // Each coding question is worth 5 marks
+        dispatch(
+          submitTest({
+            testType: "coding",
+            correct: codingScore,
+            wrong: 0,
+            skipped: 0,
+            total: CODING_TEST.total * 5,
+            passed: codingScore >= passMark,
+            timeTaken: "",
+          }),
+        );
+
+        // navigate
+        if (status === "completed") {
+          navigate("/user/result", { replace: true });
+        } else {
+          navigate("/user/dashboard", { replace: true });
+        }
+      } catch (error: any) {
+        showWarning(
+          error?.response?.data?.detail ||
+            error?.response?.data?.message ||
+            "Failed to submit code. Please try again.",
+          4000,
+        );
+      } finally {
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
       }
-
-      navigate("/user/dashboard", { replace: true });
-    } catch (error: any) {
-      showWarning(
-        error?.response?.data?.detail ||
-          error?.response?.data?.message ||
-          "Failed to submit code. Please try again.",
-        4000,
-      );
-    } finally {
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
-    }
-  },
-  [testStarted, questions, question, code, language, navigate, showWarning],
-);
+    },
+    [testStarted, questions, question, code, language, navigate, showWarning],
+  );
 
   const registerViolation = useCallback(
     (msg?: string) => {
@@ -377,7 +439,6 @@ const handleSubmit = useCallback(
 
     try {
       const payload = {
-        question_id: question.question_id,
         code,
         input_data: inputData,
         language,
@@ -437,12 +498,10 @@ const handleSubmit = useCallback(
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (
-        !testStarted ||
-        isSubmittingRef.current ||
-        fullscreenExitingRef.current ||
-        showFullscreenRestore
-      ) {
+      if (!testStarted || isSubmittingRef.current || fullscreenExitingRef.current) return;
+
+      if (showFullscreenRestore && document.hidden) {
+        handleSubmit("violation");
         return;
       }
 
@@ -470,9 +529,6 @@ const handleSubmit = useCallback(
       if (!testStarted || isSubmittingRef.current) return;
 
       if (!document.fullscreenElement) {
-        const now = Date.now();
-        if (now - lastViolationTimeRef.current < 3000) return;
-
         fullscreenExitingRef.current = true;
 
         setTimeout(() => {
@@ -514,7 +570,8 @@ const handleSubmit = useCallback(
 
     const isEditorOrInput = (target: EventTarget | null): boolean => {
       if (!target || !(target instanceof HTMLElement)) return false;
-      if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return true;
+      if (target.tagName === "TEXTAREA" || target.tagName === "INPUT")
+        return true;
       if (target.closest(".monaco-editor")) return true;
       return false;
     };
@@ -564,12 +621,10 @@ const handleSubmit = useCallback(
 
   useEffect(() => {
     const handleBlur = () => {
-      if (
-        !testStarted ||
-        isSubmittingRef.current ||
-        fullscreenExitingRef.current ||
-        showFullscreenRestore
-      ) {
+      if (!testStarted || isSubmittingRef.current || fullscreenExitingRef.current) return;
+
+      if (showFullscreenRestore) {
+        handleSubmit("violation");
         return;
       }
 
@@ -614,30 +669,21 @@ const handleSubmit = useCallback(
     };
   }, [testStarted]);
 
+  if (isSubmitting) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-lightbg font-jakarta text-navy gap-5">
+        <div className="loader" />
+        <p className="text-sm font-semibold text-slate animate-pulse">
+          {submitMode === "violation"
+            ? "Auto-submitting your test…"
+            : "Submitting your code…"}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 font-jakarta">
-      {isSubmitting && (
-        <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-white/90 backdrop-blur-md">
-          <div className="flex flex-col items-center gap-5 animate-fadeUp">
-            <div className="relative h-16 w-16">
-              <div className="absolute inset-0 rounded-full border-4 border-blue/20" />
-              <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-blue" />
-            </div>
-            <div className="text-center">
-              <h2 className="mb-1 text-lg font-extrabold text-navy">
-                {submitMode === "violation"
-                  ? "Auto-Submitting Test..."
-                  : "Submitting Your Code..."}
-              </h2>
-              <p className="text-sm text-slate">
-                {submitMode === "violation"
-                  ? "Your test is being submitted due to security violations."
-                  : "Please wait while we submit your solution."}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showGuidelines && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -1018,6 +1064,10 @@ const handleSubmit = useCallback(
                   onChange={(e) => {
                     const selectedLang = e.target.value as SupportedLanguage;
                     setLanguage(selectedLang);
+                    if (question) {
+                      languageMapRef.current[question.question_id] =
+                        selectedLang;
+                    }
                     updateCode(CODE_TEMPLATES[selectedLang]);
                     setOutput("");
                   }}
@@ -1027,6 +1077,7 @@ const handleSubmit = useCallback(
                   <option value="python">Python</option>
                   <option value="java">Java</option>
                   <option value="cpp">C++</option>
+                  <option value="c">C</option>
                 </select>
 
                 <button
@@ -1083,7 +1134,7 @@ const handleSubmit = useCallback(
                 placeholder="Enter custom input..."
                 value={inputData}
                 onChange={(e) => updateInputData(e.target.value)}
-                className="h-24 w-full resize-none bg-[#1a1a2e] px-4 py-3 font-mono text-[13px] text-slate-200 placeholder:text-slate-500 focus:outline-none"
+                className="h-24 w-full resize-none bg-[#1a1a2e] px-4 py-3 font-mono text-[13px] text-white placeholder:text-slate-500 focus:outline-none"
               />
             </div>
 

@@ -3,9 +3,9 @@ import { CodingTestData } from "../types";
 export const CODING_TEST: CodingTestData = {
   type: "coding",
   title: "Coding Test",
-  subtitle: "5 Questions - 60 min",
-  total: 5,
-  pass: 3,
+  subtitle: "4 Questions - 30 min - Each 5 marks - Pass: 2/4",
+  total: 4,
+  pass: 2,
   questions: [
     {
       id: 1,
@@ -60,31 +60,12 @@ export const CODING_TEST: CodingTestData = {
         },
       ],
     },
-    {
-      id: 5,
-      title: "Two Sum",
-      difficulty: "Hard",
-      description: "Find two numbers that add up to target.",
-      example: "[2,7,11,15], target=9 → [2,7]",
-      testCases: [
-        {
-          input: { nums: [2, 7, 11, 15], target: 9 },
-          expected: [2, 7],
-        },
-        {
-          input: { nums: [3, 2, 4], target: 6 },
-          expected: [2, 4],
-        },
-        {
-          input: { nums: [1, 5, 3, 7], target: 8 },
-          expected: [1, 7],
-        },
-      ],
-    },
   ],
 };
 
+export const CODING_MARKS_PER_Q = 5;
+
 export const CODING_SECTION_BREAKDOWN = [
-  { name: "Programming", total: 3 },
+  { name: "Programming", total: 2 },
   { name: "Data Structures", total: 2 },
 ];
