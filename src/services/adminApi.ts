@@ -35,6 +35,21 @@ export const deleteUser = (userId: number | string) => {
   return API.delete(`/users/${userId}`)
 }
 
+export const getAllMentorsApi = () => {
+  return API.get('/get_all_mentors')
+}
+
+export const addMentorApi = (data: {
+  username: string
+  email: string
+  password: string
+  batch: number
+  phone: string
+  tech_stack: string
+}) => {
+  return API.post('/add_mentor', data)
+}
+
 
 export const getBankDetailsApi = (invoiceNo: string) => {
   return API.post(

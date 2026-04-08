@@ -14,18 +14,20 @@ import {
   FiRefreshCw,
   FiEdit2,
   FiEye,
+  FiTrash2,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import {
   createTaskApi,
   getTasksApi,
+  getTaskApi,
   startTaskApi,
   pauseTaskApi,
   resumeTaskApi,
   endTaskApi,
   updateTaskApi,
   getMentorsApi,
-  getTaskApi,
+  deleteTaskApi,
 } from "../../services/internApi";
 
 // View Task Modal state and handler must be inside the component, not at top-level
@@ -34,13 +36,13 @@ import { getMeApi } from "../../services/authApi";
 // ── Types ──────────────────────────────────────────
 interface Task {
   task_id: number;
-  user_id: number;
+  user_id: number | string;
   title: string;
   status: number;
   start_time: string | null;
   completion_time: string | null;
   created_at: string;
-  created_by: number;
+  created_by: number | string;
   updated_at: string;
   due_time: string;
   is_editable: boolean;
@@ -48,6 +50,11 @@ interface Task {
   is_paused?: boolean;
   description?: string;
   priority?: string | number;
+  productive_time?: {
+    seconds?: number;
+    minutes?: number;
+    hours?: number;
+  } | null;
 }
 
 interface UserInfo {
@@ -103,12 +110,24 @@ const titleArray = [
 
 // ── Component ──────────────────────────────────────
 const TasksPage = () => {
-  // View Task Modal (no API call, use tasks array)
+  // View Task Modal
   const [viewTask, setViewTask] = useState<Task | null>(null);
-  const handleViewTask = (taskId: number) => {
-    const found = tasks.find((t) => t.task_id === taskId);
-    if (found) setViewTask(found);
-    else toast.error("Task not found");
+  const [viewLoading, setViewLoading] = useState<number | null>(null);
+  const handleViewTask = async (taskId: number) => {
+    setViewLoading(taskId);
+    try {
+      const res = await getTaskApi(taskId);
+      setViewTask(res.data);
+    } catch {
+      const found = tasks.find((t) => t.task_id === taskId);
+      if (found) {
+        setViewTask(found);
+      } else {
+        toast.error("Task not found");
+      }
+    } finally {
+      setViewLoading(null);
+    }
   };
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,11 +146,10 @@ const TasksPage = () => {
 
   // Track which task action is in-flight
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
 
   // Edit task modal
   const [editTarget, setEditTarget] = useState<Task | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editDueDate, setEditDueDate] = useState("");
   const [updating, setUpdating] = useState(false);
   const [mentors, setMentors] = useState<any[]>([]);
 
@@ -167,8 +185,11 @@ const TasksPage = () => {
     try {
       const tasksRes = await getTasksApi();
       setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
-    } catch {
-      // keep current list
+      console.log("Refreshed tasks:", tasksRes.data);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to create task");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -191,7 +212,7 @@ const TasksPage = () => {
       const priority =
         values.priority === "high" ? 1 : values.priority === "low" ? 3 : 2;
       const payload = {
-        user_id: user.user_id,  
+        user_id: user.user_id,
         title: values.newTitle,
         status: status,
         created_by: values.owner,
@@ -293,15 +314,32 @@ const TasksPage = () => {
   };
 
   // ── Edit task ──
-  const openEditModal = (task: Task) => {
-    setEditTarget(task);
-    setEditTitle(task.title);
-    setEditDueDate(task.due_time ? task.due_time.split("T")[0] : "");
+  const handleDelete = async (task: Task) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${task.title}"?`,
+    );
+    if (!confirmed) return;
+
+    setDeleteLoading(task.task_id);
+    try {
+      await deleteTaskApi(task.task_id);
+      toast.success("Task deleted");
+      setViewTask((prev) => (prev?.task_id === task.task_id ? null : prev));
+      await refreshTasks();
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      const msg = Array.isArray(detail)
+        ? detail.map((d: any) => d.msg).join(", ")
+        : detail || "Failed to delete task";
+      toast.error(msg);
+    } finally {
+      setDeleteLoading(null);
+    }
   };
 
-
-  const time = new Date().toISOString();
-  console.log(time);
+  const openEditModal = (task: Task) => {
+    setEditTarget(task);
+  };
 
   // ── Filters ──
   const filtered =
@@ -324,6 +362,34 @@ const TasksPage = () => {
       month: "short",
       year: "numeric",
     });
+  const formatDateTime = (d?: string | null) => {
+    if (!d) return "-";
+    const date = new Date(d);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+  };
+  const formatProductiveTime = (task: Task) => {
+    const p = task.productive_time;
+    if (!p) return "-";
+    const h = p.hours ?? 0;
+    const m = p.minutes ?? 0;
+    const s = p.seconds ?? 0;
+    return `${h}h ${m}m ${s}s`;
+  };
+  const getPriorityLabel = (priority?: string | number) => {
+    if (priority === 1 || priority === "1") return "High";
+    if (priority === 2 || priority === "2") return "Normal";
+    if (priority === 3 || priority === "3") return "Low";
+    return priority || "-";
+  };
 
   // ── Loading state ──
   if (loading) {
@@ -623,14 +689,17 @@ const TasksPage = () => {
             <label className="block text-xs font-bold text-slate mb-1.5">
               Reason *
             </label>
-            <textarea
-              value={pauseReason}
+            <select
               onChange={(e) => setPauseReason(e.target.value)}
-              placeholder="Why are you pausing this task?"
-              rows={3}
-              maxLength={500}
-              className="w-full border border-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-5 resize-none"
-            />
+              value={pauseReason}
+              className="w-full border border-line rounded-lg pl-4 pr-4 my-3 py-2.5 text-sm"
+            >
+              <option value="">Select reason for pausing</option>
+              <option value="First Break">First Break</option>
+              <option value="Second Break">Second Break</option>
+              <option value="Lunch Break">Lunch Break</option>
+              <option value="Meeting">Meeting</option>
+            </select>
 
             <div className="flex justify-end gap-3">
               <button
@@ -664,29 +733,52 @@ const TasksPage = () => {
               initialValues={{
                 editTitle: editTarget.title || "",
                 description: editTarget.description || "",
-                dueDate: editTarget.due_time ? editTarget.due_time.split("T")[0] : "",
-                dueTime: editTarget.due_time ? (editTarget.due_time.split(" ")[1] || "") : "",
+                dueDate: editTarget.due_time
+                  ? editTarget.due_time.split("T")[0]
+                  : "",
+                dueTime: editTarget.due_time
+                  ? editTarget.due_time.split(" ")[1] || ""
+                  : "",
                 owner: editTarget.created_by || user?.user_id || "",
-                priority: editTarget.priority ? String(editTarget.priority) : "normal",
+                priority: editTarget.priority
+                  ? String(editTarget.priority)
+                  : "normal",
               }}
               enableReinitialize
-              validationSchema={Yup.object({
-                editTitle: Yup.string().required("Task title is required"),
-                dueDate: Yup.string().required("Due date is required"),
-                dueTime: Yup.string().required("Due time is required"),
-                owner: Yup.string().required("Task owner is required"),
-                priority: Yup.string().required("Priority is required"),
-              })}
+              validationSchema={
+                editTarget
+                  ? Yup.object({
+                      editTitle: Yup.string().trim(),
+                      dueDate: Yup.string(),
+                      dueTime: Yup.string(),
+                      owner: Yup.string(),
+                      priority: Yup.string(),
+                    })
+                  : Yup.object({
+                      editTitle: Yup.string().required(
+                        "Task title is required",
+                      ),
+                      dueDate: Yup.string().required("Due date is required"),
+                      dueTime: Yup.string().required("Due time is required"),
+                      owner: Yup.string().required("Task owner is required"),
+                      priority: Yup.string().required("Priority is required"),
+                    })
+              }
               onSubmit={async (values, { setSubmitting }) => {
                 setUpdating(true);
                 try {
                   const dueDateTime = `${values.dueDate} ${values.dueTime}`;
                   const payload: any = {};
-                  if (values.editTitle.trim() !== editTarget.title) payload.title = values.editTitle.trim();
-                  if (dueDateTime !== editTarget.due_time) payload.due_time = dueDateTime;
-                  if (values.description !== editTarget.description) payload.description = values.description;
-                  if (values.owner !== String(editTarget.created_by)) payload.created_by = values.owner;
-                  if (values.priority !== String(editTarget.priority)) payload.priority = values.priority;
+                  if (values.editTitle !== editTarget.title)
+                    payload.title = values.editTitle.trim();
+                  if (dueDateTime !== editTarget.due_time)
+                    payload.due_time = dueDateTime;
+                  if (values.description !== editTarget.description)
+                    payload.description = values.description;
+                  if (values.owner !== String(editTarget.created_by))
+                    payload.created_by = values.owner;
+                  if (values.priority !== String(editTarget.priority))
+                    payload.priority = values.priority;
                   if (Object.keys(payload).length === 0) {
                     setEditTarget(null);
                     setUpdating(false);
@@ -709,22 +801,47 @@ const TasksPage = () => {
                 }
               }}
             >
-              {({ isSubmitting, resetForm, values, setFieldValue }) => (
+              {({ isSubmitting, resetForm }) => (
                 <Form>
-                  <label className="block text-xs font-bold text-slate mb-1.5">Task Title *</label>
-                  <Field name="editTitle" as="select" className="h-10 border border-gray-200 rounded-md px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1 w-full">
+                  <label className="block text-xs font-bold text-slate mb-1.5">
+                    Task Title *
+                  </label>
+                  <Field
+                    name="editTitle"
+                    as="select"
+                    className="h-10 border border-gray-200 rounded-md px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1 w-full"
+                  >
                     <option value="">Select task title</option>
                     {titleArray.map((t) => (
-                      <option key={t.value} value={t.value}>{t.option}</option>
+                      <option key={t.value} value={t.value}>
+                        {t.option}
+                      </option>
                     ))}
                   </Field>
-                  <ErrorMessage name="editTitle" component="div" className="text-xs text-red-500 mb-2" />
+                  <ErrorMessage
+                    name="editTitle"
+                    component="div"
+                    className="text-xs text-red-500 mb-2"
+                  />
 
-                  <label className="block text-xs font-bold text-slate mb-1.5">Description</label>
-                  <Field as="textarea" name="description" placeholder="add any extranotes" className="w-full h-10 border border-gray-200 rounded-md px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1" />
-                  <ErrorMessage name="description" component="div" className="text-xs text-red-500 mb-2" />
+                  <label className="block text-xs font-bold text-slate mb-1.5">
+                    Description
+                  </label>
+                  <Field
+                    as="textarea"
+                    name="description"
+                    placeholder="add any extranotes"
+                    className="w-full h-10 border border-gray-200 rounded-md px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1"
+                  />
+                  <ErrorMessage
+                    name="description"
+                    component="div"
+                    className="text-xs text-red-500 mb-2"
+                  />
 
-                  <label className="block text-xs font-bold text-slate mb-1.5">Due Date *</label>
+                  <label className="block text-xs font-bold text-slate mb-1.5">
+                    Due Date *
+                  </label>
                   <div className="relative mb-1">
                     <FiCalendar className="absolute left-3.5 top-1/2 -translate-y-1/2 text-mist text-sm pointer-events-none" />
                     <Field
@@ -734,9 +851,15 @@ const TasksPage = () => {
                       className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30"
                     />
                   </div>
-                  <ErrorMessage name="dueDate" component="div" className="text-xs text-red-500 mb-2" />
+                  <ErrorMessage
+                    name="dueDate"
+                    component="div"
+                    className="text-xs text-red-500 mb-2"
+                  />
 
-                  <label className="block text-xs font-bold text-slate mb-1.5">Due Time *</label>
+                  <label className="block text-xs font-bold text-slate mb-1.5">
+                    Due Time *
+                  </label>
                   <div className="relative mb-1">
                     <Field
                       type="time"
@@ -745,31 +868,59 @@ const TasksPage = () => {
                       className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm"
                     />
                   </div>
-                  <ErrorMessage name="dueTime" component="div" className="text-xs text-red-500 mb-2" />
+                  <ErrorMessage
+                    name="dueTime"
+                    component="div"
+                    className="text-xs text-red-500 mb-2"
+                  />
 
-                  <label className="block text-xs font-bold text-slate mb-1.5">Task Owner</label>
+                  <label className="block text-xs font-bold text-slate mb-1.5">
+                    Task Owner
+                  </label>
                   <div className="relative mb-1">
-                    <Field as="select" name="owner" className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm">
+                    <Field
+                      as="select"
+                      name="owner"
+                      className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
+                    >
                       <option value="">Select owner</option>
                       {user && (
-                        <option value={user.user_id}>{user.username} (You)</option>
+                        <option value={user.user_id}>
+                          {user.username} (You)
+                        </option>
                       )}
                       {mentors.map((mentor) => (
-                        <option key={mentor.user_id} value={mentor.user_id}>{mentor.username}</option>
+                        <option key={mentor.user_id} value={mentor.user_id}>
+                          {mentor.username}
+                        </option>
                       ))}
                     </Field>
                   </div>
-                  <ErrorMessage name="owner" component="div" className="text-xs text-red-500 mb-2" />
+                  <ErrorMessage
+                    name="owner"
+                    component="div"
+                    className="text-xs text-red-500 mb-2"
+                  />
 
-                  <label className="block text-xs font-bold text-slate mb-1.5">Priority</label>
+                  <label className="block text-xs font-bold text-slate mb-1.5">
+                    Priority
+                  </label>
                   <div className="relative mb-5">
-                    <Field as="select" name="priority" className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm">
+                    <Field
+                      as="select"
+                      name="priority"
+                      className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
+                    >
                       <option value="high">High</option>
                       <option value="low">Low</option>
                       <option value="normal">Normal</option>
                     </Field>
                   </div>
-                  <ErrorMessage name="priority" component="div" className="text-xs text-red-500 mb-2" />
+                  <ErrorMessage
+                    name="priority"
+                    component="div"
+                    className="text-xs text-red-500 mb-2"
+                  />
 
                   <div className="flex justify-end gap-3">
                     <button
@@ -787,8 +938,10 @@ const TasksPage = () => {
                       disabled={isSubmitting || updating}
                       className="text-sm font-semibold text-white bg-blue hover:bg-bluelt disabled:opacity-40 px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
                     >
-                      {(isSubmitting || updating) && <FiLoader className="animate-spin text-sm" />}
-                      {(isSubmitting || updating) ? "Updating…" : "Update Task"}
+                      {(isSubmitting || updating) && (
+                        <FiLoader className="animate-spin text-sm" />
+                      )}
+                      {isSubmitting || updating ? "Updating…" : "Update Task"}
                     </button>
                   </div>
                 </Form>
@@ -830,7 +983,10 @@ const TasksPage = () => {
               const cfg = getStatusCfg(task.status);
               const overdue = task.is_overdue;
               const dueToday = isDueToday(task.due_time);
-              const busy = actionLoading === task.task_id;
+              const isActionLoading = actionLoading === task.task_id;
+              const isDeleting = deleteLoading === task.task_id;
+              const isViewing = viewLoading === task.task_id;
+              const busy = isActionLoading || isDeleting;
 
               return (
                 <div
@@ -870,7 +1026,10 @@ const TasksPage = () => {
                       </span>
 
                       <span className="text-[11px] text-mist">
-                        by {task.created_by}
+                        by{" "}
+                        {String(task.created_by) === String(user?.user_id)
+                          ? "You"
+                          : task.created_by}
                       </span>
 
                       {task.status === 1 && (
@@ -885,67 +1044,195 @@ const TasksPage = () => {
                   </div>
 
                   {/* Right: Action buttons */}
-                  <div className="flex items-center gap-2 sm:flex-shrink-0">
+                  <div className="flex items-center gap-2 sm:flex-shrink-0 sm:w-[280px] sm:justify-end">
                     {/* View Task */}
                     <button
                       title="View Task"
                       onClick={() => handleViewTask(task.task_id)}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-blue bg-sky/40 hover:bg-sky px-2.5 py-2 rounded-lg transition-colors"
+                      disabled={isViewing}
+                      className="flex items-center justify-center h-9 w-9 text-xs font-semibold text-blue bg-sky/40 hover:bg-sky rounded-lg transition-colors"
                     >
-                      <FiEye className="text-base" />
+                      {isViewing ? (
+                        <FiLoader className="animate-spin text-sm" />
+                      ) : (
+                        <FiEye className="text-base" />
+                      )}
                     </button>
-                          {/* ═══ View Task Modal ═══ */}
-                          {viewTask && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-                              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fadeUp">
-                                <h2 className="text-lg font-extrabold text-navy mb-3 flex items-center gap-2">
-                                  <FiEye className="text-blue" /> Task Details
-                                </h2>
-                                <>
-                                  <div className="mb-3">
-                                    <div className="text-xs text-mist mb-1">Title</div>
-                                    <div className="font-bold text-navy">{viewTask.title}</div>
+                    <button
+                      title="Delete Task"
+                      onClick={() => handleDelete(task)}
+                      disabled={busy}
+                      className="flex items-center justify-center h-9 w-9 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-50 rounded-lg transition-colors"
+                    >
+                      {isDeleting ? (
+                        <FiLoader className="animate-spin text-sm" />
+                      ) : (
+                        <FiTrash2 className="text-base" />
+                      )}
+                    </button>
+                    {/* ═══ View Task Modal ═══ */}
+                    {viewTask && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm px-4">
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6 animate-fadeUp">
+                          <h2 className="text-lg font-extrabold text-navy mb-3 flex items-center gap-2">
+                            <FiEye className="text-blue" /> Task Details
+                          </h2>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="rounded-xl border border-line p-4 bg-lightbg/40">
+                              <p className="text-xs font-bold text-blue mb-3">
+                                Task Info
+                              </p>
+                              <div className="space-y-3">
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Title
                                   </div>
-                                  <div className="mb-3">
-                                    <div className="text-xs text-mist mb-1">Description</div>
-                                    <div className="text-slate text-sm">{viewTask.description || "-"}</div>
+                                  <div className="font-bold text-navy">
+                                    {viewTask.title}
                                   </div>
-                                  <div className="mb-3">
-                                    <div className="text-xs text-mist mb-1">Due Date</div>
-                                    <div className="text-slate text-sm">{viewTask.due_time ? formatDate(viewTask.due_time) : "-"}</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Description
                                   </div>
-                                  <div className="mb-3">
-                                    <div className="text-xs text-mist mb-1">Status</div>
-                                    <div className="text-slate text-sm">{getStatusCfg(viewTask.status).label}</div>
+                                  <div className="text-slate text-sm">
+                                    {viewTask.description || "-"}
                                   </div>
-                                  <div className="mb-3">
-                                    <div className="text-xs text-mist mb-1">Owner</div>
-                                    <div className="text-slate text-sm">{viewTask.created_by}</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Status
                                   </div>
-                                  <div className="mb-3">
-                                    <div className="text-xs text-mist mb-1">Priority</div>
-                                    <div className="text-slate text-sm">{viewTask.priority || "-"}</div>
+                                  <div className="text-slate text-sm">
+                                    {getStatusCfg(viewTask.status).label}
                                   </div>
-                                </>
-                                <div className="flex justify-end mt-4">
-                                  <button
-                                    onClick={() => setViewTask(null)}
-                                    className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
-                                  >
-                                    Close
-                                  </button>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Priority
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {getPriorityLabel(viewTask.priority)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Due Date
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {formatDateTime(viewTask.due_time)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Task ID
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {viewTask.task_id}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    User ID
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {viewTask.user_id ?? "-"}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          )}
+
+                            <div className="rounded-xl border border-line p-4 bg-white">
+                              <p className="text-xs font-bold text-blue mb-3">
+                                Timeline & Tracking
+                              </p>
+                              <div className="space-y-3">
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Created By
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {viewTask.created_by}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Created At
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {formatDateTime(viewTask.created_at)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Start Time
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {formatDateTime(viewTask.start_time)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Completion Time
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {formatDateTime(viewTask.completion_time)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Updated At
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {formatDateTime(viewTask.updated_at)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Productive Time
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {formatProductiveTime(viewTask)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Editable
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {viewTask.is_editable ? "Yes" : "No"}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-mist mb-1">
+                                    Overdue
+                                  </div>
+                                  <div className="text-slate text-sm">
+                                    {viewTask.is_overdue ? "Yes" : "No"}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-end mt-4">
+                            <button
+                              onClick={() => setViewTask(null)}
+                              className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
+                            >
+                              Close
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {/* Status 1 = To Do → Start */}
                     {task.status === 1 && (
                       <button
                         onClick={() => handleStart(task)}
                         disabled={busy}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue hover:bg-bluelt disabled:opacity-50 px-3.5 py-2 rounded-lg transition-colors"
+                        className="flex items-center justify-center gap-1.5 min-w-[82px] text-xs font-semibold text-white bg-blue hover:bg-bluelt disabled:opacity-50 px-3.5 py-2 rounded-lg transition-colors"
                       >
-                        {busy ? (
+                        {isActionLoading ? (
                           <FiLoader className="animate-spin text-sm" />
                         ) : (
                           <FiPlay className="text-sm" />
@@ -961,9 +1248,9 @@ const TasksPage = () => {
                         <button
                           onClick={() => openPauseModal(task)}
                           disabled={busy}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3.5 py-2 rounded-lg"
+                          className="flex items-center justify-center gap-1.5 min-w-[82px] text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3.5 py-2 rounded-lg"
                         >
-                          {busy ? (
+                          {isActionLoading ? (
                             <FiLoader className="animate-spin text-sm" />
                           ) : (
                             <FiPause className="text-sm" />
@@ -974,9 +1261,9 @@ const TasksPage = () => {
                         <button
                           onClick={() => handleEnd(task)}
                           disabled={busy}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-3.5 py-2 rounded-lg"
+                          className="flex items-center justify-center gap-1.5 min-w-[82px] text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-3.5 py-2 rounded-lg"
                         >
-                          {busy ? (
+                          {isActionLoading ? (
                             <FiLoader className="animate-spin text-sm" />
                           ) : (
                             <FiSquare className="text-sm" />
@@ -992,9 +1279,9 @@ const TasksPage = () => {
                         <button
                           onClick={() => handleResume(task)}
                           disabled={busy}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue hover:bg-bluelt px-3.5 py-2 rounded-lg"
+                          className="flex items-center justify-center gap-1.5 min-w-[82px] text-xs font-semibold text-white bg-blue hover:bg-bluelt px-3.5 py-2 rounded-lg"
                         >
-                          {busy ? (
+                          {isActionLoading ? (
                             <FiLoader className="animate-spin text-sm" />
                           ) : (
                             <FiPlay className="text-sm" />
@@ -1005,9 +1292,9 @@ const TasksPage = () => {
                         <button
                           onClick={() => handleEnd(task)}
                           disabled={busy}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-3.5 py-2 rounded-lg"
+                          className="flex items-center justify-center gap-1.5 min-w-[82px] text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-3.5 py-2 rounded-lg"
                         >
-                          {busy ? (
+                          {isActionLoading ? (
                             <FiLoader className="animate-spin text-sm" />
                           ) : (
                             <FiSquare className="text-sm" />
@@ -1019,7 +1306,7 @@ const TasksPage = () => {
 
                     {/* Status 3 = Completed */}
                     {task.status === 3 && (
-                      <span className="flex items-center gap-1 text-xs font-semibold text-green-600">
+                      <span className="flex items-center justify-center gap-1.5 min-w-[82px] text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3.5 py-2 rounded-lg">
                         <FiCheckCircle /> Done
                       </span>
                     )}

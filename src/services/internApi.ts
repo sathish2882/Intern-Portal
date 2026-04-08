@@ -29,8 +29,12 @@ export const endTaskApi = (taskId: number) => {
   return API.post(`/task/${taskId}/stop`)
 }
 
+export const deleteTaskApi = (taskId: number) => {
+  return API.delete(`/task/${taskId}`)
+}
+
 export const updateTaskApi = (taskId: number, data: { title?: string; status?: number; due_time?: string }) => {
-  return API.put(`/task/${taskId}`, data)
+  return API.put(`/task/edit/${taskId}`, data)
 }
 
 export const getMentorsApi = () => {
