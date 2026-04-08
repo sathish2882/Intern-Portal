@@ -26,14 +26,14 @@ const ASSESSMENTS: {
   {
     id: "aptitude",
     name: TEST_CONFIG.aptitude.data.title,
-    meta: `${TEST_CONFIG.aptitude.data.total} Qs · 45 min · Pass: ${TEST_CONFIG.aptitude.data.pass}/${TEST_CONFIG.aptitude.data.total}`,
+    meta: `${TEST_CONFIG.aptitude.data.total} Qs · 15 min · Pass: ${TEST_CONFIG.aptitude.data.pass}/${TEST_CONFIG.aptitude.data.total}`,
     icon: <FaCalculator className="w-5 h-5 text-blue" />,
     active: true,
   },
   {
     id: "technical",
     name: TEST_CONFIG.technical.data.title,
-    meta: `${TEST_CONFIG.technical.data.total} Qs · 30 min · Pass: ${TEST_CONFIG.technical.data.pass}/${TEST_CONFIG.technical.data.total}`,
+    meta: `${TEST_CONFIG.technical.data.total} Qs · 15 min · Pass: ${TEST_CONFIG.technical.data.pass}/${TEST_CONFIG.technical.data.total}`,
     icon: <FaCogs className="w-5 h-5 text-blue" />,
     active: true,
   },

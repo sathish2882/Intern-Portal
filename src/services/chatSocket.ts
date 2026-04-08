@@ -48,6 +48,9 @@ class ChatSocketManager {
   private maxReconnectDelay = 30000;
   private intentionallyClosed = false;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
+  private connectionOpened = false;
+  private consecutiveFailures = 0;
+  private maxConsecutiveFailures = 3;
 
   /** Subscribe to incoming WS messages */
   on(handler: WsChatHandler) {
@@ -68,11 +71,14 @@ class ChatSocketManager {
     }
 
     this.intentionallyClosed = false;
+    this.connectionOpened = false;
     const token = Cookies.get("token");
-    console.log("WS TOKEN:", token);
-    const url = token
-      ? `${getWsUrl()}?token=${encodeURIComponent(token)}`
-      : getWsUrl();
+    if (!token) {
+      console.warn("[ChatWS] No auth token — skipping connection");
+      this.emit({ type: "error", error: "No authentication token. Please log in again." });
+      return;
+    }
+    const url = `${getWsUrl()}?token=${encodeURIComponent(token)}`;
 
     try {
       this.ws = new WebSocket(url);
@@ -83,6 +89,8 @@ class ChatSocketManager {
 
     this.ws.onopen = () => {
       console.log("[ChatWS] Connected");
+      this.connectionOpened = true;
+      this.consecutiveFailures = 0;
       this.reconnectDelay = 1000;
       this.startPing();
       this.emit({ type: "connected" });
@@ -100,6 +108,23 @@ class ChatSocketManager {
     this.ws.onclose = (event) => {
       console.log("[ChatWS] Closed:", event.code, event.reason);
       this.stopPing();
+
+      // Connection rejected before opening (likely 403/auth error)
+      if (!this.connectionOpened && !this.intentionallyClosed) {
+        this.consecutiveFailures++;
+        console.warn(
+          `[ChatWS] Connection rejected (attempt ${this.consecutiveFailures}/${this.maxConsecutiveFailures})`
+        );
+        if (this.consecutiveFailures >= this.maxConsecutiveFailures) {
+          console.error("[ChatWS] Too many failed attempts — stopping reconnect");
+          this.emit({
+            type: "error",
+            error: "Chat connection rejected (403). You may not have permission to access chat.",
+          });
+          return;
+        }
+      }
+
       if (!this.intentionallyClosed) {
         this.scheduleReconnect();
       }

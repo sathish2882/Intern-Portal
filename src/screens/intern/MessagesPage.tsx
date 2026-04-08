@@ -2,10 +2,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { getMeApi } from "../../services/authApi";
 import chatSocket, { WsChatMessage } from "../../services/chatSocket";
-import {
-  FiSend,
-  FiSmile,
-} from "react-icons/fi";
+import { FiLoader, FiSend, FiSmile } from "react-icons/fi";
+import { FaUserGroup } from "react-icons/fa6";
 
 import {
   messageApi,
@@ -48,15 +46,19 @@ const normalizeConversation = (item: any): BatchConversation => ({
   conversationName: item.conversation_name || "Conversation",
 });
 
-const normalizeMessage = (item: any, conversationId: number): ChatMessage => ({
-  id: String(item.message_id),
-  chatId: makeChatId(item.conversation_id ?? conversationId),
-  senderId: Number(item.sender_id),
-  senderName: item.sender_name,
-  text: item.content,
-  timestamp: new Date(item.created_on).getTime(),
-  status: "delivered",
-});
+const normalizeMessage = (item: any, conversationId: number): ChatMessage => {
+  const clean = item.created_on.replace(/(\.\d{3})\d+/, "$1");
+
+  return {
+    id: String(item.message_id),
+    chatId: makeChatId(item.conversation_id ?? conversationId),
+    senderId: Number(item.sender_id),
+    senderName: item.sender_name,
+    text: item.content,
+    timestamp: new Date(clean + "Z").getTime(),
+    status: "delivered",
+  };
+};
 
 // ═══════════════════════════════════════
 const MessagesPage = () => {
@@ -72,8 +74,39 @@ const MessagesPage = () => {
 
   const [wsConnected, setWsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [wsFailed, setWsFailed] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const groupMessagesByDate = (messages: ChatMessage[]) => {
+    const groups: Record<string, ChatMessage[]> = {};
+
+    messages.forEach((msg) => {
+      const dateKey = new Date(msg.timestamp).toDateString();
+
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+
+      groups[dateKey].push(msg);
+    });
+
+    return groups;
+  };
+
+  const formatDate = (dateStr: string) => {
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+    if (dateStr === today) return "Today";
+    if (dateStr === yesterday) return "Yesterday";
+
+    return dateStr;
+  };
+
+  const groupedMessages = groupMessagesByDate(messages);
 
   // ── Load user + conversation ─────────────────
   useEffect(() => {
@@ -89,8 +122,15 @@ const MessagesPage = () => {
         const normalized = raw.map(normalizeConversation);
 
         setConversations(normalized);
-      } catch {
-        toast.error("Failed to load conversations");
+      } catch (err: any) {
+        if (err?.response?.status === 403) {
+          setAccessDenied(true);
+          toast.error(
+            "Access denied: You don't have permission to access chat",
+          );
+        } else {
+          toast.error("Failed to load conversations");
+        }
       } finally {
         setLoading(false);
       }
@@ -123,7 +163,7 @@ const MessagesPage = () => {
         const data = res.data || [];
 
         const normalized = data.map((m: any) =>
-          normalizeMessage(m, activeChat.conversationId)
+          normalizeMessage(m, activeChat.conversationId),
         );
 
         setMessages(normalized);
@@ -137,17 +177,32 @@ const MessagesPage = () => {
 
   // ── WebSocket ─────────────────────
   useEffect(() => {
+    if (!activeChat) return;
+
+    // ✅ connect (global socket)
     chatSocket.connect();
 
     const unsub = chatSocket.on((data: WsChatMessage) => {
       if (data.type === "connected") {
         setWsConnected(true);
+        setWsFailed(false);
+      }
+
+      if (data.type === "error") {
+        setWsConnected(false);
+        setWsFailed(true);
+        console.warn("[Chat] WebSocket unavailable, falling back to polling");
       }
 
       if (data.type === "new_message" && data.message) {
+        const incomingChatId = Number(data.message.chat_id);
+
+        // ✅ IMPORTANT: only update current chat
+        if (incomingChatId !== activeChat.conversationId) return;
+
         const msg: ChatMessage = {
           id: data.message.id,
-          chatId: makeChatId(Number(data.message.chat_id)),
+          chatId: makeChatId(incomingChatId),
           senderId: data.message.sender_id,
           senderName: data.message.sender_name,
           text: data.message.text,
@@ -156,7 +211,8 @@ const MessagesPage = () => {
         };
 
         setMessages((prev) => {
-          if (prev.find((m) => m.id === msg.id)) return prev;
+          // ✅ prevent duplicates
+          if (prev.some((m) => m.id === msg.id)) return prev;
           return [...prev, msg];
         });
       }
@@ -166,7 +222,50 @@ const MessagesPage = () => {
       unsub();
       chatSocket.disconnect();
     };
-  }, []);
+  }, [activeChat]);
+
+  // ── Polling fallback when WS is down ──────
+  useEffect(() => {
+    if (!activeChat || wsConnected) {
+      // WS is working or no chat — clear polling
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+      return;
+    }
+
+    if (!wsFailed) return; // still trying WS
+
+    const poll = async () => {
+      try {
+        const res = await viewmessageApi(activeChat.conversationId);
+        const data = res.data || [];
+        const normalized = data.map((m: any) =>
+          normalizeMessage(m, activeChat.conversationId),
+        );
+        setMessages((prev) => {
+          // Only update if there are new messages
+          if (normalized.length !== prev.length) return normalized;
+          const lastNew = normalized[normalized.length - 1];
+          const lastOld = prev[prev.length - 1];
+          if (lastNew?.id !== lastOld?.id) return normalized;
+          return prev;
+        });
+      } catch {
+        // silent — don't spam errors during polling
+      }
+    };
+
+    pollTimerRef.current = setInterval(poll, 5000);
+
+    return () => {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, [activeChat, wsConnected, wsFailed]);
 
   // ── Send message ─────────────────
   const sendMessage = useCallback(async () => {
@@ -188,22 +287,24 @@ const MessagesPage = () => {
     setInput("");
 
     try {
-      // WS send
-      chatSocket.send({
-        type: "send_message",
-        conversation_id: activeChat.conversationId,
-        text: msg.text,
-      });
-
-      // API save
+      // Send via REST API
       const res = await messageApi(activeChat.conversationId, msg.text);
 
       const saved = normalizeMessage(res.data, activeChat.conversationId);
 
+      // Also try WS if connected (for real-time delivery to others)
+      if (chatSocket.isConnected) {
+        chatSocket.send({
+          type: "send_message",
+          conversation_id: activeChat.conversationId,
+          text: msg.text,
+        });
+      }
+
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === tempId ? { ...saved, status: "delivered" } : m
-        )
+          m.id === tempId ? { ...saved, status: "delivered" } : m,
+        ),
       );
     } catch {
       toast.error("Send failed");
@@ -215,16 +316,29 @@ const MessagesPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  if (loading)   return (
+  if (loading)
+    return (
       <div className="flex flex-col items-center justify-center py-32 font-jakarta">
-        <div className="loader" />
-        <p className="text-sm text-slate mt-4 animate-pulse">Loading dashboard…</p>
+              <FiLoader className="text-3xl text-blue animate-spin mb-3" />
+              <p className="text-sm text-slate animate-pulse">Loading Messages…</p>
+            </div>
+    );
+
+  if (accessDenied)
+    return (
+      <div className="flex flex-col items-center justify-center py-32 font-jakarta">
+        <p className="text-lg font-semibold text-red-600">Access Denied</p>
+        <p className="text-sm text-gray-500 mt-2">
+          You don't have permission to access the chat feature (403 Forbidden).
+        </p>
+        <p className="text-sm text-gray-400 mt-1">
+          Please contact your administrator.
+        </p>
       </div>
-    )
+    );
 
   return (
     <div className="h-[calc(100vh-60px)] flex font-jakarta overflow-hidden">
-
       {/* LEFT */}
       <div className="w-80 border-r bg-white flex flex-col">
         <div className="p-3 border-b">
@@ -249,9 +363,14 @@ const MessagesPage = () => {
               }
               className="px-4 py-3 cursor-pointer hover:bg-gray-100 border-b"
             >
-              <p className="font-semibold text-sm">
-                {c.conversationName}
-              </p>
+              <div className="flex items-center gap-3 px-2 py-3 text-white">
+                <div className="font-semibold rounded-full bg-blue w-8 h-8 flex items-center justify-center">
+                  <FaUserGroup className="text-white" size={18} />
+                </div>
+                <span className="text-md text-black font-semibold">
+                  {activeChat?.name}
+                </span>
+              </div>
             </div>
           ))}
         </div>
@@ -259,42 +378,57 @@ const MessagesPage = () => {
 
       {/* RIGHT */}
       <div className="flex flex-col flex-1 bg-[#e5ddd5]">
-
         {/* HEADER */}
-        <div className="flex items-center justify-between px-4 py-3 bg-[#075E54] text-white">
-          <div className="font-semibold">{activeChat?.name}</div>
-          <div>{wsConnected ? "🟢" : "🔴"}</div>
+        <div className="flex items-center gap-3 px-4 py-3 bg-[#075E54] text-white">
+          <div className="font-semibold rounded-full bg-gray-400 w-8 h-8 flex items-center justify-center">
+            <FaUserGroup className="text-blue" size={18} />
+          </div>
+          <span className="text-md font-semibold">{activeChat?.name}</span>
         </div>
 
         {/* MESSAGES */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {messages.map((msg) => {
-            const isMe = msg.senderId === myUserId;
-
-            return (
-              <div
-                key={msg.id}
-                className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`relative max-w-[70%] px-3 py-2 rounded-lg shadow text-sm ${
-                    isMe
-                      ? "bg-[#dcf8c6] rounded-tr-none"
-                      : "bg-white rounded-tl-none"
-                  }`}
-                >
-                  <p>{msg.text}</p>
-
-                  <div className="text-[10px] text-gray-500 text-right mt-1">
-                    {new Date(msg.timestamp).toLocaleTimeString("en-IN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
+          {Object.entries(groupedMessages).map(([date, msgs]) => (
+            <div key={date}>
+              {/* DATE HEADER */}
+              <div className="text-center text-sm text-gray-700 my-3">
+                {formatDate(date)}
               </div>
-            );
-          })}
+
+              {/* MESSAGES */}
+              {msgs.map((msg) => {
+                const isMe = msg.senderId === myUserId;
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`relative pl-1 min-w-[10%] rounded-lg shadow text-sm my-2 ${
+                        isMe
+                          ? "bg-[#dcf8c6] rounded-tr-none"
+                          : "bg-white rounded-tl-none"
+                      }`}
+                    >
+                      {!isMe && (
+                        <span className="text-green-700">{msg.senderName}</span>
+                      )}
+
+                      <p className="mt-1 pr-1">{msg.text}</p>
+
+                      <div className="text-[10px] text-gray-500 text-right pr-1">
+                        {new Date(msg.timestamp).toLocaleTimeString("en-IN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
 
           <div ref={messagesEndRef} />
         </div>
@@ -308,6 +442,12 @@ const MessagesPage = () => {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
             placeholder="Type a message"
             className="flex-1 bg-white px-4 py-2 rounded-full text-sm outline-none"
           />

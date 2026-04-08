@@ -147,11 +147,11 @@ const ResultPage = () => {
           </h2>
           <p
             className={`text-sm font-bold mb-4 ${
-              cumulativePassed ? "text-[#047857]" : "text-[#b91c1c]"
+              cumulativePassed ? "font-semibold text-xl text-black/70 text-center" : "text-[#b91c1c]"
             }`}
           >
             {scholarshipEligible
-              ? "This is a limited Maestro benefit that's only available via M-Guru"
+              ? "You are eligible for a scholarship under the Maestro program (via M-Guru)"
               : "You're not eligible for the sponsorship benefit."}
           </p>
           <div className="inline-flex items-center gap-6 bg-white rounded-xl px-6 py-4 shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
@@ -209,7 +209,8 @@ const ResultPage = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-navy">
-                        {testResult.questionsCorrect} / {testResult.totalQuestions}
+                        {testResult.questionsCorrect} /{" "}
+                        {testResult.totalQuestions}
                       </p>
                       <p className="text-xs text-slate mt-0.5">Questions</p>
                     </div>

@@ -1,4 +1,9 @@
+
 import API from "./authInstance"
+
+export const getTaskApi = (taskId: number) => {
+  return API.get(`/task/${taskId}`);
+};
 
 export const createTaskApi = (data: any) => {
   return API.post('/task/create', data)
@@ -26,4 +31,8 @@ export const endTaskApi = (taskId: number) => {
 
 export const updateTaskApi = (taskId: number, data: { title?: string; status?: number; due_time?: string }) => {
   return API.put(`/task/${taskId}`, data)
+}
+
+export const getMentorsApi = () => {
+  return API.get('/get_all_mentors')
 }

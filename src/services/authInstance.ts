@@ -42,6 +42,11 @@ API.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // 🔴 Forbidden — user lacks permission
+    if (error.response?.status === 403) {
+      return Promise.reject(error);
+    }
+
     // 🔴 Server error
     if (error.response?.status === 500) {
       return Promise.reject(error);

@@ -46,7 +46,7 @@ const NAV_ITEMS = [
   },
   {
     to: "/intern/calendar",
-    label: "M-Guru Calendar",
+    label: "Calendar",
     icon: <IoTimeOutline />,
   },
   {

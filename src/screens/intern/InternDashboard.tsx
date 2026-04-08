@@ -15,6 +15,7 @@ import {
   FiSunrise,
   FiZap,
   FiAward,
+  FiLoader,
 } from 'react-icons/fi'
 import { FaTasks } from 'react-icons/fa'
 
@@ -116,9 +117,9 @@ const InternDashboard = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 font-jakarta">
-        <div className="loader" />
-        <p className="text-sm text-slate mt-4 animate-pulse">Loading dashboard…</p>
-      </div>
+              <FiLoader className="text-3xl text-blue animate-spin mb-3" />
+              <p className="text-sm text-slate animate-pulse">Loading Dashboard…</p>
+            </div>
     )
   }
 
@@ -319,6 +320,19 @@ const InternDashboard = () => {
               <div className="flex-1">
                 <p className="text-sm font-bold text-navy">Calendar</p>
                 <p className="text-[10px] text-mist">View task calendar</p>
+              </div>
+              <FiArrowRight className="text-mist group-hover:text-amber-600 transition-colors" />
+            </button>
+            <button
+              onClick={() => navigate('/intern/feedback')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-orange-100/50 hover:bg-orange-100/80 text-left transition-colors group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center">
+                <FiCalendar className="text-orange-600 text-sm" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-navy">Feedback</p>
+                <p className="text-[10px] text-mist">Provide feedback on tasks</p>
               </div>
               <FiArrowRight className="text-mist group-hover:text-amber-600 transition-colors" />
             </button>
