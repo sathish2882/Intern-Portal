@@ -45,3 +45,7 @@ export const createFeedbackApi = (data: any) => {
 export const getMyFeedbackApi = () => {
   return API.get('/feedback/me');
 }
+
+export const deleteFeedbackApi = (feedbackId: number | string) => {
+  return API.delete(`/feedback/${feedbackId}`);
+};

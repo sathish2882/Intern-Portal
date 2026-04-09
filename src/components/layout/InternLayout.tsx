@@ -217,7 +217,7 @@ const InternLayout = () => {
 
     return (
       <>
-        <div className="px-3 py-5 border-b border-gray-100">
+        <div className="px-3 py-5 border-b border-gray-100 sticky top-0 bg-white z-50">
           <NavLink
             to="/intern/dashboard"
             onClick={() => setMobileOpen(false)}
@@ -274,7 +274,7 @@ const InternLayout = () => {
           ))}
         </nav>
 
-        <div className="mt-auto p-3 border-t border-gray-100 space-y-2">
+        <div className="p-3 border-t border-gray-100 space-y-2 bg-white">
           <div
             className={`rounded-xl border border-gray-200 bg-slate-50 ${
               compact ? "p-2.5 flex justify-center" : "px-3 py-2.5"
@@ -344,7 +344,7 @@ const InternLayout = () => {
       )}
 
       <aside
-        className={`hidden lg:flex flex-col min-h-screen border-r border-gray-200 bg-white transition-all duration-300 ease-in-out ${
+        className={`hidden lg:flex flex-col sticky top-0 h-screen border-r border-gray-200 bg-white transition-all duration-300 ease-in-out ${
           collapsed ? "w-[86px]" : "w-[250px]"
         }`}
       >

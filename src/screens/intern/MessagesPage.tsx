@@ -268,7 +268,7 @@ const MessagesPage = () => {
           return prev;
         });
       } catch {
-        // silent — don't spam errors during polling
+        toast.error("Failed to load messages");
       }
     };
 

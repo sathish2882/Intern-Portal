@@ -1,3 +1,28 @@
+// Delete Mentor
+export const deleteMentorApi = (mentor_id: number) => {
+  return API.post('/delete_mentor', null, { params: { mentor_id } });
+};
+
+// Update Mentor
+export const updateMentorApi = (mentor_id: number, data: {
+  username: string;
+  email: string;
+  phone: string;
+  password: string;
+  batch: number;
+  tech_stack: string;
+}) => {
+  return API.put('/update_mentor', data, { params: { mentor_id } });
+};
+// Get all feedbacks (admin)
+export const getAllFeedbackApi = () => {
+  return API.get('/feedback/all');
+};
+
+// Reply to feedback (admin)
+export const replyFeedbackApi = (feedback_id: number | string, reply: string) => {
+  return API.post('/feedback/reply/admin', { feedback_id, reply });
+};
 import API from './authInstance'
 
 export const getAllEmails = (params: any) => {

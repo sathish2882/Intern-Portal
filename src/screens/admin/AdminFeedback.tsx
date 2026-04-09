@@ -1,5 +1,11 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import {
+  getAllFeedbackApi,
+  getAllMentorsApi,
+  replyFeedbackApi,
+} from "../../services/adminApi";
+import { toast } from "react-toastify";
+import {
   FiAlertCircle,
   FiBookOpen,
   FiBriefcase,
@@ -25,18 +31,15 @@ type FeedbackCategory =
   | "suggestion";
 
 interface FeedbackEntry {
-  id: string;
+  id: number | string;
+  user_id: number;
+  assigned_to: number | null;
   category: FeedbackCategory;
-  subject?: string;
   message: string;
-  createdAt: number;
-  source?: "intern" | "mentor";
+  reply?: string | null;
+  status: string;
+  created_at: string;
 }
-
-const INTERN_STORAGE_KEY = "intern_feedback";
-const MENTOR_STORAGE_KEY = "mentor_feedback";
-
-type FeedbackSource = "all" | "intern" | "mentor";
 
 const CATEGORY_META: {
   value: FeedbackCategory;
@@ -82,23 +85,6 @@ const CATEGORY_META: {
   },
 ];
 
-const loadFeedbackEntries = (): FeedbackEntry[] => {
-  try {
-    const loadFrom = (key: string, source: "intern" | "mentor"): FeedbackEntry[] => {
-      const raw = localStorage.getItem(key);
-      const parsed = raw ? (JSON.parse(raw) as FeedbackEntry[]) : [];
-      return parsed.map((e) => ({ ...e, source }));
-    };
-
-    const internEntries = loadFrom(INTERN_STORAGE_KEY, "intern");
-    const mentorEntries = loadFrom(MENTOR_STORAGE_KEY, "mentor");
-
-    return [...internEntries, ...mentorEntries].sort((a, b) => b.createdAt - a.createdAt);
-  } catch {
-    return [];
-  }
-};
-
 const formatFullDate = (timestamp: number) =>
   new Date(timestamp).toLocaleString("en-IN", {
     day: "numeric",
@@ -108,69 +94,68 @@ const formatFullDate = (timestamp: number) =>
     minute: "2-digit",
   });
 
-const timeAgo = (timestamp: number): string => {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
-  if (seconds < 60) return "Just now";
+// Copied from InternFeedback for consistent time format
+const IST_OFFSET = 5.5 * 60 * 60 * 1000;
+const timeAgo = (date: Date) => {
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(timestamp).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const hours = Math.floor(seconds / 3600);
+  const days = Math.floor(seconds / 86400);
+  if (seconds < 60) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  if (hours < 24) return `${hours} hr ago`;
+  return `${days} days ago`;
 };
 
 const AdminFeedback = () => {
   const [entries, setEntries] = useState<FeedbackEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | FeedbackCategory>("all");
-  const [sourceFilter, setSourceFilter] = useState<FeedbackSource>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<
+    "all" | FeedbackCategory
+  >("all");
+  const [selectedId, setSelectedId] = useState<number | string | null>(null);
+  const [loading, setLoading] = useState(false); // can be used for spinner if needed
+  const [replyText, setReplyText] = useState("");
+  const [replyLoading, setReplyLoading] = useState(false);
+  const [mentors, setMentors] = useState<any[]>([]);
+  console.log("mentors", mentors);
 
-  const refreshEntries = () => {
-    const nextEntries = loadFeedbackEntries();
-    setEntries(nextEntries);
-    setSelectedId((current) => {
-      if (current && nextEntries.some((entry) => entry.id === current)) {
-        return current;
-      }
-      return nextEntries[0]?.id ?? null;
-    });
+  const refreshEntries = async () => {
+    setLoading(true);
+    try {
+      const res = await getAllFeedbackApi();
+      setEntries(Array.isArray(res.data) ? res.data : []);
+      setSelectedId((current) => {
+        if (
+          current &&
+          res.data.some((entry: FeedbackEntry) => entry.id === current)
+        ) {
+          return current;
+        }
+        return res.data[0]?.id ?? null;
+      });
+    } catch (err: any) {
+      toast.error("Failed to load feedbacks");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     refreshEntries();
-
-    const handleStorage = (event: StorageEvent) => {
-      if (!event.key || event.key === INTERN_STORAGE_KEY || event.key === MENTOR_STORAGE_KEY) {
-        refreshEntries();
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   const filteredEntries = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-
     return entries.filter((entry) => {
       const matchesCategory =
         categoryFilter === "all" || entry.category === categoryFilter;
-      const matchesSource =
-        sourceFilter === "all" || entry.source === sourceFilter;
       const matchesSearch =
-        !query ||
-        (entry.subject || "").toLowerCase().includes(query) ||
-        entry.message.toLowerCase().includes(query);
-
-      return matchesCategory && matchesSource && matchesSearch;
+        !query || (entry.message || "").toLowerCase().includes(query);
+      return matchesCategory && matchesSearch;
     });
-  }, [entries, categoryFilter, sourceFilter, searchTerm]);
+  }, [entries, categoryFilter, searchTerm]);
 
   const selectedEntry =
     filteredEntries.find((entry) => entry.id === selectedId) ??
@@ -178,10 +163,8 @@ const AdminFeedback = () => {
     null;
 
   const stats = useMemo(() => {
-    const internCount = entries.filter((e) => e.source === "intern").length;
-    const mentorCount = entries.filter((e) => e.source === "mentor").length;
     const todayCount = entries.filter((entry) => {
-      const entryDate = new Date(entry.createdAt);
+      const entryDate = new Date(entry.created_at);
       const now = new Date();
       return (
         entryDate.getDate() === now.getDate() &&
@@ -189,27 +172,63 @@ const AdminFeedback = () => {
         entryDate.getFullYear() === now.getFullYear()
       );
     }).length;
-
     const topCategory =
-      CATEGORY_META
-        .map((category) => ({
-          ...category,
-          count: entries.filter((entry) => entry.category === category.value).length,
-        }))
-        .sort((a, b) => b.count - a.count)[0] ?? null;
-
+      CATEGORY_META.map((category) => ({
+        ...category,
+        count: entries.filter((entry) => entry.category === category.value)
+          .length,
+      })).sort((a, b) => b.count - a.count)[0] ?? null;
     return {
       total: entries.length,
-      intern: internCount,
-      mentor: mentorCount,
       today: todayCount,
       topCategory,
     };
   }, [entries]);
 
+  const loadMentors = async () => {
+    try {
+      const res = await getAllMentorsApi();
+      setMentors(Array.isArray(res.data) ? res.data : []);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to load mentors");
+    }
+  };
+  useEffect(() => {
+    loadMentors();
+  }, []);
+
   return (
     <AdminPortalShell title="Feedback" hideNav>
       <div className="mx-auto max-w-[1280px] text-white">
+        {loading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="rounded-xl bg-[#10131b] px-8 py-6 shadow-lg flex flex-col items-center">
+              <svg
+                className="animate-spin h-8 w-8 text-blue-400 mb-3"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8z"
+                ></path>
+              </svg>
+              <span className="text-white text-lg font-bold">
+                Loading feedbacks...
+              </span>
+            </div>
+          </div>
+        )}
         {/* ── Header ── */}
         <div className="mb-8 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.12),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-6 py-7 shadow-[0_18px_50px_rgba(0,0,0,0.22)]">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -221,7 +240,8 @@ const AdminFeedback = () => {
                 Feedback Monitor
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-slate-300">
-                Review feedback from both interns and mentors. Filter by source, category, or search keywords.
+                Review feedback from both interns and mentors. Filter by source,
+                category, or search keywords.
               </p>
             </div>
 
@@ -242,7 +262,9 @@ const AdminFeedback = () => {
               <FiLayers className="inline -mt-0.5 mr-1.5" />
               Total Entries
             </p>
-            <p className="mt-3 text-3xl font-extrabold text-white">{stats.total}</p>
+            <p className="mt-3 text-3xl font-extrabold text-white">
+              {stats.total}
+            </p>
             <p className="mt-2 text-sm text-slate-300">
               Combined feedback from all sources.
             </p>
@@ -253,30 +275,11 @@ const AdminFeedback = () => {
               <FiCalendar className="inline -mt-0.5 mr-1.5" />
               Today
             </p>
-            <p className="mt-3 text-3xl font-extrabold text-white">{stats.today}</p>
+            <p className="mt-3 text-3xl font-extrabold text-white">
+              {stats.today}
+            </p>
             <p className="mt-2 text-sm text-[#e0f2fe]/80">
               New feedback added today.
-            </p>
-          </div>
-
-          <div className="rounded-[24px] border border-fuchsia-400/15 bg-fuchsia-500/10 p-5 shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-fuchsia-200/80">
-              <FiUsers className="inline -mt-0.5 mr-1.5" />
-              By Source
-            </p>
-            <div className="mt-3 flex items-baseline gap-3">
-              <div>
-                <span className="text-2xl font-extrabold text-white">{stats.intern}</span>
-                <span className="ml-1 text-xs font-semibold text-fuchsia-200/60">Intern</span>
-              </div>
-              <span className="text-slate-500">/</span>
-              <div>
-                <span className="text-2xl font-extrabold text-white">{stats.mentor}</span>
-                <span className="ml-1 text-xs font-semibold text-fuchsia-200/60">Mentor</span>
-              </div>
-            </div>
-            <p className="mt-2 text-sm text-fuchsia-100/80">
-              Breakdown by submission source.
             </p>
           </div>
 
@@ -296,38 +299,6 @@ const AdminFeedback = () => {
           </div>
         </div>
 
-        {/* ── Source Tabs ── */}
-        <div className="mb-6 flex items-center gap-2">
-          {(["all", "intern", "mentor"] as FeedbackSource[]).map((src) => {
-            const label = src === "all" ? "All Feedback" : src === "intern" ? "Intern" : "Mentor";
-            const count =
-              src === "all"
-                ? entries.length
-                : entries.filter((e) => e.source === src).length;
-            const isActive = sourceFilter === src;
-            return (
-              <button
-                key={src}
-                onClick={() => setSourceFilter(src)}
-                className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition-all ${
-                  isActive
-                    ? "border-[#38bdf8]/30 bg-[#0ea5e9]/15 text-[#bae6fd] shadow-[0_4px_20px_rgba(14,165,233,0.15)]"
-                    : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/20 hover:text-slate-300"
-                }`}
-              >
-                {label}
-                <span
-                  className={`min-w-[22px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold ${
-                    isActive ? "bg-[#0ea5e9]/30 text-[#bae6fd]" : "bg-white/10 text-slate-500"
-                  }`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
         {/* ── Main Grid ── */}
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           {/* Inbox */}
@@ -338,7 +309,8 @@ const AdminFeedback = () => {
                   Feedback Inbox
                 </h2>
                 <p className="mt-1 text-sm text-slate-300">
-                  {filteredEntries.length} {filteredEntries.length === 1 ? "entry" : "entries"} found
+                  {filteredEntries.length}{" "}
+                  {filteredEntries.length === 1 ? "entry" : "entries"} found
                 </p>
               </div>
             </div>
@@ -359,13 +331,21 @@ const AdminFeedback = () => {
                 <select
                   value={categoryFilter}
                   onChange={(event) =>
-                    setCategoryFilter(event.target.value as "all" | FeedbackCategory)
+                    setCategoryFilter(
+                      event.target.value as "all" | FeedbackCategory,
+                    )
                   }
                   className="w-full bg-transparent text-sm text-white outline-none"
                 >
-                  <option value="all" className="bg-[#10131b]">All Categories</option>
+                  <option value="all" className="bg-[#10131b]">
+                    All Categories
+                  </option>
                   {CATEGORY_META.map((category) => (
-                    <option key={category.value} value={category.value} className="bg-[#10131b]">
+                    <option
+                      key={category.value}
+                      value={category.value}
+                      className="bg-[#10131b]"
+                    >
                       {category.label}
                     </option>
                   ))}
@@ -379,14 +359,18 @@ const AdminFeedback = () => {
                   <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#38bdf8]/20 bg-[#0ea5e9]/10 text-[#bae6fd]">
                     <FiAlertCircle className="text-xl" />
                   </div>
-                  <p className="text-lg font-bold text-white">No matching feedback found</p>
+                  <p className="text-lg font-bold text-white">
+                    No matching feedback found
+                  </p>
                   <p className="mt-2 max-w-md text-sm text-slate-400">
                     Try a different category, source, or search term.
                   </p>
                 </div>
               ) : (
                 filteredEntries.map((entry) => {
-                  const category = CATEGORY_META.find((item) => item.value === entry.category);
+                  const category = CATEGORY_META.find(
+                    (item) => item.value === entry.category,
+                  );
                   const isActive = selectedEntry?.id === entry.id;
 
                   return (
@@ -408,22 +392,25 @@ const AdminFeedback = () => {
                               {category?.icon}
                               {category?.label}
                             </span>
-                            <span
-                              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold ${
-                                entry.source === "mentor"
-                                  ? "border-amber-400/20 bg-amber-500/10 text-amber-200"
-                                  : "border-[#38bdf8]/20 bg-[#0ea5e9]/10 text-[#bae6fd]"
-                              }`}
-                            >
-                              {entry.source === "mentor" ? "Mentor" : "Intern"}
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue px-2 py-0.5 text-[10px] text-slate-400">
+                              {entry.category === "mentorship" ? mentors.find((m) => m.user_id === entry.assigned_to)
+                                ?.username || "Unassigned" : null}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-green-600/20 px-2 py-0.5 text-[10px] text-green-400">
+                              {entry.category === "mentorship" ? mentors.find((m) => m.user_id === entry.assigned_to)
+                                ?.tech_stack || "N/A" : null}
                             </span>
                           </div>
                           <h3 className="truncate text-base font-extrabold text-white">
-                            {entry.subject || entry.message.slice(0, 60)}
+                            {entry.message.slice(0, 60)}
                           </h3>
                         </div>
                         <span className="shrink-0 text-xs text-slate-400">
-                          {timeAgo(entry.createdAt)}
+                          {timeAgo(
+                            new Date(
+                              new Date(entry.created_at).getTime() + IST_OFFSET,
+                            ),
+                          )}
                         </span>
                       </div>
 
@@ -439,7 +426,9 @@ const AdminFeedback = () => {
 
           {/* Detail Panel */}
           <aside className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.18)] lg:p-6">
-            <h2 className="text-xl font-extrabold text-white">Feedback Detail</h2>
+            <h2 className="text-xl font-extrabold text-white">
+              Feedback Detail
+            </h2>
             <p className="mt-1 text-sm text-slate-300">
               Select an item to review the full submission.
             </p>
@@ -449,9 +438,12 @@ const AdminFeedback = () => {
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300">
                   <FiMessageCircle className="text-xl" />
                 </div>
-                <p className="text-lg font-bold text-white">No feedback selected</p>
+                <p className="text-lg font-bold text-white">
+                  No feedback selected
+                </p>
                 <p className="mt-2 max-w-sm text-sm text-slate-400">
-                  Choose a submission from the inbox to inspect the full message.
+                  Choose a submission from the inbox to inspect the full
+                  message.
                 </p>
               </div>
             ) : (
@@ -461,29 +453,38 @@ const AdminFeedback = () => {
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <span
                       className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold ${
-                        CATEGORY_META.find((item) => item.value === selectedEntry.category)?.chipClass
+                        CATEGORY_META.find(
+                          (item) => item.value === selectedEntry.category,
+                        )?.chipClass
                       }`}
                     >
-                      {CATEGORY_META.find((item) => item.value === selectedEntry.category)?.icon}
-                      {CATEGORY_META.find((item) => item.value === selectedEntry.category)?.label}
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold ${
-                        selectedEntry.source === "mentor"
-                          ? "border-amber-400/20 bg-amber-500/10 text-amber-200"
-                          : "border-[#38bdf8]/20 bg-[#0ea5e9]/10 text-[#bae6fd]"
-                      }`}
-                    >
-                      {selectedEntry.source === "mentor" ? "Mentor" : "Intern"}
+                      {
+                        CATEGORY_META.find(
+                          (item) => item.value === selectedEntry.category,
+                        )?.icon
+                      }
+                      {
+                        CATEGORY_META.find(
+                          (item) => item.value === selectedEntry.category,
+                        )?.label
+                      }
                     </span>
                   </div>
-
                   <h3 className="text-2xl font-extrabold text-white">
-                    {selectedEntry.subject || "Feedback Detail"}
+                    Feedback Detail
                   </h3>
                   <p className="mt-2 text-sm text-slate-400">
-                    Submitted {timeAgo(selectedEntry.createdAt)} on{" "}
-                    {formatFullDate(selectedEntry.createdAt)}
+                    Submitted{" "}
+                    {timeAgo(
+                      new Date(
+                        new Date(selectedEntry.created_at).getTime() +
+                          IST_OFFSET,
+                      ),
+                    )}{" "}
+                    on{" "}
+                    {formatFullDate(
+                      new Date(selectedEntry.created_at).getTime() + IST_OFFSET,
+                    )}
                   </p>
                 </div>
 
@@ -497,19 +498,48 @@ const AdminFeedback = () => {
                   </p>
                 </div>
 
-                {/* Notes */}
+                {/* Reply Section */}
                 <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
                   <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
-                    Review Notes
+                    {selectedEntry.status === "pending"
+                      ? "Reply"
+                      : "Your Reply"}
                   </p>
-                  <div className="space-y-2 text-sm text-slate-300">
-                    <p>
-                      Use the category and source chips to understand the context of this feedback.
-                    </p>
-                    <p>
-                      This page aggregates feedback from both intern and mentor portals.
-                    </p>
-                  </div>
+                  {selectedEntry.status === "pending" ? (
+                    <div className="flex flex-col gap-3">
+                      <textarea
+                        className="w-full rounded-lg border border-slate-600 bg-black/30 p-2 text-sm text-white"
+                        rows={3}
+                        placeholder="Type your reply..."
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        disabled={replyLoading}
+                      />
+                      <button
+                        className="self-end rounded-lg bg-blue px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"
+                        onClick={async () => {
+                          setReplyLoading(true);
+                          try {
+                            await replyFeedbackApi(selectedEntry.id, replyText);
+                            toast.success("Reply sent successfully");
+                            setReplyText("");
+                            refreshEntries();
+                          } catch (err: any) {
+                            toast.error("Failed to send reply");
+                          } finally {
+                            setReplyLoading(false);
+                          }
+                        }}
+                        disabled={!replyText.trim() || replyLoading}
+                      >
+                        {replyLoading ? "Sending..." : "Send Reply"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="rounded bg-slate-800 p-3 text-sm text-slate-200">
+                      {selectedEntry.reply || "No reply yet."}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

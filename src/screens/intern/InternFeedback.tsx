@@ -21,6 +21,7 @@ import {
   createFeedbackApi,
   getMentorsApi,
   getMyFeedbackApi,
+  deleteFeedbackApi,
 } from "../../services/internApi";
 
 // Types
@@ -234,9 +235,18 @@ const InternFeedback = () => {
   }, []);
 
   // Delete
-  const handleDelete = (id: string) => {
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-    setDeleteConfirm(null);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteFeedbackApi(id);
+      await getMyFeedback();
+      toast.success("Feedback deleted successfully");
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.detail || "Failed to delete feedback"
+      );
+    } finally {
+      setDeleteConfirm(null);
+    }
   };
 
   const filteredFeedback = useMemo(() => {
@@ -514,7 +524,7 @@ const InternFeedback = () => {
                         </span>
                         <span className="text-xs font-bold text-navy truncate">
                           {feedback.category === "mentorship"
-                            ? `Assigned to ${mentors.find((m) => m.user_id === feedback.assigned_to)?.username ?? "Mentor"}`
+                            ? `Feedback about mentor ${mentors.find((m) => m.user_id === feedback.assigned_to)?.username ?? "Mentor"}`
                             : feedback.category}
                         </span>
                       </div>
