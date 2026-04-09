@@ -27,7 +27,7 @@ type FeedbackCategory =
 interface FeedbackEntry {
   id: string;
   category: FeedbackCategory;
-  subject: string;
+  subject?: string;
   message: string;
   createdAt: number;
   source?: "intern" | "mentor";
@@ -165,7 +165,7 @@ const AdminFeedback = () => {
         sourceFilter === "all" || entry.source === sourceFilter;
       const matchesSearch =
         !query ||
-        entry.subject.toLowerCase().includes(query) ||
+        (entry.subject || "").toLowerCase().includes(query) ||
         entry.message.toLowerCase().includes(query);
 
       return matchesCategory && matchesSource && matchesSearch;
@@ -419,7 +419,7 @@ const AdminFeedback = () => {
                             </span>
                           </div>
                           <h3 className="truncate text-base font-extrabold text-white">
-                            {entry.subject}
+                            {entry.subject || entry.message.slice(0, 60)}
                           </h3>
                         </div>
                         <span className="shrink-0 text-xs text-slate-400">
@@ -479,7 +479,7 @@ const AdminFeedback = () => {
                   </div>
 
                   <h3 className="text-2xl font-extrabold text-white">
-                    {selectedEntry.subject}
+                    {selectedEntry.subject || "Feedback Detail"}
                   </h3>
                   <p className="mt-2 text-sm text-slate-400">
                     Submitted {timeAgo(selectedEntry.createdAt)} on{" "}

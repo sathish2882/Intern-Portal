@@ -1,9 +1,6 @@
 
-import API from "./authInstance"
 
-export const getTaskApi = (taskId: number) => {
-  return API.get(`/task/${taskId}`);
-};
+import API from "./authInstance"
 
 export const createTaskApi = (data: any) => {
   return API.post('/task/create', data)
@@ -21,7 +18,7 @@ export const pauseTaskApi = (taskId: number, reason: string) => {
   return API.post(`/task/${taskId}/pause`, { reason })
 }
 
-export const resumeTaskApi = (taskId: number,) =>{
+export const resumeTaskApi = (taskId: number) =>{
   return API.post(`/task/${taskId}/resume`)
 }
 
@@ -39,4 +36,12 @@ export const updateTaskApi = (taskId: number, data: { title?: string; status?: n
 
 export const getMentorsApi = () => {
   return API.get('/get_all_mentors')
+}
+
+export const createFeedbackApi = (data: any) => {
+  return API.post('/feedback/', data)
+}
+
+export const getMyFeedbackApi = () => {
+  return API.get('/feedback/me');
 }

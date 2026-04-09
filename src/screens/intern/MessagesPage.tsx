@@ -47,15 +47,17 @@ const normalizeConversation = (item: any): BatchConversation => ({
 });
 
 const normalizeMessage = (item: any, conversationId: number): ChatMessage => {
-  const clean = item.created_on.replace(/(\.\d{3})\d+/, "$1");
+  const rawCreatedOn =
+    typeof item?.created_on === "string" ? item.created_on : "";
+  const clean = rawCreatedOn ? rawCreatedOn.replace(/(\.\d{3})\d+/, "$1") : "";
 
   return {
-    id: String(item.message_id),
+    id: String(item?.message_id ?? item?.id ?? `msg_${Date.now()}`),
     chatId: makeChatId(item.conversation_id ?? conversationId),
-    senderId: Number(item.sender_id),
-    senderName: item.sender_name,
-    text: item.content,
-    timestamp: new Date(clean + "Z").getTime(),
+    senderId: Number(item?.sender_id ?? 0),
+    senderName: item?.sender_name ?? "Unknown",
+    text: item?.content ?? item?.text ?? "",
+    timestamp: clean ? new Date(`${clean}Z`).getTime() : Date.now(),
     status: "delivered",
   };
 };
@@ -107,6 +109,9 @@ const MessagesPage = () => {
   };
 
   const groupedMessages = groupMessagesByDate(messages);
+  const filteredConversations = conversations.filter((c) =>
+    c.conversationName.toLowerCase().includes(search.trim().toLowerCase()),
+  );
 
   // ── Load user + conversation ─────────────────
   useEffect(() => {
@@ -180,7 +185,9 @@ const MessagesPage = () => {
     if (!activeChat) return;
 
     // ✅ connect (global socket)
-    chatSocket.connect();
+    setWsConnected(false);
+    setWsFailed(false);
+    chatSocket.connect(activeChat.conversationId);
 
     const unsub = chatSocket.on((data: WsChatMessage) => {
       if (data.type === "connected") {
@@ -195,18 +202,26 @@ const MessagesPage = () => {
       }
 
       if (data.type === "new_message" && data.message) {
-        const incomingChatId = Number(data.message.chat_id);
+        const incomingChatId = Number(
+          data.message.chat_id ?? data.message.conversation_id,
+        );
 
         // ✅ IMPORTANT: only update current chat
-        if (incomingChatId !== activeChat.conversationId) return;
+        if (!incomingChatId || incomingChatId !== activeChat.conversationId) {
+          return;
+        }
 
         const msg: ChatMessage = {
-          id: data.message.id,
+          id: String(
+            data.message.id ?? data.message.message_id ?? `ws_${Date.now()}`,
+          ),
           chatId: makeChatId(incomingChatId),
-          senderId: data.message.sender_id,
-          senderName: data.message.sender_name,
-          text: data.message.text,
-          timestamp: new Date(data.message.timestamp).getTime(),
+          senderId: Number(data.message.sender_id ?? 0),
+          senderName: data.message.sender_name ?? "Unknown",
+          text: data.message.text ?? data.message.content ?? "",
+          timestamp: data.message.timestamp
+            ? new Date(data.message.timestamp).getTime()
+            : Date.now(),
           status: "delivered",
         };
 
@@ -271,6 +286,7 @@ const MessagesPage = () => {
   const sendMessage = useCallback(async () => {
     if (!input.trim() || !activeChat || !myUserId) return;
 
+    const messageText = input.trim();
     const tempId = `tmp_${Date.now()}`;
 
     const msg: ChatMessage = {
@@ -278,7 +294,7 @@ const MessagesPage = () => {
       chatId: activeChat.id,
       senderId: myUserId,
       senderName: myName,
-      text: input,
+      text: messageText,
       timestamp: Date.now(),
       status: "sending",
     };
@@ -302,11 +318,21 @@ const MessagesPage = () => {
       }
 
       setMessages((prev) =>
-        prev.map((m) =>
-          m.id === tempId ? { ...saved, status: "delivered" } : m,
-        ),
+        prev
+          .map((m) =>
+            m.id === tempId ? { ...saved, status: "delivered" as const } : m,
+          )
+          .filter(
+            (m, index, arr) =>
+              arr.findIndex((candidate) => candidate.id === m.id) === index,
+          ),
       );
     } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...m, status: "failed" as const } : m,
+        ),
+      );
       toast.error("Send failed");
     }
   }, [input, activeChat, myUserId, myName]);
@@ -319,9 +345,9 @@ const MessagesPage = () => {
   if (loading)
     return (
       <div className="flex flex-col items-center justify-center py-32 font-jakarta">
-              <FiLoader className="text-3xl text-blue animate-spin mb-3" />
-              <p className="text-sm text-slate animate-pulse">Loading Messages…</p>
-            </div>
+        <FiLoader className="text-3xl text-blue animate-spin mb-3" />
+        <p className="text-sm text-slate animate-pulse">Loading Messages…</p>
+      </div>
     );
 
   if (accessDenied)
@@ -351,7 +377,7 @@ const MessagesPage = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {conversations.map((c) => (
+          {filteredConversations.map((c) => (
             <div
               key={c.conversationId}
               onClick={() =>
@@ -359,6 +385,7 @@ const MessagesPage = () => {
                   id: makeChatId(c.conversationId),
                   conversationId: c.conversationId,
                   name: c.conversationName,
+                  batch: c.batch,
                 })
               }
               className="px-4 py-3 cursor-pointer hover:bg-gray-100 border-b"
@@ -368,11 +395,16 @@ const MessagesPage = () => {
                   <FaUserGroup className="text-white" size={18} />
                 </div>
                 <span className="text-md text-black font-semibold">
-                  {activeChat?.name}
+                  {c.conversationName}
                 </span>
               </div>
             </div>
           ))}
+          {filteredConversations.length === 0 && (
+            <div className="px-4 py-6 text-sm text-gray-500">
+              No matching conversations
+            </div>
+          )}
         </div>
       </div>
 
@@ -387,6 +419,7 @@ const MessagesPage = () => {
         </div>
 
         {/* MESSAGES */}
+
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {Object.entries(groupedMessages).map(([date, msgs]) => (
             <div key={date}>

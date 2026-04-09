@@ -15,6 +15,8 @@ interface ExamUser {
   aptitude_percentage: number;
   technical_score: number;
   technical_percentage: number;
+  coding_score: number;
+  coding_percentage: number;
   total_score: number;
   total_percentage: number;
   result: string;
@@ -28,6 +30,7 @@ type SortKey =
   | "email"
   | "aptitude_score"
   | "technical_score"
+  | "coding_score"
   | "total_score"
   | "result";
 
@@ -37,6 +40,7 @@ const TABLE_COLUMNS: { label: string; key: SortKey }[] = [
   { label: "Email", key: "email" },
   { label: "Aptitude", key: "aptitude_score" },
   { label: "Technical", key: "technical_score" },
+  {label: "Coding", key: "coding_score" },
   { label: "Total", key: "total_score" },
   { label: "Result", key: "result" },
 ];
@@ -63,6 +67,7 @@ const InterviewDashboard = () => {
     const load = async () => {
       try {
         const response = await getExamSummaryApi();
+         console.log(response);
         const payload = response?.data ?? [];
         setData(Array.isArray(payload) ? payload : []);
       } catch (error: any) {
@@ -314,6 +319,12 @@ const InterviewDashboard = () => {
                         <span>{user.technical_score}/20</span>
                         <span className="text-xs text-slate-400 ml-1">
                           ({user.technical_percentage.toFixed(1)}%)
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 font-mono">
+                        <span>{user.coding_score}/20</span>
+                        <span className="text-xs text-slate-400 ml-1">
+                          ({user.coding_percentage.toFixed(1)}%)
                         </span>
                       </td>
                       <td className="px-5 py-4 font-mono font-bold">

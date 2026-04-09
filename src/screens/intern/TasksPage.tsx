@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import {
@@ -20,7 +20,6 @@ import { toast } from "react-toastify";
 import {
   createTaskApi,
   getTasksApi,
-  getTaskApi,
   startTaskApi,
   pauseTaskApi,
   resumeTaskApi,
@@ -33,7 +32,7 @@ import {
 // View Task Modal state and handler must be inside the component, not at top-level
 import { getMeApi } from "../../services/authApi";
 
-// ── Types ──────────────────────────────────────────
+// -- Types ------------------------------------------
 interface Task {
   task_id: number;
   user_id: number | string;
@@ -108,23 +107,23 @@ const titleArray = [
   { option: "One to One Meeting", value: "One-to-One-Meeting" },
 ];
 
-// ── Component ──────────────────────────────────────
+// -- Component --------------------------------------
 const TasksPage = () => {
   // View Task Modal
   const [viewTask, setViewTask] = useState<Task | null>(null);
   const [viewLoading, setViewLoading] = useState<number | null>(null);
+  const hasFetchedOnce = useRef(false);
   const handleViewTask = async (taskId: number) => {
     setViewLoading(taskId);
     try {
-      const res = await getTaskApi(taskId);
-      setViewTask(res.data);
-    } catch {
-      const found = tasks.find((t) => t.task_id === taskId);
+      const found = tasks.find((t) => String(t.task_id) === String(taskId));
       if (found) {
         setViewTask(found);
       } else {
         toast.error("Task not found");
       }
+    } catch {
+      toast.error("Unable to open task");
     } finally {
       setViewLoading(null);
     }
@@ -153,7 +152,7 @@ const TasksPage = () => {
   const [updating, setUpdating] = useState(false);
   const [mentors, setMentors] = useState<any[]>([]);
 
-  // ── Fetch user + tasks ──
+  // -- Fetch user + tasks --
   const fetchData = async () => {
     setLoading(true);
     setLoadError(false);
@@ -194,10 +193,12 @@ const TasksPage = () => {
   };
 
   useEffect(() => {
+    if (hasFetchedOnce.current) return;
+    hasFetchedOnce.current = true;
     fetchData();
   }, []);
 
-  // ── Create task ──
+  // -- Create task --
   const addTask = async (values: any, { setSubmitting, resetForm }: any) => {
     if (!user) return;
     setCreating(true);
@@ -235,7 +236,7 @@ const TasksPage = () => {
     }
   };
 
-  // ── Start task ──
+  // -- Start task --
   const handleStart = async (task: Task) => {
     setActionLoading(task.task_id);
     try {
@@ -249,7 +250,7 @@ const TasksPage = () => {
     }
   };
 
-  // ── Pause task — open reason popup ──
+  // -- Pause task — open reason popup --
   const openPauseModal = (task: Task) => {
     setPauseTarget(task);
     setPauseReason("");
@@ -299,7 +300,7 @@ const TasksPage = () => {
     getMentors();
   }, []);
 
-  // ── End task ──
+  // -- End task --
   const handleEnd = async (task: Task) => {
     setActionLoading(task.task_id);
     try {
@@ -313,7 +314,7 @@ const TasksPage = () => {
     }
   };
 
-  // ── Edit task ──
+  // -- Edit task --
   const handleDelete = async (task: Task) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${task.title}"?`,
@@ -341,7 +342,7 @@ const TasksPage = () => {
     setEditTarget(task);
   };
 
-  // ── Filters ──
+  // -- Filters --
   const filtered =
     filter === "all" ? tasks : tasks.filter((t) => t.status === filter);
   const counts = {
@@ -351,7 +352,7 @@ const TasksPage = () => {
     3: tasks.filter((t) => t.status === 3).length,
   };
 
-  // ── Due date helpers ──
+  // -- Due date helpers --
   const isDueToday = (d: string) => {
     const today = new Date().toISOString().split("T")[0];
     return d?.split("T")[0] === today;
@@ -390,8 +391,41 @@ const TasksPage = () => {
     if (priority === 3 || priority === "3") return "Low";
     return priority || "-";
   };
+  const toFormPriority = (priority?: string | number) => {
+    if (priority === 1 || priority === "1" || priority === "high") return "high";
+    if (priority === 3 || priority === "3" || priority === "low") return "low";
+    return "normal";
+  };
+  const getDueDateForInput = (due?: string | null) => {
+    if (!due) return "";
+    const dateMatch = due.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (dateMatch) return dateMatch[1];
 
-  // ── Loading state ──
+    const parsed = new Date(due);
+    if (Number.isNaN(parsed.getTime())) return "";
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    const d = String(parsed.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+  const getDueTimeForInput = (due?: string | null) => {
+    if (!due) return "";
+    const timeMatch = due.match(/[T\s](\d{2}:\d{2})(?::\d{2})?/);
+    if (timeMatch) return timeMatch[1];
+
+    const parsed = new Date(due);
+    if (Number.isNaN(parsed.getTime())) return "";
+    const h = String(parsed.getHours()).padStart(2, "0");
+    const m = String(parsed.getMinutes()).padStart(2, "0");
+    return `${h}:${m}`;
+  };
+  const normalizeDueDateTime = (due?: string | null) => {
+    const dueDate = getDueDateForInput(due);
+    const dueTime = getDueTimeForInput(due);
+    return dueDate && dueTime ? `${dueDate} ${dueTime}` : "";
+  };
+
+  // -- Loading state --
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 font-jakarta">
@@ -401,7 +435,7 @@ const TasksPage = () => {
     );
   }
 
-  // ── Error state ──
+  // -- Error state --
   if (loadError) {
     return (
       <div className="flex flex-col items-center justify-center py-32 font-jakarta text-center">
@@ -478,10 +512,11 @@ const TasksPage = () => {
         })}
       </div>
 
-      {/* ═══ Create Task Modal ═══ */}
+      {/* --- Create Task Modal --- */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-fadeUp">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 backdrop-blur-sm">
+          <div className="flex min-h-full items-center justify-center p-4">
+          <div className="mx-auto bg-white rounded-2xl shadow-2xl border border-line/70 w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 animate-fadeUp">
             <h2 className="text-lg font-extrabold text-navy mb-5">
               Create New Task
             </h2>
@@ -505,7 +540,7 @@ const TasksPage = () => {
               onSubmit={addTask}
             >
               {({ isSubmitting, resetForm }) => (
-                <Form>
+                <Form className="space-y-0">
                   <label className="block text-xs font-bold text-slate mb-1.5">
                     Task Title *
                   </label>
@@ -528,13 +563,13 @@ const TasksPage = () => {
                   />
 
                   <label className="block text-xs font-bold text-slate mb-1.5">
-                    Descreption
+                    Description
                   </label>
                   <Field
                     as="textarea"
                     name="description"
-                    placeholder="add any extranotes"
-                    className="w-full h-10 border border-gray-200 rounded-md px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1"
+                    placeholder="Add any extra notes"
+                    className="w-full h-24 border border-gray-200 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1"
                   />
                   <ErrorMessage
                     name="description"
@@ -646,7 +681,7 @@ const TasksPage = () => {
                     className="text-xs text-red-500 mb-2"
                   />
 
-                  <div className="flex justify-end gap-3">
+                  <div className="sticky bottom-0 bg-white pt-3 mt-2 flex justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => {
@@ -672,13 +707,15 @@ const TasksPage = () => {
               )}
             </Formik>
           </div>
+          </div>
         </div>
       )}
 
-      {/* ═══ Pause Reason Modal ═══ */}
+      {/* --- Pause Reason Modal --- */}
       {pauseTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fadeUp">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 backdrop-blur-sm">
+          <div className="flex min-h-full items-center justify-center p-4">
+          <div className="mx-auto bg-white rounded-2xl shadow-2xl border border-line/70 w-full max-w-md p-6 animate-fadeUp">
             <h2 className="text-lg font-extrabold text-navy mb-1">
               Pause Task
             </h2>
@@ -721,237 +758,255 @@ const TasksPage = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* ═══ Edit Task Modal ═══ */}
-      {editTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-fadeUp">
-            <h2 className="text-lg font-extrabold text-navy mb-5">Edit Task</h2>
-            <Formik
-              initialValues={{
-                editTitle: editTarget.title || "",
-                description: editTarget.description || "",
-                dueDate: editTarget.due_time
-                  ? editTarget.due_time.split("T")[0]
-                  : "",
-                dueTime: editTarget.due_time
-                  ? editTarget.due_time.split(" ")[1] || ""
-                  : "",
-                owner: editTarget.created_by || user?.user_id || "",
-                priority: editTarget.priority
-                  ? String(editTarget.priority)
-                  : "normal",
-              }}
-              enableReinitialize
-              validationSchema={
-                editTarget
-                  ? Yup.object({
-                      editTitle: Yup.string().trim(),
-                      dueDate: Yup.string(),
-                      dueTime: Yup.string(),
-                      owner: Yup.string(),
-                      priority: Yup.string(),
-                    })
-                  : Yup.object({
-                      editTitle: Yup.string().required(
-                        "Task title is required",
-                      ),
-                      dueDate: Yup.string().required("Due date is required"),
-                      dueTime: Yup.string().required("Due time is required"),
-                      owner: Yup.string().required("Task owner is required"),
-                      priority: Yup.string().required("Priority is required"),
-                    })
-              }
-              onSubmit={async (values, { setSubmitting }) => {
-                setUpdating(true);
-                try {
-                  const dueDateTime = `${values.dueDate} ${values.dueTime}`;
-                  const payload: any = {};
-                  if (values.editTitle !== editTarget.title)
-                    payload.title = values.editTitle.trim();
-                  if (dueDateTime !== editTarget.due_time)
-                    payload.due_time = dueDateTime;
-                  if (values.description !== editTarget.description)
-                    payload.description = values.description;
-                  if (values.owner !== String(editTarget.created_by))
-                    payload.created_by = values.owner;
-                  if (values.priority !== String(editTarget.priority))
-                    payload.priority = values.priority;
-                  if (Object.keys(payload).length === 0) {
-                    setEditTarget(null);
-                    setUpdating(false);
-                    setSubmitting(false);
-                    return;
-                  }
-                  await updateTaskApi(editTarget.task_id, payload);
-                  toast.success("Task updated");
-                  setEditTarget(null);
-                  await refreshTasks();
-                } catch (err: any) {
-                  const detail = err?.response?.data?.detail;
-                  const msg = Array.isArray(detail)
-                    ? detail.map((d: any) => d.msg).join(", ")
-                    : detail || "Failed to update task";
-                  toast.error(msg);
-                } finally {
-                  setUpdating(false);
-                  setSubmitting(false);
-                }
-              }}
-            >
-              {({ isSubmitting, resetForm }) => (
-                <Form>
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Task Title *
-                  </label>
-                  <Field
-                    name="editTitle"
-                    as="select"
-                    className="h-10 border border-gray-200 rounded-md px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1 w-full"
-                  >
-                    <option value="">Select task title</option>
-                    {titleArray.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.option}
-                      </option>
-                    ))}
-                  </Field>
-                  <ErrorMessage
-                    name="editTitle"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Description
-                  </label>
-                  <Field
-                    as="textarea"
-                    name="description"
-                    placeholder="add any extranotes"
-                    className="w-full h-10 border border-gray-200 rounded-md px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1"
-                  />
-                  <ErrorMessage
-                    name="description"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Due Date *
-                  </label>
-                  <div className="relative mb-1">
-                    <FiCalendar className="absolute left-3.5 top-1/2 -translate-y-1/2 text-mist text-sm pointer-events-none" />
-                    <Field
-                      type="date"
-                      name="dueDate"
-                      min={new Date().toISOString().split("T")[0]}
-                      className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30"
-                    />
-                  </div>
-                  <ErrorMessage
-                    name="dueDate"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Due Time *
-                  </label>
-                  <div className="relative mb-1">
-                    <Field
-                      type="time"
-                      step="1"
-                      name="dueTime"
-                      className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm"
-                    />
-                  </div>
-                  <ErrorMessage
-                    name="dueTime"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Task Owner
-                  </label>
-                  <div className="relative mb-1">
-                    <Field
-                      as="select"
-                      name="owner"
-                      className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
-                    >
-                      <option value="">Select owner</option>
-                      {user && (
-                        <option value={user.user_id}>
-                          {user.username} (You)
-                        </option>
-                      )}
-                      {mentors.map((mentor) => (
-                        <option key={mentor.user_id} value={mentor.user_id}>
-                          {mentor.username}
-                        </option>
-                      ))}
-                    </Field>
-                  </div>
-                  <ErrorMessage
-                    name="owner"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Priority
-                  </label>
-                  <div className="relative mb-5">
-                    <Field
-                      as="select"
-                      name="priority"
-                      className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
-                    >
-                      <option value="high">High</option>
-                      <option value="low">Low</option>
-                      <option value="normal">Normal</option>
-                    </Field>
-                  </div>
-                  <ErrorMessage
-                    name="priority"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <div className="flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditTarget(null);
-                        resetForm();
-                      }}
-                      className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || updating}
-                      className="text-sm font-semibold text-white bg-blue hover:bg-bluelt disabled:opacity-40 px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
-                    >
-                      {(isSubmitting || updating) && (
-                        <FiLoader className="animate-spin text-sm" />
-                      )}
-                      {isSubmitting || updating ? "Updating…" : "Update Task"}
-                    </button>
-                  </div>
-                </Form>
-              )}
-            </Formik>
           </div>
         </div>
       )}
 
-      {/* ═══ Tasks List ═══ */}
+      {/* --- Edit Task Modal --- */}
+      {editTarget && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 backdrop-blur-sm">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="mx-auto w-full max-w-lg max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-line/70 p-6 animate-fadeUp">
+              <h2 className="text-lg font-extrabold text-navy mb-5">
+                Edit Task
+              </h2>
+              <Formik
+                initialValues={{
+                  editTitle: editTarget.title || "",
+                  description: editTarget.description || "",
+                  dueDate: getDueDateForInput(editTarget.due_time),
+                  dueTime: getDueTimeForInput(editTarget.due_time),
+                  owner: editTarget.created_by || user?.user_id || "",
+                  priority: toFormPriority(editTarget.priority),
+                }}
+                enableReinitialize
+                validationSchema={
+                  editTarget
+                    ? Yup.object({
+                        editTitle: Yup.string().trim(),
+                        dueDate: Yup.string(),
+                        dueTime: Yup.string(),
+                        owner: Yup.string(),
+                        priority: Yup.string(),
+                      })
+                    : Yup.object({
+                        editTitle: Yup.string().required(
+                          "Task title is required",
+                        ),
+                        dueDate: Yup.string().required("Due date is required"),
+                        dueTime: Yup.string().required("Due time is required"),
+                        owner: Yup.string().required("Task owner is required"),
+                        priority: Yup.string().required("Priority is required"),
+                      })
+                }
+                onSubmit={async (values, { setSubmitting }) => {
+                  setUpdating(true);
+                  try {
+                    const dueDateTime = `${values.dueDate} ${values.dueTime}`;
+                    const existingDueDateTime = normalizeDueDateTime(
+                      editTarget.due_time,
+                    );
+                    const priority =
+                      values.priority === "high"
+                        ? 1
+                        : values.priority === "low"
+                          ? 3
+                          : 2;
+                    const currentPriority =
+                      editTarget.priority === 1 ||
+                      editTarget.priority === "1" ||
+                      editTarget.priority === "high"
+                        ? 1
+                        : editTarget.priority === 3 ||
+                            editTarget.priority === "3" ||
+                            editTarget.priority === "low"
+                          ? 3
+                          : 2;
+                    const payload: any = {};
+                    if (values.editTitle !== editTarget.title)
+                      payload.title = values.editTitle.trim();
+                    if (dueDateTime !== existingDueDateTime)
+                      payload.due_time = dueDateTime;
+                    if (values.description !== editTarget.description)
+                      payload.description = values.description;
+                    if (values.owner !== String(editTarget.created_by))
+                      payload.created_by = values.owner;
+                    if (priority !== currentPriority)
+                      payload.priority = priority;
+                    if (Object.keys(payload).length === 0) {
+                      setEditTarget(null);
+                      setUpdating(false);
+                      setSubmitting(false);
+                      return;
+                    }
+                    await updateTaskApi(editTarget.task_id, payload);
+                    toast.success("Task updated");
+                    setEditTarget(null);
+                    await refreshTasks();
+                  } catch (err: any) {
+                    const detail = err?.response?.data?.detail;
+                    const msg = Array.isArray(detail)
+                      ? detail.map((d: any) => d.msg).join(", ")
+                      : detail || "Failed to update task";
+                    toast.error(msg);
+                  } finally {
+                    setUpdating(false);
+                    setSubmitting(false);
+                  }
+                }}
+              >
+                {({ isSubmitting, resetForm }) => (
+                  <Form className="space-y-0">
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Task Title *
+                    </label>
+                    <Field
+                      name="editTitle"
+                      as="select"
+                      className="h-10 border border-gray-200 rounded-md px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1 w-full"
+                    >
+                      <option value="">Select task title</option>
+                      {titleArray.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.option}
+                        </option>
+                      ))}
+                    </Field>
+                    <ErrorMessage
+                      name="editTitle"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
+
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Description
+                    </label>
+                  <Field
+                    as="textarea"
+                    name="description"
+                    placeholder="Add any extra notes"
+                    className="w-full h-24 border border-gray-200 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1"
+                  />
+                    <ErrorMessage
+                      name="description"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
+
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Due Date *
+                    </label>
+                    <div className="relative mb-1">
+                      <FiCalendar className="absolute left-3.5 top-1/2 -translate-y-1/2 text-mist text-sm pointer-events-none" />
+                      <Field
+                        type="date"
+                        name="dueDate"
+                        min={new Date().toISOString().split("T")[0]}
+                        className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30"
+                      />
+                    </div>
+                    <ErrorMessage
+                      name="dueDate"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
+
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Due Time *
+                    </label>
+                    <div className="relative mb-1">
+                      <Field
+                        type="time"
+                        step="1"
+                        name="dueTime"
+                        className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm"
+                      />
+                    </div>
+                    <ErrorMessage
+                      name="dueTime"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
+
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Task Owner
+                    </label>
+                    <div className="relative mb-1">
+                      <Field
+                        as="select"
+                        name="owner"
+                        className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
+                      >
+                        <option value="">Select owner</option>
+                        {user && (
+                          <option value={user.user_id}>
+                            {user.username} (You)
+                          </option>
+                        )}
+                        {mentors.map((mentor) => (
+                          <option key={mentor.user_id} value={mentor.user_id}>
+                            {mentor.username}
+                          </option>
+                        ))}
+                      </Field>
+                    </div>
+                    <ErrorMessage
+                      name="owner"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
+
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Priority
+                    </label>
+                    <div className="relative mb-5">
+                      <Field
+                        as="select"
+                        name="priority"
+                        className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
+                      >
+                        <option value="high">High</option>
+                        <option value="low">Low</option>
+                        <option value="normal">Normal</option>
+                      </Field>
+                    </div>
+                    <ErrorMessage
+                      name="priority"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
+
+                  <div className="sticky bottom-0 bg-white pt-3 mt-2 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                          setEditTarget(null);
+                          resetForm();
+                        }}
+                        className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting || updating}
+                        className="text-sm font-semibold text-white bg-blue hover:bg-bluelt disabled:opacity-40 px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        {(isSubmitting || updating) && (
+                          <FiLoader className="animate-spin text-sm" />
+                        )}
+                        {isSubmitting || updating ? "Updating…" : "Update Task"}
+                      </button>
+                    </div>
+                  </Form>
+                )}
+              </Formik>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- Tasks List --- */}
       <div className="bg-white border border-line rounded-[13px] overflow-hidden">
         <div className="px-5 py-4 border-b border-line flex items-center justify-between">
           <span className="text-sm font-extrabold text-navy">
@@ -1070,162 +1125,7 @@ const TasksPage = () => {
                         <FiTrash2 className="text-base" />
                       )}
                     </button>
-                    {/* ═══ View Task Modal ═══ */}
-                    {viewTask && (
-                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm px-4">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6 animate-fadeUp">
-                          <h2 className="text-lg font-extrabold text-navy mb-3 flex items-center gap-2">
-                            <FiEye className="text-blue" /> Task Details
-                          </h2>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="rounded-xl border border-line p-4 bg-lightbg/40">
-                              <p className="text-xs font-bold text-blue mb-3">
-                                Task Info
-                              </p>
-                              <div className="space-y-3">
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Title
-                                  </div>
-                                  <div className="font-bold text-navy">
-                                    {viewTask.title}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Description
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {viewTask.description || "-"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Status
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {getStatusCfg(viewTask.status).label}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Priority
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {getPriorityLabel(viewTask.priority)}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Due Date
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {formatDateTime(viewTask.due_time)}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Task ID
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {viewTask.task_id}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    User ID
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {viewTask.user_id ?? "-"}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="rounded-xl border border-line p-4 bg-white">
-                              <p className="text-xs font-bold text-blue mb-3">
-                                Timeline & Tracking
-                              </p>
-                              <div className="space-y-3">
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Created By
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {viewTask.created_by}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Created At
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {formatDateTime(viewTask.created_at)}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Start Time
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {formatDateTime(viewTask.start_time)}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Completion Time
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {formatDateTime(viewTask.completion_time)}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Updated At
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {formatDateTime(viewTask.updated_at)}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Productive Time
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {formatProductiveTime(viewTask)}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Editable
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {viewTask.is_editable ? "Yes" : "No"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-mist mb-1">
-                                    Overdue
-                                  </div>
-                                  <div className="text-slate text-sm">
-                                    {viewTask.is_overdue ? "Yes" : "No"}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex justify-end mt-4">
-                            <button
-                              onClick={() => setViewTask(null)}
-                              className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
-                            >
-                              Close
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {/* Status 1 = To Do → Start */}
+                    {/* Status 1 = To Do ? Start */}
                     {task.status === 1 && (
                       <button
                         onClick={() => handleStart(task)}
@@ -1241,7 +1141,7 @@ const TasksPage = () => {
                       </button>
                     )}
 
-                    {/* Status 2 = In Progress → Pause + End */}
+                    {/* Status 2 = In Progress ? Pause + End */}
                     {/* In Progress */}
                     {task.status === 2 && (
                       <>
@@ -1317,6 +1217,132 @@ const TasksPage = () => {
           </div>
         )}
       </div>
+
+      {/* --- View Task Modal --- */}
+      {viewTask && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 backdrop-blur-sm">
+          <div className="flex min-h-full items-center justify-center p-4">
+          <div className="mx-auto w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl border border-line/70 bg-white p-6 shadow-2xl animate-fadeUp">
+            <h2 className="text-lg font-extrabold text-navy mb-3 flex items-center gap-2">
+              <FiEye className="text-blue" /> Task Details
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-line p-4 bg-lightbg/40">
+                <p className="text-xs font-bold text-blue mb-3">Task Info</p>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-xs text-mist mb-1">Title</div>
+                    <div className="font-bold text-navy">{viewTask.title}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">Description</div>
+                    <div className="text-slate text-sm">
+                      {viewTask.description || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">Status</div>
+                    <div className="text-slate text-sm">
+                      {getStatusCfg(viewTask.status).label}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">Priority</div>
+                    <div className="text-slate text-sm">
+                      {getPriorityLabel(viewTask.priority)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">Due Date</div>
+                    <div className="text-slate text-sm">
+                      {formatDateTime(viewTask.due_time)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">Task ID</div>
+                    <div className="text-slate text-sm">{viewTask.task_id}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">User ID</div>
+                    <div className="text-slate text-sm">
+                      {viewTask.user_id ?? "-"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-line p-4 bg-white">
+                <p className="text-xs font-bold text-blue mb-3">
+                  Timeline & Tracking
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-xs text-mist mb-1">Created By</div>
+                    <div className="text-slate text-sm">
+                      {viewTask.created_by}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">Created At</div>
+                    <div className="text-slate text-sm">
+                      {formatDateTime(viewTask.created_at)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">Start Time</div>
+                    <div className="text-slate text-sm">
+                      {formatDateTime(viewTask.start_time)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">
+                      Completion Time
+                    </div>
+                    <div className="text-slate text-sm">
+                      {formatDateTime(viewTask.completion_time)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">Updated At</div>
+                    <div className="text-slate text-sm">
+                      {formatDateTime(viewTask.updated_at)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">
+                      Productive Time
+                    </div>
+                    <div className="text-slate text-sm">
+                      {formatProductiveTime(viewTask)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">Editable</div>
+                    <div className="text-slate text-sm">
+                      {viewTask.is_editable ? "Yes" : "No"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-mist mb-1">Overdue</div>
+                    <div className="text-slate text-sm">
+                      {viewTask.is_overdue ? "Yes" : "No"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setViewTask(null)}
+                className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

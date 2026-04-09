@@ -145,19 +145,6 @@ const InternLayout = () => {
     };
   }, [profile]);
 
-  const formatProfileDate = (date?: string) => {
-    if (!date) return "-";
-    const parsed = new Date(date);
-    if (Number.isNaN(parsed.getTime())) return "-";
-    return parsed.toLocaleString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -249,9 +236,7 @@ const InternLayout = () => {
                 <p className="font-syne font-extrabold text-xl text-navy leading-tight">
                   M-Guru
                 </p>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Intern
-                </p>
+                <p className="text-[11px] text-slate-500 font-medium">Intern</p>
               </div>
             )}
           </NavLink>
@@ -461,12 +446,6 @@ const InternLayout = () => {
 
                   <div className="px-4 py-3 grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <p className="text-mist mb-1">User ID</p>
-                      <p className="text-navy font-semibold">
-                        {profile?.user_id ?? "-"}
-                      </p>
-                    </div>
-                    <div>
                       <p className="text-mist mb-1">Batch</p>
                       <p className="text-navy font-semibold">
                         {profile?.batch ?? "-"}
@@ -482,18 +461,6 @@ const InternLayout = () => {
                       <p className="text-mist mb-1">Tech Stack</p>
                       <p className="text-navy font-semibold">
                         {profile?.tech_stack || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-mist mb-1">Created At</p>
-                      <p className="text-navy font-semibold">
-                        {formatProfileDate(profile?.created_at)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-mist mb-1">Updated At</p>
-                      <p className="text-navy font-semibold">
-                        {formatProfileDate(profile?.updated_at)}
                       </p>
                     </div>
                   </div>
