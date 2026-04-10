@@ -178,20 +178,20 @@ const DeleteIcon = () => (
   </svg>
 );
 
-const formatDateTime = (value: string) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-};
+// const formatDateTime = (value: string) => {
+//   if (!value) return "-";
+//   const date = new Date(value);
+//   if (Number.isNaN(date.getTime())) return "-";
+//   return date.toLocaleString("en-IN", {
+//     day: "2-digit",
+//     month: "short",
+//     year: "numeric",
+//     hour: "2-digit",
+//     minute: "2-digit",
+//     second: "2-digit",
+//     hour12: true,
+//   });
+// };
 
 const getStatusText = (status: number) => {
   if (status === 1) return "Active";
