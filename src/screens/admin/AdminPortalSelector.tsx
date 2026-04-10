@@ -41,8 +41,8 @@ const PORTALS = [
     ),
   },
   {
-    title: "Intern Attendance Dashboard",
-    route: "/admin/attendance-dashboard",
+    title: "Conversation Dashboard",
+    route: "/admin/messages",
     accent: "border-emerald-400/20 bg-emerald-500/10",
     icon: (
       <ScheduleOutlined

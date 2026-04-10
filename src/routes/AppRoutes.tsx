@@ -24,7 +24,7 @@ import AdminLayout from "../components/layout/AdminLayout";
 import AdminPortalSelector from "../screens/admin/AdminPortalSelector";
 import AdminInternDashboard from "../screens/admin/AdminInternDashboard";
 import AdminMentorDashboard from "../screens/admin/AdminMentorDashboard";
-import UserAttendanceDashboard from "../screens/admin/UserAttendanceDashboard";
+import AdminMessagesPage from "../screens/admin/AdminMessagesPage";
 import InterviewDashboard from "../screens/admin/AssesmentDashboard";
 import AdminDashboard from "../screens/admin/AdminDashboard";
 import SendEmail from "../screens/admin/SendEmail";
@@ -88,7 +88,7 @@ export const router = createHashRouter([
       { path: "portals", element: <AdminPortalSelector /> },
       { path: "mentor-dashboard", element: <AdminMentorDashboard /> },
       { path: "intern-dashboard", element: <AdminInternDashboard /> },
-      { path: "attendance-dashboard", element: <UserAttendanceDashboard /> },
+      { path: "messages", element: <AdminMessagesPage /> },
       { path: "interview-dashboard", element: <InterviewDashboard /> },
       { path: "feedback", element: <AdminFeedback /> },
       {

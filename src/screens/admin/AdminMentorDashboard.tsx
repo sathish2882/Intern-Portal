@@ -341,7 +341,10 @@ const AdminMentorDashboard = () => {
       console.error(error);
       const detail = error?.response?.data?.detail;
       const message = Array.isArray(detail)
-        ? detail.map((item: { msg?: string }) => item.msg).filter(Boolean).join(", ")
+        ? detail
+            .map((item: { msg?: string }) => item.msg)
+            .filter(Boolean)
+            .join(", ")
         : detail || "Failed to update mentor";
       toast.error(message);
     } finally {
@@ -434,7 +437,7 @@ const AdminMentorDashboard = () => {
               ))}
             </select>
           </div>
-          
+
           <Button
             type="primary"
             className="ml-auto md:self-end !bg-blue font-bold"
@@ -546,177 +549,184 @@ const AdminMentorDashboard = () => {
                             Edit
                           </button>
                         </td>
-                              {editMentor && (
-                                <div
-                                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
-                                  onClick={(event) => {
-                                    if (event.target === event.currentTarget && !updatingMentor) {
-                                      setEditMentor(null);
-                                    }
-                                  }}
+                        {editMentor && (
+                          <div
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
+                            onClick={(event) => {
+                              if (
+                                event.target === event.currentTarget &&
+                                !updatingMentor
+                              ) {
+                                setEditMentor(null);
+                              }
+                            }}
+                          >
+                            <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#111827] p-6 shadow-2xl">
+                              <div className="mb-5 flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
+                                    Mentor Form
+                                  </p>
+                                  <h3 className="mt-1 text-xl font-bold text-white">
+                                    Edit Mentor
+                                  </h3>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditMentor(null)}
+                                  disabled={updatingMentor}
+                                  className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-semibold text-slate-300 hover:text-white disabled:opacity-50"
                                 >
-                                  <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#111827] p-6 shadow-2xl">
-                                    <div className="mb-5 flex items-center justify-between gap-3">
+                                  Close
+                                </button>
+                              </div>
+
+                              <Formik
+                                initialValues={{
+                                  username: editMentor.username,
+                                  email: editMentor.email,
+                                  password: editMentor.password,
+                                  batch: String(editMentor.batch),
+                                  phone: editMentor.phone,
+                                  tech_stack: editMentor.tech_stack,
+                                }}
+                                validationSchema={addMentorValidationSchema}
+                                onSubmit={async (values, { setSubmitting }) => {
+                                  await handleUpdateMentor(values);
+                                  setSubmitting(false);
+                                }}
+                                enableReinitialize
+                              >
+                                {({ isSubmitting, resetForm }) => (
+                                  <Form>
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                       <div>
-                                        <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
-                                          Mentor Form
-                                        </p>
-                                        <h3 className="mt-1 text-xl font-bold text-white">
-                                          Edit Mentor
-                                        </h3>
+                                        <label className="mb-1.5 block text-xs text-slate-300">
+                                          Username
+                                        </label>
+                                        <Field
+                                          name="username"
+                                          className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
+                                          placeholder="Enter username"
+                                        />
+                                        <ErrorMessage
+                                          name="username"
+                                          component="div"
+                                          className="mt-1 text-xs text-red-300"
+                                        />
                                       </div>
-                                      <button
-                                        type="button"
-                                        onClick={() => setEditMentor(null)}
-                                        disabled={updatingMentor}
-                                        className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-semibold text-slate-300 hover:text-white disabled:opacity-50"
-                                      >
-                                        Close
-                                      </button>
+                                      <div>
+                                        <label className="mb-1.5 block text-xs text-slate-300">
+                                          Email
+                                        </label>
+                                        <Field
+                                          type="email"
+                                          name="email"
+                                          className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
+                                          placeholder="user@example.com"
+                                        />
+                                        <ErrorMessage
+                                          name="email"
+                                          component="div"
+                                          className="mt-1 text-xs text-red-300"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="mb-1.5 block text-xs text-slate-300">
+                                          Password
+                                        </label>
+                                        <Field
+                                          type="password"
+                                          name="password"
+                                          className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
+                                          placeholder="Enter password (leave blank to keep unchanged)"
+                                        />
+                                        <ErrorMessage
+                                          name="password"
+                                          component="div"
+                                          className="mt-1 text-xs text-red-300"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="mb-1.5 block text-xs text-slate-300">
+                                          Batch
+                                        </label>
+                                        <Field
+                                          type="number"
+                                          min={0}
+                                          name="batch"
+                                          className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
+                                          placeholder="Enter batch number"
+                                        />
+                                        <ErrorMessage
+                                          name="batch"
+                                          component="div"
+                                          className="mt-1 text-xs text-red-300"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="mb-1.5 block text-xs text-slate-300">
+                                          Phone
+                                        </label>
+                                        <Field
+                                          name="phone"
+                                          className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
+                                          placeholder="Enter phone number"
+                                        />
+                                        <ErrorMessage
+                                          name="phone"
+                                          component="div"
+                                          className="mt-1 text-xs text-red-300"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="mb-1.5 block text-xs text-slate-300">
+                                          Tech Stack
+                                        </label>
+                                        <Field
+                                          name="tech_stack"
+                                          className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
+                                          placeholder="Enter tech stack"
+                                        />
+                                        <ErrorMessage
+                                          name="tech_stack"
+                                          component="div"
+                                          className="mt-1 text-xs text-red-300"
+                                        />
+                                      </div>
                                     </div>
 
-                                    <Formik
-                                      initialValues={{
-                                        username: editMentor.username,
-                                        email: editMentor.email,
-                                        password: "",
-                                        batch: String(editMentor.batch),
-                                        phone: editMentor.phone,
-                                        tech_stack: editMentor.tech_stack,
-                                      }}
-                                      validationSchema={addMentorValidationSchema}
-                                      onSubmit={async (values, { setSubmitting }) => {
-                                        await handleUpdateMentor(values);
-                                        setSubmitting(false);
-                                      }}
-                                      enableReinitialize
-                                    >
-                                      {({ isSubmitting, resetForm }) => (
-                                        <Form>
-                                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                            <div>
-                                              <label className="mb-1.5 block text-xs text-slate-300">
-                                                Username
-                                              </label>
-                                              <Field
-                                                name="username"
-                                                className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
-                                                placeholder="Enter username"
-                                              />
-                                              <ErrorMessage
-                                                name="username"
-                                                component="div"
-                                                className="mt-1 text-xs text-red-300"
-                                              />
-                                            </div>
-                                            <div>
-                                              <label className="mb-1.5 block text-xs text-slate-300">
-                                                Email
-                                              </label>
-                                              <Field
-                                                type="email"
-                                                name="email"
-                                                className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
-                                                placeholder="user@example.com"
-                                              />
-                                              <ErrorMessage
-                                                name="email"
-                                                component="div"
-                                                className="mt-1 text-xs text-red-300"
-                                              />
-                                            </div>
-                                            <div>
-                                              <label className="mb-1.5 block text-xs text-slate-300">
-                                                Password
-                                              </label>
-                                              <Field
-                                                type="password"
-                                                name="password"
-                                                className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
-                                                placeholder="Enter password (leave blank to keep unchanged)"
-                                              />
-                                              <ErrorMessage
-                                                name="password"
-                                                component="div"
-                                                className="mt-1 text-xs text-red-300"
-                                              />
-                                            </div>
-                                            <div>
-                                              <label className="mb-1.5 block text-xs text-slate-300">
-                                                Batch
-                                              </label>
-                                              <Field
-                                                type="number"
-                                                min={0}
-                                                name="batch"
-                                                className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
-                                                placeholder="Enter batch number"
-                                              />
-                                              <ErrorMessage
-                                                name="batch"
-                                                component="div"
-                                                className="mt-1 text-xs text-red-300"
-                                              />
-                                            </div>
-                                            <div>
-                                              <label className="mb-1.5 block text-xs text-slate-300">
-                                                Phone
-                                              </label>
-                                              <Field
-                                                name="phone"
-                                                className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
-                                                placeholder="Enter phone number"
-                                              />
-                                              <ErrorMessage
-                                                name="phone"
-                                                component="div"
-                                                className="mt-1 text-xs text-red-300"
-                                              />
-                                            </div>
-                                            <div>
-                                              <label className="mb-1.5 block text-xs text-slate-300">
-                                                Tech Stack
-                                              </label>
-                                              <Field
-                                                name="tech_stack"
-                                                className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
-                                                placeholder="Enter tech stack"
-                                              />
-                                              <ErrorMessage
-                                                name="tech_stack"
-                                                component="div"
-                                                className="mt-1 text-xs text-red-300"
-                                              />
-                                            </div>
-                                          </div>
-
-                                          <div className="mt-6 flex items-center justify-end gap-2">
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                resetForm();
-                                                setEditMentor(null);
-                                              }}
-                                              disabled={updatingMentor || isSubmitting}
-                                              className="rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white disabled:opacity-50"
-                                            >
-                                              Cancel
-                                            </button>
-                                            <Button
-                                              type="primary"
-                                              htmlType="submit"
-                                              loading={updatingMentor || isSubmitting}
-                                              disabled={updatingMentor || isSubmitting}
-                                            >
-                                              Update Mentor
-                                            </Button>
-                                          </div>
-                                        </Form>
-                                      )}
-                                    </Formik>
-                                  </div>
-                                </div>
-                              )}
+                                    <div className="mt-6 flex items-center justify-end gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          resetForm();
+                                          setEditMentor(null);
+                                        }}
+                                        disabled={
+                                          updatingMentor || isSubmitting
+                                        }
+                                        className="rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white disabled:opacity-50"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <Button
+                                        type="primary"
+                                        htmlType="submit"
+                                        loading={updatingMentor || isSubmitting}
+                                        disabled={
+                                          updatingMentor || isSubmitting
+                                        }
+                                      >
+                                        Update Mentor
+                                      </Button>
+                                    </div>
+                                  </Form>
+                                )}
+                              </Formik>
+                            </div>
+                          </div>
+                        )}
                         <td className="px-5 py-4">
                           <button
                             type="button"

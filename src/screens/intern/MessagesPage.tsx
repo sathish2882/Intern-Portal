@@ -346,7 +346,7 @@ const MessagesPage = () => {
     return (
       <div className="flex flex-col items-center justify-center py-32 font-jakarta">
         <FiLoader className="text-3xl text-blue animate-spin mb-3" />
-        <p className="text-sm text-slate animate-pulse">Loading Messages…</p>
+        <p className="text-sm text-slate animate-pulse">Loading Messages...</p>
       </div>
     );
 
@@ -364,9 +364,9 @@ const MessagesPage = () => {
     );
 
   return (
-    <div className="h-[calc(100vh-60px)] flex font-jakarta overflow-hidden">
+    <div className="h-[calc(100vh-60px)] flex flex-col md:flex-row font-jakarta overflow-hidden">
       {/* LEFT */}
-      <div className="w-80 border-r bg-white flex flex-col">
+      <div className="w-full md:w-80 h-[38vh] md:h-auto border-b md:border-b-0 md:border-r bg-white flex flex-col">
         <div className="p-3 border-b">
           <input
             placeholder="Search"
@@ -388,9 +388,9 @@ const MessagesPage = () => {
                   batch: c.batch,
                 })
               }
-              className="px-4 py-3 cursor-pointer hover:bg-gray-100 border-b"
+              className="px-3 sm:px-4 py-3 cursor-pointer hover:bg-gray-100 border-b"
             >
-              <div className="flex items-center gap-3 px-2 py-3 text-white">
+              <div className="flex items-center gap-3 px-1 sm:px-2 py-2 text-white">
                 <div className="font-semibold rounded-full bg-blue w-8 h-8 flex items-center justify-center">
                   <FaUserGroup className="text-white" size={18} />
                 </div>
@@ -409,18 +409,20 @@ const MessagesPage = () => {
       </div>
 
       {/* RIGHT */}
-      <div className="flex flex-col flex-1 bg-[#e5ddd5]">
+      <div className="flex flex-col flex-1 min-h-0 bg-[#e5ddd5]">
         {/* HEADER */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-[#075E54] text-white">
+        <div className="flex items-center gap-3 px-3 sm:px-4 py-3 bg-[#075E54] text-white">
           <div className="font-semibold rounded-full bg-gray-400 w-8 h-8 flex items-center justify-center">
             <FaUserGroup className="text-blue" size={18} />
           </div>
-          <span className="text-md font-semibold">{activeChat?.name}</span>
+          <span className="text-sm sm:text-md font-semibold truncate">
+            {activeChat?.name}
+          </span>
         </div>
 
         {/* MESSAGES */}
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2">
           {Object.entries(groupedMessages).map(([date, msgs]) => (
             <div key={date}>
               {/* DATE HEADER */}
@@ -438,7 +440,7 @@ const MessagesPage = () => {
                     className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`relative pl-1 min-w-[10%] rounded-lg shadow text-sm my-2 ${
+                      className={`relative pl-1 min-w-[10%] max-w-[85%] sm:max-w-[70%] rounded-lg shadow text-sm my-2 ${
                         isMe
                           ? "bg-[#dcf8c6] rounded-tr-none"
                           : "bg-white rounded-tl-none"
@@ -448,7 +450,7 @@ const MessagesPage = () => {
                         <span className="text-green-700">{msg.senderName}</span>
                       )}
 
-                      <p className="mt-1 pr-1">{msg.text}</p>
+                      <p className="mt-1 pr-1 break-words">{msg.text}</p>
 
                       <div className="text-[10px] text-gray-500 text-right pr-1">
                         {new Date(msg.timestamp).toLocaleTimeString("en-IN", {
@@ -467,7 +469,7 @@ const MessagesPage = () => {
         </div>
 
         {/* INPUT */}
-        <div className="flex items-center gap-2 px-3 py-2 bg-[#f0f0f0] rounded-full">
+        <div className="flex items-center gap-2 px-2 sm:px-3 py-2 bg-[#f0f0f0] border-t">
           <button className="text-gray-500">
             <FiSmile size={20} />
           </button>
