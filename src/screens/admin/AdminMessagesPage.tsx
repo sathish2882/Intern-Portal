@@ -1,6 +1,10 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
-import { getMeApi } from "../../services/authApi";
+import {
+  getBatchesApi,
+  getMeApi,
+  getUserByBatchApi,
+} from "../../services/authApi";
 import chatSocket, { WsChatMessage } from "../../services/chatSocket";
 import {
   FiLoader,
@@ -17,7 +21,6 @@ import {
   addGroupMemberApi,
   createGroupApi,
   deleteGroupApi,
-  getBatchUsersForChatApi,
   getGroupMembersApi,
   messageApi,
   removeGroupMemberApi,
@@ -146,6 +149,10 @@ const AdminMessagesPage = () => {
   const [selectedMembersGroupId, setSelectedMembersGroupId] = useState<
     number | ""
   >("");
+  const [batchOptions, setBatchOptions] = useState<number[]>([]);
+  const [selectedBatchForMembers, setSelectedBatchForMembers] = useState<
+    number | ""
+  >("");
   const [batchUsers, setBatchUsers] = useState<SelectableMemberOption[]>([]);
   const [allMentors, setAllMentors] = useState<SelectableMemberOption[]>([]);
   const [selectedBatchUserId, setSelectedBatchUserId] = useState<number | "">(
@@ -204,12 +211,13 @@ const AdminMessagesPage = () => {
     groups.find((group) => group.conversationId === selectedMembersGroupId) ??
     null;
   const selectedGroupBatch = Number(selectedMembersGroup?.batch ?? 0);
+  const selectedBatchId = Number(selectedBatchForMembers);
   const activeMemberIds = new Set(groupMembers.map((member) => member.userId));
   const availableBatchUsers = batchUsers.filter(
     (user) => !activeMemberIds.has(user.userId),
   );
   const availableMentors = allMentors
-    .filter((mentor) => Number(mentor.batch) === selectedGroupBatch)
+    .filter((mentor) => Number(mentor.batch) === selectedBatchId)
     .filter((mentor) => !activeMemberIds.has(mentor.userId));
 
   const menuItems = [
@@ -252,10 +260,13 @@ const AdminMessagesPage = () => {
   const loadMentors = useCallback(async () => {
     try {
       const res = await getAllMentorsApi();
-      const raw = Array.isArray(res.data) ? res.data : res.data ? [res.data] : [];
-      const normalized = raw
-        .map(normalizeSelectableMember)
-        .filter((mentor) => Number.isFinite(mentor.userId) && mentor.userId > 0);
+      const raw = Array.isArray(res.data)
+        ? res.data
+        : res.data
+          ? [res.data]
+          : [];
+      const normalized = raw.map(normalizeSelectableMember);
+
       setAllMentors(normalized);
     } catch {
       toast.error("Failed to load mentors");
@@ -263,7 +274,33 @@ const AdminMessagesPage = () => {
     }
   }, []);
 
-  const loadBatchUsersForGroup = useCallback(async (batchId: number) => {
+  const loadBatches = useCallback(async () => {
+    try {
+      const res = await getBatchesApi();
+      const raw = Array.isArray(res.data)
+        ? res.data
+        : res.data
+          ? [res.data]
+          : [];
+      const normalized = Array.from(
+        new Set(
+          raw
+            .map((item: any) =>
+              Number(item?.batch_id ?? item?.batch ?? item?.id ?? item),
+            )
+            .filter((batchId) => Number.isInteger(batchId) && batchId > 0),
+        ),
+      );
+      setBatchOptions(normalized);
+      return normalized;
+    } catch {
+      toast.error("Failed to load batches");
+      setBatchOptions([]);
+      return [];
+    }
+  }, []);
+
+  const loadUsersByBatch = useCallback(async (batchId: number) => {
     if (!Number.isInteger(batchId) || batchId <= 0) {
       setBatchUsers([]);
       return;
@@ -271,8 +308,12 @@ const AdminMessagesPage = () => {
 
     setMemberOptionsLoading(true);
     try {
-      const res = await getBatchUsersForChatApi(batchId);
-      const raw = Array.isArray(res.data) ? res.data : res.data ? [res.data] : [];
+      const res = await getUserByBatchApi(batchId);
+      const raw = Array.isArray(res.data)
+        ? res.data
+        : res.data
+          ? [res.data]
+          : [];
       const normalized = raw
         .map(normalizeSelectableMember)
         .filter((user) => Number.isFinite(user.userId) && user.userId > 0);
@@ -291,7 +332,7 @@ const AdminMessagesPage = () => {
         const me = (await getMeApi()).data;
         setMyUserId(me.user_id);
         setMyName(me.username);
-        await Promise.all([loadGroups(), loadMentors()]);
+        await Promise.all([loadGroups(), loadMentors(), loadBatches()]);
       } catch (err: any) {
         if (err?.response?.status === 403) {
           setAccessDenied(true);
@@ -307,7 +348,7 @@ const AdminMessagesPage = () => {
     };
 
     load();
-  }, [loadGroups, loadMentors]);
+  }, [loadGroups, loadMentors, loadBatches]);
 
   useEffect(() => {
     if (!activeChat && groups.length > 0) {
@@ -343,14 +384,37 @@ const AdminMessagesPage = () => {
   }, [activeMenu, selectedMembersGroupId, loadGroupMembers]);
 
   useEffect(() => {
+    if (
+      selectedMembersGroup &&
+      Number.isInteger(selectedGroupBatch) &&
+      selectedGroupBatch > 0
+    ) {
+      setSelectedBatchForMembers(selectedGroupBatch);
+      return;
+    }
+
+    if (batchOptions.length > 0) {
+      setSelectedBatchForMembers(batchOptions[0]);
+      return;
+    }
+
+    setSelectedBatchForMembers("");
+  }, [
+    selectedMembersGroupId,
+    selectedMembersGroup,
+    selectedGroupBatch,
+    batchOptions,
+  ]);
+
+  useEffect(() => {
     if (activeMenu !== "groupMembers") return;
-    if (!Number.isInteger(selectedGroupBatch) || selectedGroupBatch <= 0) {
+    if (!Number.isInteger(selectedBatchId) || selectedBatchId <= 0) {
       setBatchUsers([]);
       return;
     }
 
-    loadBatchUsersForGroup(selectedGroupBatch);
-  }, [activeMenu, selectedGroupBatch, loadBatchUsersForGroup]);
+    loadUsersByBatch(selectedBatchId);
+  }, [activeMenu, selectedBatchId, loadUsersByBatch]);
 
   useEffect(() => {
     if (availableBatchUsers.length === 0) {
@@ -370,17 +434,8 @@ const AdminMessagesPage = () => {
   useEffect(() => {
     if (availableMentors.length === 0) {
       setSelectedMentorId("");
-      return;
     }
-
-    const isSelectedAvailable = availableMentors.some(
-      (mentor) => mentor.userId === selectedMentorId,
-    );
-
-    if (!isSelectedAvailable) {
-      setSelectedMentorId(availableMentors[0].userId);
-    }
-  }, [availableMentors, selectedMentorId]);
+  }, [availableMentors]);
 
   useEffect(() => {
     if (!activeChat) return;
@@ -645,7 +700,7 @@ const AdminMessagesPage = () => {
       await Promise.all([
         loadGroupMembers(selectedMembersGroupId),
         loadGroups(),
-        loadBatchUsersForGroup(selectedGroupBatch),
+        loadUsersByBatch(selectedBatchId),
       ]);
       toast.success("Member added successfully");
     } catch {
@@ -674,7 +729,7 @@ const AdminMessagesPage = () => {
       await Promise.all([
         loadGroupMembers(selectedMembersGroupId),
         loadGroups(),
-        loadBatchUsersForGroup(selectedGroupBatch),
+        loadUsersByBatch(selectedBatchId),
       ]);
       toast.success("Member removed successfully");
     } catch {
@@ -998,6 +1053,33 @@ const AdminMessagesPage = () => {
                     </div>
 
                     <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="lg:col-span-2 rounded-md border border-white/10 bg-abg3 p-3">
+                        <p className="text-xs font-semibold text-amuted uppercase tracking-wide">
+                          Batch
+                        </p>
+                        <div className="mt-2">
+                          <select
+                            value={selectedBatchForMembers}
+                            onChange={(e) =>
+                              setSelectedBatchForMembers(
+                                e.target.value ? Number(e.target.value) : "",
+                              )
+                            }
+                            disabled={batchOptions.length === 0}
+                            className="w-full border border-white/10 rounded px-3 py-2 text-sm bg-abg2 text-adark focus:outline-none focus:ring-2 focus:ring-goldtxt disabled:opacity-60"
+                          >
+                            {batchOptions.length === 0 && (
+                              <option value="">No batches available</option>
+                            )}
+                            {batchOptions.map((batchId) => (
+                              <option key={batchId} value={batchId}>
+                                Batch {batchId}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
                       <div className="rounded-md border border-white/10 bg-abg3 p-3">
                         <p className="text-xs font-semibold text-amuted uppercase tracking-wide">
                           Users In Batch
@@ -1012,6 +1094,7 @@ const AdminMessagesPage = () => {
                             }
                             disabled={
                               !selectedMembersGroupId ||
+                              !selectedBatchForMembers ||
                               memberOptionsLoading ||
                               availableBatchUsers.length === 0
                             }
@@ -1047,7 +1130,7 @@ const AdminMessagesPage = () => {
 
                       <div className="rounded-md border border-white/10 bg-abg3 p-3">
                         <p className="text-xs font-semibold text-amuted uppercase tracking-wide">
-                          Mentors In Batch
+                          Mentors
                         </p>
                         <div className="mt-2 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
                           <select
@@ -1059,21 +1142,32 @@ const AdminMessagesPage = () => {
                             }
                             disabled={
                               !selectedMembersGroupId ||
+                              !selectedBatchForMembers ||
                               availableMentors.length === 0
                             }
                             className="w-full border border-white/10 rounded px-3 py-2 text-sm bg-abg2 text-adark focus:outline-none focus:ring-2 focus:ring-goldtxt disabled:opacity-60"
                           >
-                            {availableMentors.length === 0 && (
+                            {allMentors.length === 0 ? (
                               <option value="">No mentors available</option>
+                            ) : (
+                              <>
+                                <option value="" disabled>
+                                  Select from all mentors
+                                </option>
+
+                                {allMentors.map((mentor) => (
+                                  <option
+                                    key={mentor.userId}
+                                    value={mentor.userId}
+                                  >
+                                    {mentor.username}
+                                    {mentor.techStack
+                                      ? ` - ${mentor.techStack}`
+                                      : ""}
+                                  </option>
+                                ))}
+                              </>
                             )}
-                            {availableMentors.map((mentor) => (
-                              <option key={mentor.userId} value={mentor.userId}>
-                                {mentor.username}
-                                {mentor.techStack
-                                  ? ` - ${mentor.techStack}`
-                                  : ""}
-                              </option>
-                            ))}
                           </select>
                           <button
                             type="button"

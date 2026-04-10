@@ -72,7 +72,7 @@ export const getBankDetailsApi = (invoiceNo: string) => {
 
 // Delete Mentor
 export const deleteMentorApi = (mentor_id: number) => {
-  return API.delete("/delete_mentor", { params: { mentor_id } });
+  return API.delete(`/delete_mentor?mentor_id=${mentor_id}`);
 };
 
 // Update Mentor
@@ -87,5 +87,5 @@ export const updateMentorApi = (
     tech_stack: string;
   },
 ) => {
-  return API.put("/update_mentor", data, { params: { mentor_id } });
+  return API.put(`/update_mentor?mentor_id=${mentor_id}`, data);
 };

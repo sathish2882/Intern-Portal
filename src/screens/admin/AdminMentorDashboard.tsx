@@ -684,10 +684,24 @@ const AdminMentorDashboard = () => {
                                           Tech Stack
                                         </label>
                                         <Field
+                                          as="select"
                                           name="tech_stack"
                                           className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
                                           placeholder="Enter tech stack"
-                                        />
+                                        >
+                                          <option value="">
+                                            Select tech stack
+                                          </option>
+                                          <option value="Frontend">
+                                            React
+                                          </option>
+                                          <option value="Backend">
+                                            Python
+                                          </option>
+                                          <option value="Fullstack">IOT</option>
+
+                                          <option value="Others">Others</option>
+                                        </Field>
                                         <ErrorMessage
                                           name="tech_stack"
                                           component="div"
@@ -902,10 +916,17 @@ const AdminMentorDashboard = () => {
                         Tech Stack
                       </label>
                       <Field
+                        as="select"
                         name="tech_stack"
                         className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
                         placeholder="Enter tech stack"
-                      />
+                      >
+                        <option value="">Select tech stack</option>
+                        <option value="Frontend">React</option>
+                        <option value="Backend">Python</option>
+                        <option value="Fullstack">IOT</option>
+                        <option value="Others">Others</option>
+                      </Field>
                       <ErrorMessage
                         name="tech_stack"
                         component="div"
@@ -979,20 +1000,13 @@ const AdminMentorDashboard = () => {
                 { label: "Phone", value: selectedUser.phone },
 
                 { label: "Tech Stack", value: selectedUser.tech_stack },
-                {
-                  label: "Updated At",
-                  value: formatDateTime(selectedUser.updated_at),
-                },
+
                 { label: "Created By", value: selectedUser.created_by },
                 {
                   label: "Status",
                   value: `${selectedUser.status} (${getStatusText(selectedUser.status)})`,
                 },
                 { label: "Batch", value: String(selectedUser.batch) },
-                {
-                  label: "Created At",
-                  value: formatDateTime(selectedUser.created_at),
-                },
               ].map((item) => (
                 <div
                   key={item.label}
