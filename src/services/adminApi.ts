@@ -37,19 +37,15 @@ export const getBatchUsers = (batchId: number) => {
   return API.get(`/get_userby_batch/${batchId}`);
 };
 
-export const viewAttendanceByAdminApi = (userId: number | string) => {
-  return API.post("/viewbyadmin", null, {
-    params: { user_id: userId },
-  });
-};
-
-export const viewAttendanceByUserApi = () => {
-  return API.post("/viewbyuser");
-};
 
 export const deleteUser = (userId: number | string) => {
   return API.delete(`/users/${userId}`);
 };
+
+export const updateUserApi = (userId: number | string, data: any) => {
+  return API.put(`/update_users/${userId}`, data)
+}
+
 
 export const getAllMentorsApi = () => {
   return API.get("/get_all_mentors");
