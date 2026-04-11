@@ -143,7 +143,7 @@ export const router = createHashRouter([
   },
 
   {
-    path: "/mentor",
+    path: "/mentor/assessments/",
     element: (
       <ProtectedRoute role="4">
         <MentorLayout />
@@ -152,9 +152,18 @@ export const router = createHashRouter([
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <MentorDashboard /> },
-      { path: "technical", element: <TechnicalAssessment /> },
-      { path: "presentation", element: <PresentationAssessment /> },
-      { path: "softskills", element: <SoftSkillsAssessment /> },
+      {
+        path: "technical/:id",
+        element: <TechnicalAssessment />,
+      },
+      {
+        path: "presentation/:id",
+        element: <PresentationAssessment />,
+      },
+      {
+        path: "softskills/:id",
+        element: <SoftSkillsAssessment />,
+      },
     ],
   },
 

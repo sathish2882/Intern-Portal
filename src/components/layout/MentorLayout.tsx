@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useNavigate, useLocation, NavLink } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -11,38 +11,12 @@ import { capitalizeName } from "../../utils/formatName";
 import welcomeLogo from "../../assets/images/jpg/welcome-logo.jpg";
 import { FiCode, FiMonitor, FiMessageSquare } from "react-icons/fi";
 import Profile from "../../assets/images/png/profile.png";
+import { getTypes } from "../../services/mentorApi";
 
 const FALLBACK_USER = {
   name: "Mentor",
   email: "",
 };
-
-const NAV_ITEMS = [
-  {
-    to: "/mentor/dashboard",
-    label: "Dashboard",
-    icon: (
-      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
-      </svg>
-    ),
-  },
-  {
-    to: "/mentor/technical",
-    label: "Technical",
-    icon: <FiCode />,
-  },
-  {
-    to: "/mentor/presentation",
-    label: "Presentation",
-    icon: <FiMonitor />,
-  },
-  {
-    to: "/mentor/softskills",
-    label: "Soft Skills",
-    icon: <FiMessageSquare />,
-  },
-];
 
 const MentorLayout = () => {
   const navigate = useNavigate();
@@ -51,8 +25,51 @@ const MentorLayout = () => {
   const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState<CurrentUserProfile | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [loadingMenu, setLoadingMenu] = useState(true);
+  const [assessmentTypes, setAssessmentTypes] = useState<[]>([]);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
+  //const lastPingRef = useRef(0);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const NAV_ITEMS = [
+    {
+      to: "/mentor/assessments/dashboard",
+      label: "Dashboard",
+      icon: (
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+        </svg>
+      ),
+    },
+  ];
+
+  const getAssessmentTypes = async () => {
+    try {
+      setLoadingMenu(true);
+      const response = await getTypes();
+      const formatTypes = response.data.map((item: any) => ({
+        assessmentTypeId: item.assessment_type_id,
+        assessmentName: item.assessment_name,
+      }));
+      setAssessmentTypes(formatTypes);
+    } catch (error: any) {
+      console.error("Failed to load assessment types:", error);
+      toast.error(
+        error?.response?.data?.detail || "Failed to load assessment types",
+      );
+      return null;
+    } finally {
+      setLoadingMenu(false);
+    }
+  };
+
+  useEffect(() => {
+    getAssessmentTypes();
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -136,44 +153,74 @@ const MentorLayout = () => {
                 <p className="font-syne font-extrabold text-xl text-navy leading-tight">
                   M-Guru
                 </p>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Mentor
-                </p>
+                <p className="text-[11px] text-slate-500 font-medium">Mentor</p>
               </div>
             )}
           </NavLink>
         </div>
 
-        <nav className="flex-1 p-2.5 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-2.5 space-y-1">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === "/mentor/dashboard"}
+              end
               onClick={() => setMobileOpen(false)}
-              title={compact ? item.label : undefined}
               className={({ isActive }) =>
-                `group flex items-center rounded-xl transition-all duration-200 ${
-                  compact ? "justify-center px-2 py-2.5" : "px-3 py-2.5 gap-2.5"
-                } ${
+                `flex items-center rounded-xl px-3 py-2.5 gap-2.5 ${
                   isActive
-                    ? "text-white bg-blue shadow-[0_6px_16px_rgba(29,110,222,0.24)]"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-navy"
+                    ? "text-white bg-blue"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`
               }
             >
-              <span
-                className={`w-5 text-center ${compact ? "text-[17px]" : "text-base"}`}
-              >
-                {item.icon}
-              </span>
+              <span className="w-5 text-center">{item.icon}</span>
               {!compact && (
-                <span className="text-sm font-semibold truncate">
-                  {item.label}
-                </span>
+                <span className="text-sm font-semibold">{item.label}</span>
               )}
             </NavLink>
           ))}
+
+          {loadingMenu ? (
+            <p className="text-xs text-gray-400 px-3">Loading...</p>
+          ) : (
+            assessmentTypes.map((type: any) => {
+              // Map assessment type names to correct route paths
+              let route = null;
+              const name = (type.assessmentName || "").toLowerCase();
+              if (name.includes("technical")) {
+                route = `/mentor/assessments/technical/${type.assessmentTypeId}`;
+              } else if (name.includes("presentation")) {
+                route = `/mentor/assessments/presentation/${type.assessmentTypeId}`;
+              } else if (name.includes("soft")) {
+                route = `/mentor/assessments/softskills/${type.assessmentTypeId}`;
+              }
+              // Only render link if route matches a defined route
+              return route ? (
+                <NavLink
+                  key={type.assessmentTypeId}
+                  to={route}
+                  onClick={() => setMobileOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center rounded-xl px-3 py-2.5 gap-2.5 ${
+                      isActive
+                        ? "text-white bg-blue"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`
+                  }
+                >
+                  <span className="w-5 text-center">
+                    <FiCode />
+                  </span>
+                  {!compact && (
+                    <span className="text-sm font-semibold">
+                      {type.assessmentName}
+                    </span>
+                  )}
+                </NavLink>
+              ) : null;
+            })
+          )}
         </nav>
 
         <div className="p-3 border-t border-gray-100 space-y-2">
@@ -304,8 +351,70 @@ const MentorLayout = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 cursor-pointer">
-              <img src={Profile} alt="Mentor" className="w-10 h-10 rounded" />
+            <div className="relative" ref={profileMenuRef}>
+              <button
+                type="button"
+                onClick={() => setProfileMenuOpen((prev) => !prev)}
+                className="flex items-center justify-center p-1.5 rounded-xl hover:bg-sky/20 transition-colors cursor-pointer"
+                aria-label="Open profile details"
+              >
+                <span className="relative inline-flex items-center justify-center w-10 h-10 rounded-xl shadow-sm overflow-hidden">
+                  <img
+                    src={Profile}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white" />
+                </span>
+              </button>
+
+              {profileMenuOpen && (
+                <div className="absolute right-0 top-14 z-50 w-[320px] rounded-2xl border border-line bg-white shadow-xl overflow-hidden">
+                  <div className="relative px-4 py-4 border-b border-line bg-gradient-to-r from-blue to-cyan-500 text-white overflow-hidden">
+                    <span className="absolute -top-4 -right-6 w-20 h-20 rounded-full bg-white/15" />
+                    <span className="absolute -bottom-6 -left-8 w-24 h-24 rounded-full bg-white/10" />
+                    <div className="relative flex items-center gap-3">
+                      <div className="relative w-12 h-12 rounded-xl shadow-sm overflow-hidden">
+                        <img
+                          src={Profile}
+                          alt={user.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-white/90 truncate">
+                          {user.email || "No email"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-3 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <p className="text-mist mb-1">Batch</p>
+                      <p className="text-navy font-semibold">
+                        {profile?.batch ?? "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-mist mb-1">Phone</p>
+                      <p className="text-navy font-semibold">
+                        {profile?.phone || profile?.phno || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-mist mb-1">Tech Stack</p>
+                      <p className="text-navy font-semibold">
+                        {profile?.tech_stack || "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </nav>
