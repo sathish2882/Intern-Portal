@@ -9,7 +9,7 @@ import { MdOutlineMenu } from "react-icons/md";
 import { CurrentUserProfile } from "../../types";
 import { capitalizeName } from "../../utils/formatName";
 import welcomeLogo from "../../assets/images/jpg/welcome-logo.jpg";
-import { FiCode, FiMonitor, FiMessageSquare } from "react-icons/fi";
+import { FiCode} from "react-icons/fi";
 import Profile from "../../assets/images/png/profile.png";
 import { getTypes } from "../../services/mentorApi";
 
