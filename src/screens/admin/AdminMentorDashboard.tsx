@@ -178,21 +178,6 @@ const DeleteIcon = () => (
   </svg>
 );
 
-// const formatDateTime = (value: string) => {
-//   if (!value) return "-";
-//   const date = new Date(value);
-//   if (Number.isNaN(date.getTime())) return "-";
-//   return date.toLocaleString("en-IN", {
-//     day: "2-digit",
-//     month: "short",
-//     year: "numeric",
-//     hour: "2-digit",
-//     minute: "2-digit",
-//     second: "2-digit",
-//     hour12: true,
-//   });
-// };
-
 const getStatusText = (status: number) => {
   if (status === 1) return "Active";
   if (status === 0) return "Inactive";
@@ -670,6 +655,14 @@ const AdminMentorDashboard = () => {
                                         </label>
                                         <Field
                                           name="phone"
+                                          type="number"
+                                          inputMode="numeric"
+                                          onInput={(e: any) => {
+                                            if (e.target.value.length > 10) {
+                                              e.target.value =
+                                                e.target.value.slice(0, 10);
+                                            }
+                                          }}
                                           className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
                                           placeholder="Enter phone number"
                                         />
@@ -902,6 +895,13 @@ const AdminMentorDashboard = () => {
                       </label>
                       <Field
                         name="phone"
+                        type="number"
+                        inputMode="numeric"
+                        onInput={(e: any) => {
+                          if (e.target.value.length > 10) {
+                            e.target.value = e.target.value.slice(0, 10);
+                          }
+                        }}
                         className="w-full rounded-lg border border-white/10 bg-abg3 px-3 py-2 text-sm text-white outline-none focus:border-blue-400"
                         placeholder="Enter phone number"
                       />

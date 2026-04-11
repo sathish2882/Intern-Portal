@@ -4,7 +4,8 @@ import * as Yup from "yup";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import FormInput from "../../components/form/FormInput";
-import { signupApi, updateUserApi } from "../../services/authApi";
+import { signupApi, } from "../../services/authApi";
+import { updateUserApi } from "../../services/adminApi";
 
 interface SignupFormValues {
   username: string;

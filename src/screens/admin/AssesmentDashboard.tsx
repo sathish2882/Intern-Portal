@@ -310,13 +310,13 @@ const InterviewDashboard = () => {
                         {user.email}
                       </td>
                       <td className="px-5 py-4 font-mono">
-                        <span>{user.aptitude_score}/30</span>
+                        <span>{user.aptitude_score}/15</span>
                         <span className="text-xs text-slate-400 ml-1">
                           ({user.aptitude_percentage.toFixed(1)}%)
                         </span>
                       </td>
                       <td className="px-5 py-4 font-mono">
-                        <span>{user.technical_score}/20</span>
+                        <span>{user.technical_score}/15</span>
                         <span className="text-xs text-slate-400 ml-1">
                           ({user.technical_percentage.toFixed(1)}%)
                         </span>
