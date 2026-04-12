@@ -136,7 +136,7 @@ const MentorLayout = () => {
       <>
         <div className="px-3 py-5 border-b border-gray-100">
           <NavLink
-            to="/mentor/dashboard"
+            to="/mentor/assessments/dashboard"
             onClick={() => setMobileOpen(false)}
             title="Mentor Portal"
             className={`flex items-center gap-2 ${compact ? "justify-center" : "px-1"}`}
@@ -293,7 +293,7 @@ const MentorLayout = () => {
       )}
 
       <aside
-        className={`hidden lg:flex flex-col h-screen border-r border-gray-200 bg-white transition-all duration-300 ease-in-out overflow-hidden ${
+        className={`hidden lg:flex flex-col h-screen border-r sticky top-0 border-gray-200 bg-white transition-all duration-300 ease-in-out overflow-hidden ${
           collapsed ? "w-[86px]" : "w-[250px]"
         }`}
       >

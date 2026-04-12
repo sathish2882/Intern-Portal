@@ -95,16 +95,16 @@ const getStatusCfg = (status: number) =>
   };
 
 const titleArray = [
-  { option: "Documentation", value: "Documentation" },
-  { option: "Mentor session", value: "Mentor-session" },
   { option: "Daily Standup Update", value: "Daily-Standup-Update" },
-  { option: "Knowledge Base Update", value: "Knowledge-Base-Update" },
-  { option: "Internal Team Coordination", value: "Internal-Team-Coordination" },
-  { option: "Feedback working", value: "Feedback-working" },
+  { option: "Documentation", value: "Documentation" },
   { option: "Documentation Writing", value: "Documentation-Writing" },
-  { option: "Report Preparation", value: "Report-Preparation" },
-  { option: "Presentation", value: "Presentation" },
+  { option: "Feedback working", value: "Feedback-working" },
+  { option: "Internal Team Coordination", value: "Internal-Team-Coordination" },
+  { option: "Knowledge Base Update", value: "Knowledge-Base-Update" },
+  { option: "Mentor session", value: "Mentor-session" },
   { option: "One to One Meeting", value: "One-to-One-Meeting" },
+  { option: "Presentation", value: "Presentation" },
+  { option: "Report Preparation", value: "Report-Preparation" },
 ];
 
 // -- Component --------------------------------------
@@ -392,7 +392,8 @@ const TasksPage = () => {
     return priority || "-";
   };
   const toFormPriority = (priority?: string | number) => {
-    if (priority === 1 || priority === "1" || priority === "high") return "high";
+    if (priority === 1 || priority === "1" || priority === "high")
+      return "high";
     if (priority === 3 || priority === "3" || priority === "low") return "low";
     return "normal";
   };
@@ -516,197 +517,197 @@ const TasksPage = () => {
       {showCreate && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 backdrop-blur-sm">
           <div className="flex min-h-full items-center justify-center p-4">
-          <div className="mx-auto bg-white rounded-2xl shadow-2xl border border-line/70 w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 animate-fadeUp">
-            <h2 className="text-lg font-extrabold text-navy mb-5">
-              Create New Task
-            </h2>
-            <Formik
-              initialValues={{
-                newTitle: "",
-                description: "",
-                dueDate: "",
-                dueTime: "",
-                status: "not-started",
-                owner: user ? user.user_id : "",
-                priority: "normal",
-              }}
-              validationSchema={Yup.object({
-                newTitle: Yup.string().required("Task title is required"),
-                dueDate: Yup.string().required("Due date is required"),
-                dueTime: Yup.string().required("Due time is required"),
-                owner: Yup.string().required("Task owner is required"),
-                priority: Yup.string().required("Priority is required"),
-              })}
-              onSubmit={addTask}
-            >
-              {({ isSubmitting, resetForm }) => (
-                <Form className="space-y-0">
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Task Title *
-                  </label>
-                  <Field
-                    as="select"
-                    name="newTitle"
-                    className="h-10 border border-gray-200 rounded-md px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1 w-full"
-                  >
-                    <option value="">Select task title</option>
-                    {titleArray.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.option}
-                      </option>
-                    ))}
-                  </Field>
-                  <ErrorMessage
-                    name="newTitle"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Description
-                  </label>
-                  <Field
-                    as="textarea"
-                    name="description"
-                    placeholder="Add any extra notes"
-                    className="w-full h-24 border border-gray-200 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1"
-                  />
-                  <ErrorMessage
-                    name="description"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Due Date *
-                  </label>
-                  <div className="relative mb-1">
-                    <FiCalendar className="absolute left-3.5 top-1/2 -translate-y-1/2 text-mist text-sm pointer-events-none" />
-                    <Field
-                      type="date"
-                      name="dueDate"
-                      min={new Date().toISOString().split("T")[0]}
-                      className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30"
-                    />
-                  </div>
-                  <ErrorMessage
-                    name="dueDate"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Due Time *
-                  </label>
-                  <div className="relative mb-1">
-                    <Field
-                      type="time"
-                      step="1"
-                      name="dueTime"
-                      className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm"
-                    />
-                  </div>
-                  <ErrorMessage
-                    name="dueTime"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Status
-                  </label>
-                  <div className="relative mb-1">
+            <div className="mx-auto bg-white rounded-2xl shadow-2xl border border-line/70 w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 animate-fadeUp">
+              <h2 className="text-lg font-extrabold text-navy mb-5">
+                Create New Task
+              </h2>
+              <Formik
+                initialValues={{
+                  newTitle: "",
+                  description: "",
+                  dueDate: "",
+                  dueTime: "",
+                  status: "not-started",
+                  owner: user ? user.user_id : "",
+                  priority: "normal",
+                }}
+                validationSchema={Yup.object({
+                  newTitle: Yup.string().required("Task title is required"),
+                  dueDate: Yup.string().required("Due date is required"),
+                  dueTime: Yup.string().required("Due time is required"),
+                  owner: Yup.string().required("Task owner is required"),
+                  priority: Yup.string().required("Priority is required"),
+                })}
+                onSubmit={addTask}
+              >
+                {({ isSubmitting, resetForm }) => (
+                  <Form className="space-y-0">
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Task Title *
+                    </label>
                     <Field
                       as="select"
-                      name="status"
-                      className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
+                      name="newTitle"
+                      className="h-10 border border-gray-200 rounded-md px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1 w-full"
                     >
-                      <option value="not-started">Not Started</option>
-                      <option value="inprogress">Inprogress</option>
-                      <option value="completed">Completed</option>
-                    </Field>
-                  </div>
-                  <ErrorMessage
-                    name="status"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Task Owner
-                  </label>
-                  <div className="relative mb-1">
-                    <Field
-                      as="select"
-                      name="owner"
-                      className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
-                    >
-                      <option value="">Select owner</option>
-                      {user && (
-                        <option value={user.user_id}>
-                          {user.username} (You)
-                        </option>
-                      )}
-                      {mentors.map((mentor) => (
-                        <option key={mentor.user_id} value={mentor.user_id}>
-                          {mentor.username}
+                      <option value="">Select task title</option>
+                      {titleArray.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.option}
                         </option>
                       ))}
                     </Field>
-                  </div>
-                  <ErrorMessage
-                    name="owner"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
+                    <ErrorMessage
+                      name="newTitle"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
 
-                  <label className="block text-xs font-bold text-slate mb-1.5">
-                    Priority
-                  </label>
-                  <div className="relative mb-5">
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Description
+                    </label>
                     <Field
-                      as="select"
+                      as="textarea"
+                      name="description"
+                      placeholder="Add any extra notes"
+                      className="w-full h-24 border border-gray-200 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1"
+                    />
+                    <ErrorMessage
+                      name="description"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
+
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Due Date *
+                    </label>
+                    <div className="relative mb-1">
+                      <FiCalendar className="absolute left-3.5 top-1/2 -translate-y-1/2 text-mist text-sm pointer-events-none" />
+                      <Field
+                        type="date"
+                        name="dueDate"
+                        min={new Date().toISOString().split("T")[0]}
+                        className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30"
+                      />
+                    </div>
+                    <ErrorMessage
+                      name="dueDate"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
+
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Due Time *
+                    </label>
+                    <div className="relative mb-1">
+                      <Field
+                        type="time"
+                        step="1"
+                        name="dueTime"
+                        className="w-full border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm"
+                      />
+                    </div>
+                    <ErrorMessage
+                      name="dueTime"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
+
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Status
+                    </label>
+                    <div className="relative mb-1">
+                      <Field
+                        as="select"
+                        name="status"
+                        className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
+                      >
+                        <option value="not-started">Not Started</option>
+                        <option value="inprogress">Inprogress</option>
+                        <option value="completed">Completed</option>
+                      </Field>
+                    </div>
+                    <ErrorMessage
+                      name="status"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
+
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Task Owner
+                    </label>
+                    <div className="relative mb-1">
+                      <Field
+                        as="select"
+                        name="owner"
+                        className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
+                      >
+                        <option value="">Select owner</option>
+                        {user && (
+                          <option value={user.user_id}>
+                            {user.username} (You)
+                          </option>
+                        )}
+                        {mentors.map((mentor) => (
+                          <option key={mentor.user_id} value={mentor.user_id}>
+                            {mentor.username}
+                          </option>
+                        ))}
+                      </Field>
+                    </div>
+                    <ErrorMessage
+                      name="owner"
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
+
+                    <label className="block text-xs font-bold text-slate mb-1.5">
+                      Priority
+                    </label>
+                    <div className="relative mb-5">
+                      <Field
+                        as="select"
+                        name="priority"
+                        className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
+                      >
+                        <option value="high">High</option>
+
+                        <option value="normal">Normal</option>
+                        <option value="low">Low</option>
+                      </Field>
+                    </div>
+                    <ErrorMessage
                       name="priority"
-                      className="w-full border border-line rounded-lg pl-4 pr-4 py-2.5 text-sm"
-                    >
-                      <option value="high">High</option>
+                      component="div"
+                      className="text-xs text-red-500 mb-2"
+                    />
 
-                      <option value="normal">Normal</option>
-                      <option value="low">Low</option>
-                    </Field>
-                  </div>
-                  <ErrorMessage
-                    name="priority"
-                    component="div"
-                    className="text-xs text-red-500 mb-2"
-                  />
-
-                  <div className="sticky bottom-0 bg-white pt-3 mt-2 flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowCreate(false);
-                        resetForm();
-                      }}
-                      className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || creating}
-                      className="text-sm font-semibold text-white bg-blue hover:bg-bluelt disabled:opacity-40 px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
-                    >
-                      {(isSubmitting || creating) && (
-                        <FiLoader className="animate-spin text-sm" />
-                      )}
-                      {isSubmitting || creating ? "Creating…" : "Create Task"}
-                    </button>
-                  </div>
-                </Form>
-              )}
-            </Formik>
-          </div>
+                    <div className="sticky bottom-0 bg-white pt-3 mt-2 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCreate(false);
+                          resetForm();
+                        }}
+                        className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting || creating}
+                        className="text-sm font-semibold text-white bg-blue hover:bg-bluelt disabled:opacity-40 px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        {(isSubmitting || creating) && (
+                          <FiLoader className="animate-spin text-sm" />
+                        )}
+                        {isSubmitting || creating ? "Creating…" : "Create Task"}
+                      </button>
+                    </div>
+                  </Form>
+                )}
+              </Formik>
+            </div>
           </div>
         </div>
       )}
@@ -715,49 +716,49 @@ const TasksPage = () => {
       {pauseTarget && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 backdrop-blur-sm">
           <div className="flex min-h-full items-center justify-center p-4">
-          <div className="mx-auto bg-white rounded-2xl shadow-2xl border border-line/70 w-full max-w-md p-6 animate-fadeUp">
-            <h2 className="text-lg font-extrabold text-navy mb-1">
-              Pause Task
-            </h2>
-            <p className="text-xs text-mist mb-4 truncate">
-              {pauseTarget.title}
-            </p>
+            <div className="mx-auto bg-white rounded-2xl shadow-2xl border border-line/70 w-full max-w-md p-6 animate-fadeUp">
+              <h2 className="text-lg font-extrabold text-navy mb-1">
+                Pause Task
+              </h2>
+              <p className="text-xs text-mist mb-4 truncate">
+                {pauseTarget.title}
+              </p>
 
-            <label className="block text-xs font-bold text-slate mb-1.5">
-              Reason *
-            </label>
-            <select
-              onChange={(e) => setPauseReason(e.target.value)}
-              value={pauseReason}
-              className="w-full border border-line rounded-lg pl-4 pr-4 my-3 py-2.5 text-sm"
-            >
-              <option value="">Select reason for pausing</option>
-              <option value="First Break">First Break</option>
-              <option value="Second Break">Second Break</option>
-              <option value="Lunch Break">Lunch Break</option>
-              <option value="Meeting">Meeting</option>
-            </select>
+              <label className="block text-xs font-bold text-slate mb-1.5">
+                Reason *
+              </label>
+              <select
+                onChange={(e) => setPauseReason(e.target.value)}
+                value={pauseReason}
+                className="w-full border border-line rounded-lg pl-4 pr-4 my-3 py-2.5 text-sm"
+              >
+                <option value="">Select reason for pausing</option>
+                <option value="First Break">First Break</option>
+                <option value="Second Break">Second Break</option>
+                <option value="Lunch Break">Lunch Break</option>
+                <option value="Meeting">Meeting</option>
+              </select>
 
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setPauseTarget(null);
-                  setPauseReason("");
-                }}
-                className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmPause}
-                disabled={!pauseReason.trim() || pausing}
-                className="text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 disabled:opacity-40 px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
-              >
-                {pausing && <FiLoader className="animate-spin text-sm" />}
-                {pausing ? "Pausing…" : "OK"}
-              </button>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setPauseTarget(null);
+                    setPauseReason("");
+                  }}
+                  className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmPause}
+                  disabled={!pauseReason.trim() || pausing}
+                  className="text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 disabled:opacity-40 px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {pausing && <FiLoader className="animate-spin text-sm" />}
+                  {pausing ? "Pausing…" : "OK"}
+                </button>
+              </div>
             </div>
-          </div>
           </div>
         </div>
       )}
@@ -881,12 +882,12 @@ const TasksPage = () => {
                     <label className="block text-xs font-bold text-slate mb-1.5">
                       Description
                     </label>
-                  <Field
-                    as="textarea"
-                    name="description"
-                    placeholder="Add any extra notes"
-                    className="w-full h-24 border border-gray-200 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1"
-                  />
+                    <Field
+                      as="textarea"
+                      name="description"
+                      placeholder="Add any extra notes"
+                      className="w-full h-24 border border-gray-200 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/30 mb-1"
+                    />
                     <ErrorMessage
                       name="description"
                       component="div"
@@ -976,10 +977,10 @@ const TasksPage = () => {
                       className="text-xs text-red-500 mb-2"
                     />
 
-                  <div className="sticky bottom-0 bg-white pt-3 mt-2 flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
+                    <div className="sticky bottom-0 bg-white pt-3 mt-2 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
                           setEditTarget(null);
                           resetForm();
                         }}
@@ -1222,124 +1223,128 @@ const TasksPage = () => {
       {viewTask && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 backdrop-blur-sm">
           <div className="flex min-h-full items-center justify-center p-4">
-          <div className="mx-auto w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl border border-line/70 bg-white p-6 shadow-2xl animate-fadeUp">
-            <h2 className="text-lg font-extrabold text-navy mb-3 flex items-center gap-2">
-              <FiEye className="text-blue" /> Task Details
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-line p-4 bg-lightbg/40">
-                <p className="text-xs font-bold text-blue mb-3">Task Info</p>
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-xs text-mist mb-1">Title</div>
-                    <div className="font-bold text-navy">{viewTask.title}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">Description</div>
-                    <div className="text-slate text-sm">
-                      {viewTask.description || "-"}
+            <div className="mx-auto w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl border border-line/70 bg-white p-6 shadow-2xl animate-fadeUp">
+              <h2 className="text-lg font-extrabold text-navy mb-3 flex items-center gap-2">
+                <FiEye className="text-blue" /> Task Details
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-xl border border-line p-4 bg-lightbg/40">
+                  <p className="text-xs font-bold text-blue mb-3">Task Info</p>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-xs text-mist mb-1">Title</div>
+                      <div className="font-bold text-navy">
+                        {viewTask.title}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">Status</div>
-                    <div className="text-slate text-sm">
-                      {getStatusCfg(viewTask.status).label}
+                    <div>
+                      <div className="text-xs text-mist mb-1">Description</div>
+                      <div className="text-slate text-sm">
+                        {viewTask.description || "-"}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">Priority</div>
-                    <div className="text-slate text-sm">
-                      {getPriorityLabel(viewTask.priority)}
+                    <div>
+                      <div className="text-xs text-mist mb-1">Status</div>
+                      <div className="text-slate text-sm">
+                        {getStatusCfg(viewTask.status).label}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">Due Date</div>
-                    <div className="text-slate text-sm">
-                      {formatDateTime(viewTask.due_time)}
+                    <div>
+                      <div className="text-xs text-mist mb-1">Priority</div>
+                      <div className="text-slate text-sm">
+                        {getPriorityLabel(viewTask.priority)}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">Task ID</div>
-                    <div className="text-slate text-sm">{viewTask.task_id}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">User ID</div>
-                    <div className="text-slate text-sm">
-                      {viewTask.user_id ?? "-"}
+                    <div>
+                      <div className="text-xs text-mist mb-1">Due Date</div>
+                      <div className="text-slate text-sm">
+                        {formatDateTime(viewTask.due_time)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-mist mb-1">Task ID</div>
+                      <div className="text-slate text-sm">
+                        {viewTask.task_id}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-mist mb-1">User ID</div>
+                      <div className="text-slate text-sm">
+                        {viewTask.user_id ?? "-"}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="rounded-xl border border-line p-4 bg-white">
-                <p className="text-xs font-bold text-blue mb-3">
-                  Timeline & Tracking
-                </p>
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-xs text-mist mb-1">Created By</div>
-                    <div className="text-slate text-sm">
-                      {viewTask.created_by}
+                <div className="rounded-xl border border-line p-4 bg-white">
+                  <p className="text-xs font-bold text-blue mb-3">
+                    Timeline & Tracking
+                  </p>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-xs text-mist mb-1">Created By</div>
+                      <div className="text-slate text-sm">
+                        {viewTask.created_by}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">Created At</div>
-                    <div className="text-slate text-sm">
-                      {formatDateTime(viewTask.created_at)}
+                    <div>
+                      <div className="text-xs text-mist mb-1">Created At</div>
+                      <div className="text-slate text-sm">
+                        {formatDateTime(viewTask.created_at)}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">Start Time</div>
-                    <div className="text-slate text-sm">
-                      {formatDateTime(viewTask.start_time)}
+                    <div>
+                      <div className="text-xs text-mist mb-1">Start Time</div>
+                      <div className="text-slate text-sm">
+                        {formatDateTime(viewTask.start_time)}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">
-                      Completion Time
+                    <div>
+                      <div className="text-xs text-mist mb-1">
+                        Completion Time
+                      </div>
+                      <div className="text-slate text-sm">
+                        {formatDateTime(viewTask.completion_time)}
+                      </div>
                     </div>
-                    <div className="text-slate text-sm">
-                      {formatDateTime(viewTask.completion_time)}
+                    <div>
+                      <div className="text-xs text-mist mb-1">Updated At</div>
+                      <div className="text-slate text-sm">
+                        {formatDateTime(viewTask.updated_at)}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">Updated At</div>
-                    <div className="text-slate text-sm">
-                      {formatDateTime(viewTask.updated_at)}
+                    <div>
+                      <div className="text-xs text-mist mb-1">
+                        Productive Time
+                      </div>
+                      <div className="text-slate text-sm">
+                        {formatProductiveTime(viewTask)}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">
-                      Productive Time
+                    <div>
+                      <div className="text-xs text-mist mb-1">Editable</div>
+                      <div className="text-slate text-sm">
+                        {viewTask.is_editable ? "Yes" : "No"}
+                      </div>
                     </div>
-                    <div className="text-slate text-sm">
-                      {formatProductiveTime(viewTask)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">Editable</div>
-                    <div className="text-slate text-sm">
-                      {viewTask.is_editable ? "Yes" : "No"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-mist mb-1">Overdue</div>
-                    <div className="text-slate text-sm">
-                      {viewTask.is_overdue ? "Yes" : "No"}
+                    <div>
+                      <div className="text-xs text-mist mb-1">Overdue</div>
+                      <div className="text-slate text-sm">
+                        {viewTask.is_overdue ? "Yes" : "No"}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={() => setViewTask(null)}
+                  className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => setViewTask(null)}
-                className="text-sm font-semibold text-slate px-5 py-2.5 rounded-lg border border-line hover:bg-gray-50 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
           </div>
         </div>
       )}
