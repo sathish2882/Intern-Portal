@@ -9,13 +9,26 @@ import { MdOutlineMenu } from "react-icons/md";
 import { CurrentUserProfile } from "../../types";
 import { capitalizeName } from "../../utils/formatName";
 import welcomeLogo from "../../assets/images/jpg/welcome-logo.jpg";
-import { FiCode} from "react-icons/fi";
+import {
+  FiCode,
+  FiMonitor,
+  FiMessageSquare,
+  FiTrendingUp,
+} from "react-icons/fi";
 import Profile from "../../assets/images/png/profile.png";
 import { getTypes } from "../../services/mentorApi";
 
 const FALLBACK_USER = {
   name: "Mentor",
   email: "",
+};
+
+type MentorAssessmentLink = {
+  assessmentTypeId: number | string;
+  assessmentName: string;
+  route: string;
+  order: number;
+  icon: JSX.Element;
 };
 
 const MentorLayout = () => {
@@ -26,7 +39,9 @@ const MentorLayout = () => {
   const [profile, setProfile] = useState<CurrentUserProfile | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [loadingMenu, setLoadingMenu] = useState(true);
-  const [assessmentTypes, setAssessmentTypes] = useState<[]>([]);
+  const [assessmentTypes, setAssessmentTypes] = useState<MentorAssessmentLink[]>(
+    [],
+  );
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -51,10 +66,55 @@ const MentorLayout = () => {
     try {
       setLoadingMenu(true);
       const response = await getTypes();
-      const formatTypes = response.data.map((item: any) => ({
-        assessmentTypeId: item.assessment_type_id,
-        assessmentName: item.assessment_name,
-      }));
+      const formatTypes = response.data
+        .map((item: any) => {
+          const assessmentName = item.assessment_name || "";
+          const name = assessmentName.toLowerCase();
+
+          if (name.includes("technical")) {
+            return {
+              assessmentTypeId: item.assessment_type_id,
+              assessmentName,
+              route: `/mentor/assessments/technical/${item.assessment_type_id}`,
+              order: 1,
+              icon: <FiCode />,
+            };
+          }
+
+          if (name.includes("presentation")) {
+            return {
+              assessmentTypeId: item.assessment_type_id,
+              assessmentName,
+              route: `/mentor/assessments/presentation/${item.assessment_type_id}`,
+              order: 2,
+              icon: <FiMonitor />,
+            };
+          }
+
+          if (name.includes("performance")) {
+            return {
+              assessmentTypeId: item.assessment_type_id,
+              assessmentName,
+              route: `/mentor/assessments/performance/${item.assessment_type_id}`,
+              order: 4,
+              icon: <FiTrendingUp />,
+            };
+          }
+
+          if (name.includes("soft")) {
+            return {
+              assessmentTypeId: item.assessment_type_id,
+              assessmentName,
+              route: `/mentor/assessments/softskills/${item.assessment_type_id}`,
+              order: 3,
+              icon: <FiMessageSquare />,
+            };
+          }
+
+          return null;
+        })
+        .filter(Boolean)
+        .sort((a: MentorAssessmentLink, b: MentorAssessmentLink) => a.order - b.order);
       setAssessmentTypes(formatTypes);
     } catch (error: any) {
       console.error("Failed to load assessment types:", error);
@@ -167,10 +227,9 @@ const MentorLayout = () => {
               end
               onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
-                `flex items-center rounded-xl px-3 py-2.5 gap-2.5 ${
-                  isActive
-                    ? "text-white bg-blue"
-                    : "text-slate-600 hover:bg-slate-100"
+                `flex items-center rounded-xl px-3 py-2.5 gap-2.5 ${isActive
+                  ? "text-white bg-blue"
+                  : "text-slate-600 hover:bg-slate-100"
                 }`
               }
             >
@@ -184,33 +243,21 @@ const MentorLayout = () => {
           {loadingMenu ? (
             <p className="text-xs text-gray-400 px-3">Loading...</p>
           ) : (
-            assessmentTypes.map((type: any) => {
-              // Map assessment type names to correct route paths
-              let route = null;
-              const name = (type.assessmentName || "").toLowerCase();
-              if (name.includes("technical")) {
-                route = `/mentor/assessments/technical/${type.assessmentTypeId}`;
-              } else if (name.includes("presentation")) {
-                route = `/mentor/assessments/presentation/${type.assessmentTypeId}`;
-              } else if (name.includes("soft")) {
-                route = `/mentor/assessments/softskills/${type.assessmentTypeId}`;
-              }
-              // Only render link if route matches a defined route
-              return route ? (
+            assessmentTypes.map((type) => {
+              return (
                 <NavLink
                   key={type.assessmentTypeId}
-                  to={route}
+                  to={type.route}
                   onClick={() => setMobileOpen(false)}
                   className={({ isActive }) =>
-                    `flex items-center rounded-xl px-3 py-2.5 gap-2.5 ${
-                      isActive
-                        ? "text-white bg-blue"
-                        : "text-slate-600 hover:bg-slate-100"
+                    `flex items-center rounded-xl px-3 py-2.5 gap-2.5 ${isActive
+                      ? "text-white bg-blue"
+                      : "text-slate-600 hover:bg-slate-100"
                     }`
                   }
                 >
                   <span className="w-5 text-center">
-                    <FiCode />
+                    {type.icon}
                   </span>
                   {!compact && (
                     <span className="text-sm font-semibold">
@@ -218,16 +265,33 @@ const MentorLayout = () => {
                     </span>
                   )}
                 </NavLink>
-              ) : null;
+              );
             })
           )}
         </nav>
+        {/* ✅ Static Performance NavLink */}
+        <NavLink
+          to="/mentor/assessments/performance"
+          onClick={() => setMobileOpen(false)}
+          className={({ isActive }) =>
+            `flex items-center rounded-xl px-3 py-2.5 gap-2.5 ${isActive
+              ? "text-white bg-blue"
+              : "text-slate-600 hover:bg-slate-100"
+            }`
+          }
+        >
+          <span className="w-5 text-center">
+            <FiTrendingUp />
+          </span>
+          {!compact && (
+            <span className="text-sm font-semibold">Performance</span>
+          )}
+        </NavLink>
 
         <div className="p-3 border-t border-gray-100 space-y-2">
           <div
-            className={`rounded-xl border border-gray-200 bg-slate-50 ${
-              compact ? "p-2.5 flex justify-center" : "px-3 py-2.5"
-            }`}
+            className={`rounded-xl border border-gray-200 bg-slate-50 ${compact ? "p-2.5 flex justify-center" : "px-3 py-2.5"
+              }`}
           >
             {loadingProfile ? (
               <div className="loader-btn loader-btn-sm" />
@@ -256,11 +320,10 @@ const MentorLayout = () => {
             onClick={handleLogout}
             disabled={loggingOut}
             title={compact ? "Sign Out" : undefined}
-            className={`w-full rounded-xl text-sm font-semibold transition-all ${
-              compact
+            className={`w-full rounded-xl text-sm font-semibold transition-all ${compact
                 ? "px-2 py-2.5 flex items-center justify-center text-red-700 bg-red-50 hover:bg-red-100"
                 : "px-3 py-2.5 flex items-center gap-2.5 text-red-700 bg-red-50 hover:bg-red-100"
-            }`}
+              }`}
           >
             {loggingOut ? (
               <div className="loader-btn loader-btn-sm" />
@@ -293,17 +356,15 @@ const MentorLayout = () => {
       )}
 
       <aside
-        className={`hidden lg:flex flex-col h-screen border-r sticky top-0 border-gray-200 bg-white transition-all duration-300 ease-in-out overflow-hidden ${
-          collapsed ? "w-[86px]" : "w-[250px]"
-        }`}
+        className={`hidden lg:flex flex-col h-screen border-r sticky top-0 border-gray-200 bg-white transition-all duration-300 ease-in-out overflow-hidden ${collapsed ? "w-[86px]" : "w-[250px]"
+          }`}
       >
         <SidebarContent />
       </aside>
 
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-[270px] bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 lg:hidden ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 left-0 z-50 h-full w-[270px] bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <SidebarContent isMobile />
       </aside>
