@@ -171,7 +171,7 @@ const MentorLayout = () => {
                   isActive
                     ? "text-white bg-blue"
                     : "text-slate-600 hover:bg-slate-100"
-                }`
+                } ${collapsed && "justify-center"}`
               }
             >
               <span className="w-5 text-center">{item.icon}</span>
@@ -206,7 +206,7 @@ const MentorLayout = () => {
                       isActive
                         ? "text-white bg-blue"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`
+                    } ${collapsed && "justify-center"}`
                   }
                 >
                   <span className="w-5 text-center">
