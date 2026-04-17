@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import {
@@ -61,8 +62,10 @@ interface UserInfo {
   username: string;
 }
 
+type StatusConfigKey = number | "overdue_task";
+
 const STATUS_CONFIG: Record<
-  number,
+  StatusConfigKey,
   { label: string; color: string; bg: string; dot: string }
 > = {
   1: {
@@ -83,6 +86,12 @@ const STATUS_CONFIG: Record<
     color: "text-orange-6oo",
     bg: "bg-orange-50",
     dot: "bg-orange-500",
+  },
+  overdue_task: {
+    label: "Overdue Task",
+    color: "text-red-600",
+    bg: "bg-red-50",
+    dot: "bg-red-500",
   },
 };
 
@@ -136,7 +145,7 @@ const TasksPage = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   // Formik will manage newTitle, dueDate, dueTime, description, status, owner, priority
-  const [filter, setFilter] = useState<"all" | number>("all");
+  const [filter, setFilter] = useState<"all" | number | "overdue_task">("all");
 
   // Pause reason modal
   const [pauseTarget, setPauseTarget] = useState<Task | null>(null);
@@ -344,12 +353,17 @@ const TasksPage = () => {
 
   // -- Filters --
   const filtered =
-    filter === "all" ? tasks : tasks.filter((t) => t.status === filter);
+    filter === "all"
+      ? tasks
+      : filter === "overdue_task"
+        ? tasks.filter((t) => t.is_overdue)
+        : tasks.filter((t) => t.status === filter);
   const counts = {
     all: tasks.length,
     1: tasks.filter((t) => t.status === 1).length,
     2: tasks.filter((t) => t.status === 2).length,
     3: tasks.filter((t) => t.status === 3).length,
+    overdue_task: tasks.filter((t) => t.is_overdue).length,
   };
 
   // -- Due date helpers --
@@ -477,7 +491,7 @@ const TasksPage = () => {
       </div>
 
       {/* KPI Filter Tabs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4 mb-6">
         {[
           {
             key: "all" as const,
@@ -489,6 +503,7 @@ const TasksPage = () => {
           { key: 1 as const, ...STATUS_CONFIG[1] },
           { key: 2 as const, ...STATUS_CONFIG[2] },
           { key: 3 as const, ...STATUS_CONFIG[3] },
+          { key: "overdue_task" as const, ...STATUS_CONFIG.overdue_task },
         ].map((tab) => {
           const isActive = filter === tab.key;
           return (
@@ -514,7 +529,7 @@ const TasksPage = () => {
       </div>
 
       {/* --- Create Task Modal --- */}
-      {showCreate && (
+      {showCreate && createPortal(
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 backdrop-blur-sm">
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="mx-auto bg-white rounded-2xl shadow-2xl border border-line/70 w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 animate-fadeUp">
@@ -709,7 +724,7 @@ const TasksPage = () => {
               </Formik>
             </div>
           </div>
-        </div>
+        </div>,document.body
       )}
 
       {/* --- Pause Reason Modal --- */}
@@ -1220,7 +1235,7 @@ const TasksPage = () => {
       </div>
 
       {/* --- View Task Modal --- */}
-      {viewTask && (
+      {viewTask && createPortal(
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 backdrop-blur-sm">
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="mx-auto w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl border border-line/70 bg-white p-6 shadow-2xl animate-fadeUp">
@@ -1288,10 +1303,10 @@ const TasksPage = () => {
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-mist mb-1">Created At</div>
+                    {/*<div className="text-xs text-mist mb-1">Created At</div>
                       <div className="text-slate text-sm">
                         {formatDateTime(viewTask.created_at)}
-                      </div>
+                      </div>*/} 
                     </div>
                     <div>
                       <div className="text-xs text-mist mb-1">Start Time</div>
@@ -1308,10 +1323,10 @@ const TasksPage = () => {
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-mist mb-1">Updated At</div>
+                     {/*<div className="text-xs text-mist mb-1">Updated At</div>
                       <div className="text-slate text-sm">
                         {formatDateTime(viewTask.updated_at)}
-                      </div>
+                      </div>*/} 
                     </div>
                     <div>
                       <div className="text-xs text-mist mb-1">
@@ -1346,7 +1361,7 @@ const TasksPage = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,document.body
       )}
     </div>
   );

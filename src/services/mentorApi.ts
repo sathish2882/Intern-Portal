@@ -31,3 +31,7 @@ export const getCategoriesPresentationApi = (
     `/mentor_assessment/categories?assessment_type_id=${assessment_type_id}`,
   );
 };
+
+export const getMentorDashboardApi = ()=>{
+    return API.get ("/mentor_assessment/dashboard")
+}

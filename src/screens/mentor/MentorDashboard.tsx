@@ -1,6 +1,8 @@
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { getMeApi } from "../../services/authApi";
+import { getMentorDashboardApi } from "../../services/mentorApi";
 import { capitalizeName } from "../../utils/formatName";
 import {
   FiClock,
@@ -16,76 +18,99 @@ import {
   FiTrendingUp,
 } from "react-icons/fi";
 
-// ── Types ──────────────────────────────────────────
-interface AssessmentEntry {
-  id: string;
-  internName: string;
-  specialization: string;
-  date: string;
-  totalScore: number;
-  maxScore: number;
-  grade: string;
-  batch?: string;
+interface DashboardSectionApi {
+  assessment_type: string;
+  assessments: number;
+  avg_score: number;
+  batches: number;
 }
 
-type AssessmentType = "technical" | "presentation" | "softskills";
+interface RecentAssessmentApi {
+  assessment_id: number;
+  intern_name: string;
+  type: string;
+  date: string;
+}
 
-// ── Helpers ────────────────────────────────────────
+interface MentorDashboardApiResponse {
+  total_assessments: number;
+  interns_assessed: number;
+  avg_technical_score: number;
+  batches: number;
+  overall_avg?: number;
+  sections: DashboardSectionApi[];
+  recent_assessments: RecentAssessmentApi[];
+  all_batches?: Array<number | string>;
+  active_batch?: number | string;
+}
+
+interface DashboardSectionCard {
+  total: number;
+  avgScore: number;
+  batches: number;
+}
+
+const DEFAULT_DASHBOARD: MentorDashboardApiResponse = {
+  total_assessments: 0,
+  interns_assessed: 0,
+  avg_technical_score: 0,
+  batches: 0,
+  overall_avg: 0,
+  sections: [],
+  recent_assessments: [],
+  all_batches: [],
+  active_batch: "all",
+};
+
 const getGreeting = () => {
   const h = new Date().getHours();
-  if (h < 12)
+  if (h < 12) {
     return {
       text: "Good Morning",
       icon: <FiSunrise className="text-amber-400" />,
     };
-  if (h < 17)
+  }
+  if (h < 17) {
     return {
       text: "Good Afternoon",
       icon: <FiSun className="text-orange-400" />,
     };
-  return { text: "Good Evening", icon: <FiMoon className="text-indigo-400" /> };
-};
-
-const loadAssessments = (type: AssessmentType): AssessmentEntry[] => {
-  try {
-    const raw = localStorage.getItem(`mentor_${type}_assessments`);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
   }
+  return {
+    text: "Good Evening",
+    icon: <FiMoon className="text-indigo-400" />,
+  };
 };
 
-const getGradeColor = (grade: string) => {
-  switch (grade) {
-    case "Outstanding":
-      return "text-emerald-600 bg-emerald-50";
-    case "Excellent":
-      return "text-blue bg-sky";
-    case "Good":
-      return "text-amber-600 bg-amber-50";
-    case "Average":
-      return "text-orange-600 bg-orange-50";
-    default:
-      return "text-red-600 bg-red-50";
-  }
+const normalizeSectionKey = (value: string) => {
+  const normalized = value.toLowerCase();
+  if (normalized.includes("technical")) return "technical";
+  if (normalized.includes("presentation")) return "presentation";
+  if (normalized.includes("soft")) return "softskills";
+  return normalized;
 };
 
-// ── Component ──────────────────────────────────────
+const formatDateTime = (value: string) => {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
 const MentorDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [liveTime, setLiveTime] = useState(new Date());
-
-  const [technicalAssessments, setTechnicalAssessments] = useState<
-    AssessmentEntry[]
-  >([]);
-  const [presentationAssessments, setPresentationAssessments] = useState<
-    AssessmentEntry[]
-  >([]);
-  const [softskillsAssessments, setSoftskillsAssessments] = useState<
-    AssessmentEntry[]
-  >([]);
+  const [dashboard, setDashboard] =
+    useState<MentorDashboardApiResponse>(DEFAULT_DASHBOARD);
 
   useEffect(() => {
     const id = setInterval(() => setLiveTime(new Date()), 1000);
@@ -93,32 +118,34 @@ const MentorDashboard = () => {
   }, []);
 
   useEffect(() => {
-    const handler = () => {
-      setTechnicalAssessments(loadAssessments("technical"));
-      setPresentationAssessments(loadAssessments("presentation"));
-      setSoftskillsAssessments(loadAssessments("softskills"));
-    };
-    handler();
-    window.addEventListener("focus", handler);
-    window.addEventListener("storage", handler);
-    return () => {
-      window.removeEventListener("focus", handler);
-      window.removeEventListener("storage", handler);
-    };
-  }, []);
-
-  useEffect(() => {
     const load = async () => {
       try {
-        const res = await getMeApi();
-        setUserName(capitalizeName(res.data.username || "Mentor"));
-      } catch {
+        const [meRes, dashboardRes] = await Promise.all([
+          getMeApi(),
+          getMentorDashboardApi(),
+        ]);
+        setUserName(capitalizeName(meRes.data.username || "Mentor"));
+        setDashboard({
+          ...DEFAULT_DASHBOARD,
+          ...dashboardRes.data,
+          sections: Array.isArray(dashboardRes.data?.sections)
+            ? dashboardRes.data.sections
+            : [],
+          recent_assessments: Array.isArray(dashboardRes.data?.recent_assessments)
+            ? dashboardRes.data.recent_assessments
+            : [],
+        });
+      } catch (error: any) {
         setUserName("Mentor");
+        toast.error(
+          error?.response?.data?.detail || "Failed to load mentor dashboard",
+        );
       } finally {
         setLoading(false);
       }
     };
-    load();
+
+    void load();
   }, []);
 
   const greeting = getGreeting();
@@ -138,67 +165,33 @@ const MentorDashboard = () => {
     year: "numeric",
   });
 
-  // ── Stats per type ──
-  const buildStats = (assessments: AssessmentEntry[]) => {
-    const total = assessments.length;
-    const avgScore =
-      total > 0
-        ? Math.round(
-            assessments.reduce(
-              (sum, a) => sum + (a.totalScore / a.maxScore) * 100,
-              0
-            ) / total
-          )
-        : 0;
-    const batches = new Set(assessments.map((a) => a.batch || "General"));
-    return { total, avgScore, batches: batches.size };
-  };
+  const sectionStats = useMemo(() => {
+    const mapped: Record<string, DashboardSectionCard> = {
+      technical: { total: 0, avgScore: 0, batches: 0 },
+      presentation: { total: 0, avgScore: 0, batches: 0 },
+      softskills: { total: 0, avgScore: 0, batches: 0 },
+    };
 
-  const techStats = useMemo(
-    () => buildStats(technicalAssessments),
-    [technicalAssessments]
-  );
-  const presStats = useMemo(
-    () => buildStats(presentationAssessments),
-    [presentationAssessments]
-  );
-  const commStats = useMemo(
-    () => buildStats(softskillsAssessments),
-    [softskillsAssessments]
-  );
+    dashboard.sections.forEach((section) => {
+      const key = normalizeSectionKey(section.assessment_type);
+      if (key in mapped) {
+        mapped[key] = {
+          total: Number(section.assessments) || 0,
+          avgScore: Number(section.avg_score) || 0,
+          batches: Number(section.batches) || 0,
+        };
+      }
+    });
 
-  const totalAssessments =
-    technicalAssessments.length +
-    presentationAssessments.length +
-    softskillsAssessments.length;
-
-  const allInterns = useMemo(() => {
-    const names = new Set([
-      ...technicalAssessments.map((a) => a.internName),
-      ...presentationAssessments.map((a) => a.internName),
-      ...softskillsAssessments.map((a) => a.internName),
-    ]);
-    return names.size;
-  }, [technicalAssessments, presentationAssessments, softskillsAssessments]);
-
-  // ── Recent assessments ──
-  const recentAssessments = useMemo(() => {
-    const all = [
-      ...technicalAssessments.map((a) => ({ ...a, type: "Technical" as const })),
-      ...presentationAssessments.map((a) => ({ ...a, type: "Presentation" as const })),
-      ...softskillsAssessments.map((a) => ({ ...a, type: "Soft Skills" as const })),
-    ];
-    return all
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
-  }, [technicalAssessments, presentationAssessments, softskillsAssessments]);
+    return mapped;
+  }, [dashboard.sections]);
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 font-jakarta">
         <div className="loader" />
         <p className="text-sm text-slate mt-4 animate-pulse">
-          Loading dashboard…
+          Loading dashboard...
         </p>
       </div>
     );
@@ -209,8 +202,7 @@ const MentorDashboard = () => {
       key: "technical",
       label: "Technical",
       icon: <FiCode className="text-blue text-lg" />,
-      stats: techStats,
-      color: "blue",
+      stats: sectionStats.technical,
       bgColor: "bg-sky",
       route: "/mentor/technical",
     },
@@ -218,8 +210,7 @@ const MentorDashboard = () => {
       key: "presentation",
       label: "Presentation",
       icon: <FiMonitor className="text-amber-600 text-lg" />,
-      stats: presStats,
-      color: "amber-600",
+      stats: sectionStats.presentation,
       bgColor: "bg-amber-50",
       route: "/mentor/presentation",
     },
@@ -227,8 +218,7 @@ const MentorDashboard = () => {
       key: "softskills",
       label: "Soft Skills",
       icon: <FiMessageSquare className="text-emerald-600 text-lg" />,
-      stats: commStats,
-      color: "emerald-600",
+      stats: sectionStats.softskills,
       bgColor: "bg-emerald-50",
       route: "/mentor/softskills",
     },
@@ -236,7 +226,6 @@ const MentorDashboard = () => {
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 lg:px-8 py-6 font-jakarta text-navy animate-fadeUp">
-      {/* ═══ Hero Greeting Banner ═══ */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0d1b2e] via-[#132238] to-[#1d6ede] text-white p-6 lg:p-8 mb-6">
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/5" />
         <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5" />
@@ -265,14 +254,13 @@ const MentorDashboard = () => {
         </div>
       </div>
 
-      {/* ═══ Summary Stats ═══ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
         <div className="bg-white border border-line rounded-xl p-4 hover:shadow-md hover:border-blue/20 transition-all">
           <div className="w-9 h-9 rounded-lg bg-sky flex items-center justify-center mb-2">
             <FiFileText className="text-blue text-base" />
           </div>
           <p className="text-xl lg:text-2xl font-extrabold">
-            {totalAssessments}
+            {dashboard.total_assessments}
           </p>
           <p className="text-[11px] text-slate mt-0.5">Total Assessments</p>
         </div>
@@ -281,7 +269,9 @@ const MentorDashboard = () => {
           <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center mb-2">
             <FiUsers className="text-purple-600 text-base" />
           </div>
-          <p className="text-xl lg:text-2xl font-extrabold">{allInterns}</p>
+          <p className="text-xl lg:text-2xl font-extrabold">
+            {dashboard.interns_assessed}
+          </p>
           <p className="text-[11px] text-slate mt-0.5">Interns Assessed</p>
         </div>
 
@@ -290,7 +280,9 @@ const MentorDashboard = () => {
             <FiTrendingUp className="text-emerald-600 text-base" />
           </div>
           <p className="text-xl lg:text-2xl font-extrabold">
-            {techStats.avgScore > 0 ? `${techStats.avgScore}%` : "—"}
+            {dashboard.avg_technical_score > 0
+              ? `${dashboard.avg_technical_score}%`
+              : "-"}
           </p>
           <p className="text-[11px] text-slate mt-0.5">Avg Technical Score</p>
         </div>
@@ -300,17 +292,12 @@ const MentorDashboard = () => {
             <FiClock className="text-amber-600 text-base" />
           </div>
           <p className="text-xl lg:text-2xl font-extrabold">
-            {new Set([
-              ...technicalAssessments.map((a) => a.batch || "General"),
-              ...presentationAssessments.map((a) => a.batch || "General"),
-              ...softskillsAssessments.map((a) => a.batch || "General"),
-            ]).size || "—"}
+            {dashboard.batches || "-"}
           </p>
           <p className="text-[11px] text-slate mt-0.5">Batches</p>
         </div>
       </div>
 
-      {/* ═══ Assessment Sections ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5 mb-6">
         {sections.map((sec) => (
           <div
@@ -336,7 +323,6 @@ const MentorDashboard = () => {
               </button>
             </div>
 
-            {/* Score ring */}
             <div className="flex items-center gap-4 mb-4">
               <div className="relative w-16 h-16 flex-shrink-0">
                 <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
@@ -369,7 +355,7 @@ const MentorDashboard = () => {
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-sm font-extrabold text-navy">
-                    {sec.stats.avgScore > 0 ? `${sec.stats.avgScore}%` : "—"}
+                    {sec.stats.avgScore > 0 ? `${sec.stats.avgScore}%` : "-"}
                   </span>
                 </div>
               </div>
@@ -400,18 +386,17 @@ const MentorDashboard = () => {
         ))}
       </div>
 
-      {/* ═══ Recent Assessments ═══ */}
       <div className="bg-white border border-line rounded-[13px] p-5">
         <h2 className="text-sm font-extrabold text-navy mb-4">
           Recent Assessments
         </h2>
 
-        {recentAssessments.length === 0 ? (
+        {dashboard.recent_assessments.length === 0 ? (
           <div className="text-center py-8">
             <FiFileText className="text-3xl text-mist mx-auto mb-2" />
             <p className="text-sm text-slate">No assessments yet</p>
             <p className="text-xs text-mist mt-1">
-              Start by evaluating an intern in the Technical section
+              Start by evaluating an intern in any assessment section
             </p>
             <button
               onClick={() => navigate("/mentor/technical")}
@@ -422,43 +407,35 @@ const MentorDashboard = () => {
           </div>
         ) : (
           <div className="space-y-2">
-            {recentAssessments.map((a) => (
+            {dashboard.recent_assessments.map((assessment) => (
               <div
-                key={a.id}
+                key={assessment.assessment_id}
                 className="flex items-center justify-between p-3 rounded-xl border border-line hover:bg-lightbg transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-blue text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                    {a.internName.charAt(0).toUpperCase()}
+                    {assessment.intern_name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-navy truncate">
-                      {a.internName}
+                      {assessment.intern_name}
                     </p>
-                    <p className="text-[11px] text-mist">{a.date}</p>
+                    <p className="text-[11px] text-mist">
+                      {formatDateTime(assessment.date)}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      a.type === "Technical"
-                        ? "text-blue bg-sky"
-                        : a.type === "Presentation"
-                          ? "text-amber-600 bg-amber-50"
-                          : "text-emerald-600 bg-emerald-50"
-                    }`}
-                  >
-                    {a.type}
-                  </span>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${getGradeColor(a.grade)}`}
-                  >
-                    {a.grade}
-                  </span>
-                  <span className="text-xs font-bold text-navy">
-                    {a.totalScore}/{a.maxScore}
-                  </span>
-                </div>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    assessment.type.toLowerCase().includes("technical")
+                      ? "text-blue bg-sky"
+                      : assessment.type.toLowerCase().includes("presentation")
+                        ? "text-amber-600 bg-amber-50"
+                        : "text-emerald-600 bg-emerald-50"
+                  }`}
+                >
+                  {assessment.type}
+                </span>
               </div>
             ))}
           </div>
