@@ -5,7 +5,21 @@ import { getUserId } from '../utils/authCookies'
 export const loginApi = (data: any) => {
   return API.post('/login', data)
 }
-export const signupApi = (data: any) => {
+
+export interface SignupPayload {
+  username: string
+  email: string
+  password: string
+  type: number
+  batch: number
+  monthly_installment: boolean
+  emi_amount: number
+  total_fee: number
+  phone: string
+  tech_stack: string
+}
+
+export const signupApi = (data: SignupPayload) => {
   return API.post('/signup', data)
 }
 
@@ -74,8 +88,4 @@ export const getExamSummaryApi = () => {
 
 export const resetExamDataApi = () => {
   return API.delete('/truncate-exam-users')
-}
-
-export const updateUserApi = (userId: number | string, data: any) => {
-  return API.put(`/update_users/${userId}`, data)
 }

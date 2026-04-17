@@ -1,43 +1,87 @@
-import API from './authInstance'
+import API from "./authInstance";
+
+// Get all feedbacks (admin)
+export const getAllFeedbackApi = () => {
+  return API.get("/feedback/all");
+};
+
+// Reply to feedback (admin)
+export const replyFeedbackApi = (
+  feedback_id: number | string,
+  reply: string,
+) => {
+  return API.post("/feedback/reply/admin", { feedback_id, reply });
+};
 
 export const getAllEmails = (params: any) => {
-  return API.get('/emails', { params })
-}
+  return API.get("/emails", { params });
+};
 
 export const batchemailHistory = (batchId: number, params: any) => {
-  return API.get(`/emails/${batchId}`, { params })
-}
+  return API.get(`/emails/${batchId}`, { params });
+};
 
-export const getAllUsers = (params?: { page_no?: number; page_size?: number }) => {
-  return API.get('/get_all_users', {
+export const getAllUsers = (params?: {
+  page_no?: number;
+  page_size?: number;
+}) => {
+  return API.get("/get_all_users", {
     params: {
       page_no: params?.page_no ?? 1,
       page_size: params?.page_size ?? 10,
     },
-  })
-}
+  });
+};
 
 export const getBatchUsers = (batchId: number) => {
-  return API.get(`/get_userby_batch/${batchId}`)
-}
+  return API.get(`/get_userby_batch/${batchId}`);
+};
 
-export const viewAttendanceByAdminApi = (userId: number | string) => {
-  return API.post('/viewbyadmin', null, {
-    params: { user_id: userId },
-  })
-}
-
-export const viewAttendanceByUserApi = () => {
-  return API.post('/viewbyuser')
-}
 
 export const deleteUser = (userId: number | string) => {
-  return API.delete(`/users/${userId}`)
+  return API.delete(`/users/${userId}`);
+};
+
+export const updateUserApi = (userId: number | string, data: any) => {
+  return API.put(`/update_users/${userId}`, data)
 }
 
 
+export const getAllMentorsApi = () => {
+  return API.get("/get_all_mentors");
+};
+
+export const addMentorApi = (data: {
+  username: string;
+  email: string;
+  password: string;
+  batch: number;
+  phone: string;
+  tech_stack: string;
+}) => {
+  return API.post("/add_mentor", data);
+};
+
 export const getBankDetailsApi = (invoiceNo: string) => {
-  return API.post(
-    `/get_bankdetails?invoice_no=${invoiceNo}`
-  );
+  return API.post(`/get_bankdetails?invoice_no=${invoiceNo}`);
+};
+
+// Delete Mentor
+export const deleteMentorApi = (mentor_id: number) => {
+  return API.delete(`/delete_mentor?mentor_id=${mentor_id}`);
+};
+
+// Update Mentor
+export const updateMentorApi = (
+  mentor_id: number,
+  data: {
+    username: string;
+    email: string;
+    phone: string;
+    password: string;
+    batch: number;
+    tech_stack: string;
+  },
+) => {
+  return API.put(`/update_mentor?mentor_id=${mentor_id}`, data);
 };

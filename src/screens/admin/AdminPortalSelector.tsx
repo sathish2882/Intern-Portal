@@ -5,11 +5,13 @@ import {
   TeamOutlined,
   ScheduleOutlined,
   AuditOutlined,
+  CommentOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 
 const PORTALS = [
   {
-    title: "Assessment Dashboard",
+    title: "Interview Dashboard",
     route: "/admin/interview-dashboard",
     accent: "border-amber-400/20 bg-amber-500/10",
     icon: (
@@ -18,10 +20,19 @@ const PORTALS = [
       />
     ),
   },
-
+  {
+    title: "Mentor Dashboard",
+    route: "/admin/mentor-dashboard",
+    accent: "border-[#60A5FA]/40 bg-[#3B82F6]/20",
+    icon: (
+      <UserOutlined
+        style={{ fontSize: 28, color: "#60a5fa", marginBottom: 12 }}
+      />
+    ),
+  },
   {
     title: "Intern Dashboard",
-    route: "/admin/user-dashboard",
+    route: "/admin/intern-dashboard",
     accent: "border-red-400/30 bg-red-500/10",
     icon: (
       <TeamOutlined
@@ -30,8 +41,8 @@ const PORTALS = [
     ),
   },
   {
-    title: "Intern Attendance Dashboard",
-    route: "/admin/attendance-dashboard",
+    title: "Conversation Dashboard",
+    route: "/admin/messages",
     accent: "border-emerald-400/20 bg-emerald-500/10",
     icon: (
       <ScheduleOutlined
@@ -46,6 +57,16 @@ const PORTALS = [
     icon: (
       <BankOutlined
         style={{ fontSize: 28, color: "#e879f9", marginBottom: 12 }}
+      />
+    ),
+  },
+  {
+    title: "Feedback",
+    route: "/admin/feedback",
+    accent: "border-cyan-400/20 bg-cyan-500/10",
+    icon: (
+      <CommentOutlined
+        style={{ fontSize: 28, color: "#22d3ee", marginBottom: 12 }}
       />
     ),
   },
@@ -70,10 +91,10 @@ const AdminPortalSelector = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {PORTALS.map((portal) => (
             <button
-              key={portal.route}
+              key={`${portal.title}-${portal.route}`}
               onClick={() => navigate(portal.route)}
               className={`group relative flex min-h-[220px] flex-col items-start overflow-hidden rounded-[26px] border p-6 text-left shadow-[0_18px_40px_rgba(0,0,0,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_24px_55px_rgba(0,0,0,0.24)] ${portal.accent}`}
             >
@@ -88,7 +109,7 @@ const AdminPortalSelector = () => {
               <div className="mt-auto flex items-center gap-2 pt-6 text-sm font-semibold text-white">
                 <span>Go to Dashboard</span>
                 <span className="transition-transform duration-200 group-hover:translate-x-1">
-                  →
+                  -&gt;
                 </span>
               </div>
             </button>

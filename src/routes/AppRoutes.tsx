@@ -1,4 +1,9 @@
-import { createHashRouter, Navigate, Outlet, useLocation } from "react-router-dom";
+import {
+  createHashRouter,
+  Navigate,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
 import { useEffect } from "react";
 
 // ScrollToTop wrapper
@@ -17,43 +22,55 @@ import NotFound from "../screens/NotFound";
 // Admin
 import AdminLayout from "../components/layout/AdminLayout";
 import AdminPortalSelector from "../screens/admin/AdminPortalSelector";
-import AdminUserDashboard from "../screens/admin/AdminInternDashboard";
-import UserAttendanceDashboard from "../screens/admin/UserAttendanceDashboard";
+import AdminInternDashboard from "../screens/admin/AdminInternDashboard";
+import AdminMentorDashboard from "../screens/admin/AdminMentorDashboard";
+import AdminMessagesPage from "../screens/admin/AdminMessagesPage";
 import InterviewDashboard from "../screens/admin/AssesmentDashboard";
 import AdminDashboard from "../screens/admin/AdminDashboard";
 import SendEmail from "../screens/admin/SendEmail";
 import Customers from "../screens/admin/User";
 import EmailHistory from "../screens/admin/EmailHistory";
+import AdminFeedback from "../screens/admin/AdminFeedback";
 
 // Intern
 import InternLayout from "../components/layout/InternLayout";
 import InternDashboard from "../screens/intern/InternDashboard";
+import TasksPage from "../screens/intern/TasksPage";
+import MessagesPage from "../screens/intern/MessagesPage";
+import CalendarPage from "../screens/intern/CalendarPage";
+import InternFeedback from "../screens/intern/InternFeedback";
 
 // User
 import UserLayout from "../components/layout/UserLayout";
 import UserDashboard from "../screens/user/UserDashboard";
 import TestPage from "../screens/user/TestPage";
 import ResultPage from "../screens/user/ResultPage";
-import ProtectedRoute from "../components/ui/ProtectedRoute"; 
+import ProtectedRoute from "../components/ui/ProtectedRoute";
 import UserDetails from "../screens/auth/userDetails";
+import CodingTest from "../screens/user/CodingTestPage";
+
+// Mentor
+import MentorLayout from "../components/layout/MentorLayout";
+import MentorDashboard from "../screens/mentor/MentorDashboard";
+import TechnicalAssessment from "../screens/mentor/TechnicalAssessment";
+import PresentationAssessment from "../screens/mentor/PresentationAssessment";
+import SoftSkillsAssessment from "../screens/mentor/SoftSkillsAssessment";
 
 export const router = createHashRouter([
   {
     path: "/",
     element: (
       <ProtectedRoute guestOnly>
-           <WelcomeScreen />
+        <WelcomeScreen />
       </ProtectedRoute>
-     
     ),
   },
   {
     path: "/login",
     element: (
-       <ProtectedRoute guestOnly>
-           <LoginScreen />
-      </ProtectedRoute> 
-     
+      <ProtectedRoute guestOnly>
+        <LoginScreen />
+      </ProtectedRoute>
     ),
   },
   { path: "/add-user", element: <AddUser /> },
@@ -63,16 +80,17 @@ export const router = createHashRouter([
     path: "/admin",
     element: (
       <ProtectedRoute role="1">
-          <ScrollToTopOutlet />
+        <ScrollToTopOutlet />
       </ProtectedRoute>
-      
     ),
     children: [
       { index: true, element: <Navigate to="portals" replace /> },
       { path: "portals", element: <AdminPortalSelector /> },
-      { path: "user-dashboard", element: <AdminUserDashboard /> },
-      { path: "attendance-dashboard", element: <UserAttendanceDashboard /> },
+      { path: "mentor-dashboard", element: <AdminMentorDashboard /> },
+      { path: "intern-dashboard", element: <AdminInternDashboard /> },
+      { path: "messages", element: <AdminMessagesPage /> },
       { path: "interview-dashboard", element: <InterviewDashboard /> },
+      { path: "feedback", element: <AdminFeedback /> },
       {
         path: "payment",
         element: <AdminLayout />,
@@ -91,13 +109,16 @@ export const router = createHashRouter([
     path: "/intern",
     element: (
       <ProtectedRoute role="2">
-          <InternLayout />
+        <InternLayout />
       </ProtectedRoute>
-      
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <InternDashboard /> },
+      { path: "tasks", element: <TasksPage /> },
+      { path: "messages", element: <MessagesPage /> },
+      { path: "calendar", element: <CalendarPage /> },
+      { path: "feedback", element: <InternFeedback /> },
     ],
   },
 
@@ -105,25 +126,47 @@ export const router = createHashRouter([
     path: "/user",
     element: (
       <ProtectedRoute role="3">
-           <UserLayout key={window.location.pathname} />
+        <UserLayout key={window.location.pathname} />
       </ProtectedRoute>
-      
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <UserDashboard /> },
       { path: "test", element: <TestPage /> },
       { path: "result", element: <ResultPage /> },
-       { 
-    path:"userDetails", 
-    element:<UserDetails/>
-  },
+      { path: "coding-test", element: <CodingTest /> },
+      {
+        path: "userDetails",
+        element: <UserDetails />,
+      },
     ],
-    
-
   },
 
- 
+  {
+    path: "/mentor/assessments/",
+    element: (
+      <ProtectedRoute role="4">
+        <MentorLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
+      { path: "dashboard", element: <MentorDashboard /> },
+      {
+        path: "technical/:id",
+        element: <TechnicalAssessment />,
+      },
+      {
+        path: "presentation/:id",
+        element: <PresentationAssessment />,
+      },
+      {
+        path: "softskills/:id",
+        element: <SoftSkillsAssessment />,
+      },
+    ],
+  },
+
   {
     path: "*",
     element: <NotFound />,

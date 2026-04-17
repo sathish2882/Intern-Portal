@@ -22,51 +22,74 @@ const UserLayout = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
 
-  // ✅ Scroll to top on route change
+  // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [location.pathname])
 
   const [loggingOut, setLoggingOut] = useState(false)
+  const [loadingUser, setLoadingUser] = useState(true)
   const [user, setUser] = useState({ name: 'User', email: '' })
 
   const showAssessmentHeader = location.pathname === '/user/dashboard'
 
-  // 🔥 LOAD USER (ONLY EXAM USER FLOW)
+  // LOAD USER (ONLY EXAM USER FLOW)
   useEffect(() => {
-  const loadUser = async () => {
-    const userId = getUserId()
+    let isMounted = true
 
-    // block invalid access
-    if (!isExamUser() || !userId) {
-      navigate('/login', { replace: true })
-      return
+    const loadUser = async () => {
+      setLoadingUser(true)
+      const userId = getUserId()
+
+      // block invalid access
+      if (!isExamUser() || !userId) {
+        navigate('/login', { replace: true })
+        return
+      }
+
+      try {
+        const response = await getUserByIdApi(userId as string)
+
+        const payload = response?.data ?? {}
+
+        const userName = capitalizeName(String(payload.name ?? payload.username ?? 'User'))
+        const userEmail = String(payload.email ?? '')
+
+        if (!isMounted) return
+
+        setUser({
+          name: userName,
+          email: userEmail,
+        })
+
+        // Store user info in Redux for access in UserDashboard
+        dispatch(setCurrentUser({ name: userName, email: userEmail }))
+      } catch (error: any) {
+        console.error('Failed to load user:', error)
+        toast.error(error?.response?.data?.detail || 'Failed to load user')
+      } finally {
+        if (isMounted) {
+          setLoadingUser(false)
+        }
+      }
     }
 
-    try {
-      const response = await getUserByIdApi(userId as string)
+    loadUser()
 
-      const payload = response?.data ?? {}
-
-      const userName = capitalizeName(String(payload.name ?? payload.username ?? 'User'))
-      const userEmail = String(payload.email ?? '')
-
-      setUser({
-        name: userName,
-        email: userEmail,
-      })
-
-      // 🔥 Store user info in Redux for access in UserDashboard
-      dispatch(setCurrentUser({ name: userName, email: userEmail }))
-    } catch (error: any) {
-      console.error('Failed to load user:', error)
-      toast.error(error?.response?.data?.detail || 'Failed to load user')
+    return () => {
+      isMounted = false
     }
+}, [location.pathname]) // IMPORTANT
+  if (loadingUser) {
+    return (
+      <div className="min-h-screen bg-lightbg font-jakarta text-navy flex flex-col items-center justify-center">
+        <div className="loader" />
+        <p className="text-sm text-slate mt-4 animate-pulse">Loading...</p>
+      </div>
+    )
   }
 
-  loadUser()
-}, [location.pathname]) // 🔥 IMPORTANT
-  // 🔥 LOGOUT
+  // LOGOUT
   const handleLogout = async () => {
     if (loggingOut) return
 
@@ -81,10 +104,10 @@ const UserLayout = () => {
       console.error('Logout failed:', error)
       toast.error(error?.response?.data?.detail || 'Logout failed')
     } finally {
-      // 🔥 Clear test data from Redux
+      // Clear test data from Redux
       dispatch(clearTestData())
       
-      // 🔥 Clear test data from localStorage
+      // Clear test data from localStorage
       localStorage.removeItem('redux-test-state')
       console.log("🧹 Cleared test data on logout")
 
@@ -110,7 +133,7 @@ const UserLayout = () => {
                             <img
                               src={welcomeLogo}
                               alt="Admin Logo"
-                              className=" w-10 h-10"
+                              className=" w-8 h-10"
                             />
                           </span>
             <span className="hidden text-[17px] font-extrabold text-navy sm:block">
@@ -138,7 +161,7 @@ const UserLayout = () => {
             <button
               onClick={handleLogout}
               disabled={loggingOut}
-              className="flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-[13px] font-semibold text-slate transition-all hover:border-danger hover:bg-red-50 hover:text-danger lg:px-4"
+              className="flex h-[36px] items-center gap-2 rounded-lg bg-red-500 px-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-red-600 active:scale-95"
             >
               <span className="flex min-h-5 min-w-[72px] items-center justify-center gap-1.5">
                 {loggingOut ? (

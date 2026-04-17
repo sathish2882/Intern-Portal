@@ -12,7 +12,7 @@ import {
 } from "../../redux/slices/testSlice";
 import { TEST_CONFIG } from "../../utils/testData";
 import { TestResult } from "../../types";
-import { getTestStatusApi, submitResultApi } from "../../services/testApi";
+import { getTestStatusApi, saveScoresApi } from "../../services/testApi";
 
 function TestPage() {
   const dispatch = useAppDispatch();
@@ -58,11 +58,16 @@ function TestPage() {
     let skipped = 0;
 
     answers.forEach((ans, i) => {
-      if (ans === null) skipped++;
-      else if (ans === questions[i].ans) correct++;
-      else wrong++;
-    });
+      const q = questions[i];
 
+      if (ans === null) {
+        skipped++;
+      } else if ("ans" in q) {
+        if (ans === q.ans) correct++;
+        else wrong++;
+      }
+      // ✅ coding questions ignored
+    });
     return { correct, wrong, skipped };
   };
 
@@ -81,10 +86,7 @@ function TestPage() {
     try {
       const { correct, wrong, skipped } = calculateResult();
 
-      const elapsed = durationSeconds - timeLeft;
-
-      // Pass mark is 25 correct answers for both tests
-      const passMark = 25;
+      const passMark = TEST_CONFIG[activeTestType].data.pass;
       const result: TestResult = {
         testType: activeTestType,
         correct,
@@ -95,27 +97,25 @@ function TestPage() {
         timeTaken: "",
       };
 
-      // 🔥 send to backend
+      // send to backend
       const submitPayload = {
         test_type: activeTestType,
+        score: correct,
         correct_answers: correct,
         wrong_answers: wrong,
         skipped_answers: skipped,
-        total_questions: questions.length,
-        score: correct,
-        time_taken: elapsed,
       };
 
       console.log("📤 Submitting test payload:", submitPayload);
 
-      await submitResultApi(submitPayload);
+      await saveScoresApi(submitPayload);
 
       console.log("✅ Test submitted successfully");
 
-      // 🔥 update redux FIRST (IMPORTANT FIX)
+      // update redux FIRST (IMPORTANT FIX)
       dispatch(submitTest(result));
 
-      // 🔥 fetch latest status
+      // fetch latest status
       const statusRes = await getTestStatusApi();
       const status = statusRes?.data?.status;
 
@@ -126,7 +126,7 @@ function TestPage() {
         statusRes?.data,
       );
 
-      // 🔥 navigate
+      // navigate
       if (status === "completed") {
         navigate("/user/result", { replace: true });
       } else {
@@ -758,7 +758,7 @@ function TestPage() {
         <main className="flex-1 p-4 lg:p-9 overflow-y-auto max-h-[calc(100vh-60px)]">
           <div className="max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-1.5 bg-sky text-blue border border-[#ccdff8] rounded-lg px-3 py-1.5 text-xs font-bold mb-4">
-              {q.section}
+              {"section" in q && <p>{q.section}</p>}{" "}
             </div>
 
             <div className="bg-white border border-line rounded-[13px] p-5 lg:p-7 mb-4">
@@ -766,42 +766,43 @@ function TestPage() {
                 Question {currentQuestion + 1} of {questions.length}
               </p>
               <p className="text-[15px] font-semibold text-navy leading-relaxed mb-6">
-                {q.q}
+                {"q" in q && q.q}
               </p>
 
               <div className="flex flex-col gap-2.5">
-                {q.opts.map((opt, i) => {
-                  const sel = answers[currentQuestion] === i;
-                  return (
-                    <button
-                      key={i}
-                      onClick={() =>
-                        dispatch(
-                          selectAnswer({
-                            questionIndex: currentQuestion,
-                            answer: i,
-                          }),
-                        )
-                      }
-                      className={`flex items-start gap-3 w-full text-left px-4 py-3.5 border-[1.5px] rounded-[10px] transition-all
+                {"opts" in q &&
+                  q.opts.map((opt, i) => {
+                    const sel = answers[currentQuestion] === i;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() =>
+                          dispatch(
+                            selectAnswer({
+                              questionIndex: currentQuestion,
+                              answer: i,
+                            }),
+                          )
+                        }
+                        className={`flex items-start gap-3 w-full text-left px-4 py-3.5 border-[1.5px] rounded-[10px] transition-all
                         ${
                           sel
                             ? "border-blue bg-sky"
                             : "border-line bg-white hover:border-blue hover:bg-sky"
                         }`}
-                    >
-                      <div
-                        className={`w-[26px] h-[26px] rounded-lg border-[1.5px] flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all
-                        ${sel ? "bg-blue border-blue text-white" : "border-line text-slate"}`}
                       >
-                        {["A", "B", "C", "D"][i]}
-                      </div>
-                      <span className="text-sm text-navy leading-relaxed pt-0.5">
-                        {opt}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <div
+                          className={`w-[26px] h-[26px] rounded-lg border-[1.5px] flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all
+                        ${sel ? "bg-blue border-blue text-white" : "border-line text-slate"}`}
+                        >
+                          {["A", "B", "C", "D"][i]}
+                        </div>
+                        <span className="text-sm text-navy leading-relaxed pt-0.5">
+                          {opt}
+                        </span>
+                      </button>
+                    );
+                  })}
               </div>
             </div>
 

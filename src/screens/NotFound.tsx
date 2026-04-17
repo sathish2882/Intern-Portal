@@ -15,7 +15,7 @@ const NotFound: React.FC = () => {
           <p className="text-base text-slate-500 mb-2 text-center">Sorry, the page you are looking for does not exist or has been moved.</p>
         </div>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/login')}
           className="mt-2 px-6 py-2.5 rounded-lg bg-blue text-white font-bold text-base shadow-md hover:bg-blue-700 transition-all"
         >
           Go to Home

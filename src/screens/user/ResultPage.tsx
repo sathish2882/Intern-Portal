@@ -2,7 +2,12 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { getResult } from "../../redux/slices/testSlice";
-import { TEST_CONFIG } from "../../utils/testData";
+import {
+  TEST_CONFIG,
+  OVERALL_PASS_MARK,
+  SCHOLARSHIP_THRESHOLD,
+  TOTAL_MARKS,
+} from "../../utils/testData";
 
 const ResultPage = () => {
   const navigate = useNavigate();
@@ -10,23 +15,20 @@ const ResultPage = () => {
 
   const { backendResult, loading } = useAppSelector((s) => s.test);
 
-  // ✅ Fetch results on mount if not already in Redux
+  // Always fetch fresh results on mount
   useEffect(() => {
-    if (!backendResult) {
-      console.log("📋 ResultPage: Fetching backend results...");
-      dispatch(getResult() as any); // 🔥 Call Redux Thunk
-    }
-  }, [dispatch, backendResult]);
+    dispatch(getResult() as any);
+  }, [dispatch]);
 
-  // ✅ Validate status and check for test completion
+  // Validate status and check for test completion
   useEffect(() => {
-    if (backendResult && backendResult.status !== "completed") {
-      console.log("⚠️ Status is not 'completed':", backendResult.status);
+    if (!loading && backendResult && backendResult.status !== "completed") {
+      console.log("Status is not 'completed':", backendResult.status);
       navigate("/user/dashboard", { replace: true });
     }
-  }, [backendResult, navigate]);
+  }, [backendResult, loading, navigate]);
 
-  // ✅ ALERT MESSAGE
+  //ALERT MESSAGE
   useEffect(() => {
     const pendingAlert = sessionStorage.getItem("test_alert_message");
     if (pendingAlert) {
@@ -46,47 +48,65 @@ const ResultPage = () => {
   if (!backendResult) return null;
 
   // =========================
-  // 🔥 INDIVIDUAL TEST RESULTS - Use Backend Data Directly
+  // INDIVIDUAL TEST RESULTS - Use Backend Data Directly
   // =========================
 
   // Get data for each test from BACKEND (not local Redux calculations)
-  const getTestResult = (testType: "aptitude" | "technical") => {
-    const backendScore = backendResult?.[`${testType}_score`] ?? 0;
-    const testTotal = TEST_CONFIG[testType].data.total;
-    
+  const getTestResult = (testType: "aptitude" | "technical" | "coding") => {
+    const isCoding = testType === "coding";
+    const backendScore =
+      testType === "coding"
+        ? (backendResult?.coding_score ?? 0)
+        : (backendResult?.[`${testType}_score`] ?? 0);
+    const totalQuestions = TEST_CONFIG[testType].data.total;
+
     // Calculate percentage based on backend score and test total
-    const testPercentage = testTotal > 0 ? Math.round((backendScore / testTotal) * 100) : 0;
+    const passQuestions = TEST_CONFIG[testType].data.pass;
+    const marksPerQuestion = isCoding ? 5 : 1; // Coding questions are worth more
+    const testPass = passQuestions * marksPerQuestion;
+    const testTotal = totalQuestions * marksPerQuestion;
+    const testPercentage =
+      testTotal > 0 ? Math.round((backendScore / testTotal) * 100) : 0;
+
+    // For display: show questions passed / total questions
+    const questionsCorrect = isCoding
+      ? Math.round(backendScore / marksPerQuestion)
+      : backendScore;
 
     return {
       testType,
-      score: backendScore, // From backend
-      total: testTotal,    // From test config
+      score: backendScore, // From backend (marks)
+      total: testTotal, // Total marks for this test
+      pass: testPass, // Pass marks
       percentage: testPercentage, // Calculate from backend score
       name: TEST_CONFIG[testType].data.title,
+      questionsCorrect, // Number of questions passed
+      totalQuestions, // Number of questions
     };
   };
 
   const aptitudeResult = getTestResult("aptitude");
   const technicalResult = getTestResult("technical");
+  const codingResult = getTestResult("coding");
 
   // =========================
   // 🔥 CUMULATIVE RESULTS - Calculate from scores, not backend percentage
   // =========================
   const totalScore = backendResult?.total_score ?? 0;
-  const totalATotalQuestions = TEST_CONFIG.aptitude.data.total + TEST_CONFIG.technical.data.total;
-  const totalPercentage = totalATotalQuestions > 0 ? Math.round((totalScore / totalATotalQuestions) * 100) : 0;
-  // Pass mark is 25 correct answers out of 50
-  const cumulativePassed = totalScore >= 25;
+  const totalPercentage =
+    TOTAL_MARKS > 0 ? Math.round((totalScore / TOTAL_MARKS) * 100) : 0;
+  const cumulativePassed = totalScore >= OVERALL_PASS_MARK;
+  const scholarshipEligible = totalScore > SCHOLARSHIP_THRESHOLD;
 
-  console.log("📊 ResultPage - Calculated Percentage:", {
+  console.log("ResultPage - Calculated Percentage:", {
     totalScore,
-    totalATotalQuestions,
+    TOTAL_MARKS,
     totalPercentage,
     backendPercentage: backendResult?.percentage,
   });
 
   // =========================
-  // ✅ NO RETAKES - Only one attempt per test
+  // NO RETAKES - Only one attempt per test
   // =========================
 
   return (
@@ -97,8 +117,12 @@ const ResultPage = () => {
           <p className="text-sm text-mist font-mono mb-2">
             Aptitude Portal › <span className="text-blue">Results</span>
           </p>
-          <h1 className="text-2xl font-extrabold text-navy mb-1">Assessment Results</h1>
-          <p className="text-sm text-slate">Your complete performance summary across all tests</p>
+          <h1 className="text-2xl font-extrabold text-navy mb-1">
+            Assessment Results
+          </h1>
+          <p className="text-sm text-slate">
+            Your complete performance summary across all tests
+          </p>
         </div>
 
         {/* Cumulative Summary Card */}
@@ -109,41 +133,47 @@ const ResultPage = () => {
               : "bg-gradient-to-br from-[#fef2f2] to-[#fee2e2]"
           }`}
         >
-          <p className="text-sm font-mono text-mist mb-2 uppercase">Overall Result</p>
+          <p className="text-sm font-mono text-mist mb-2 uppercase">
+            Overall Result
+          </p>
           <h2
             className={`text-2xl font-extrabold mb-1 ${
               cumulativePassed ? "text-[#065f46]" : "text-[#991b1b]"
             }`}
           >
-            {cumulativePassed ? "🎉 CONGRATULATIONS! YOU PASSED" : "❌ ASSESSMENT NOT PASSED"}
+            {cumulativePassed
+              ? "🎉 CONGRATULATIONS! YOU PASSED"
+              : "❌ ASSESSMENT NOT PASSED"}
           </h2>
           <p
             className={`text-sm font-bold mb-4 ${
-              cumulativePassed ? "text-[#047857]" : "text-[#b91c1c]"
+              cumulativePassed ? "font-semibold text-xl text-black/70 text-center" : "text-[#b91c1c]"
             }`}
           >
-            {cumulativePassed
-              ? "This is a limited Maestro benefit that's only available via M-Guru"
+            {scholarshipEligible
+              ? "You are eligible for a scholarship under the Maestro program (via M-Guru)"
               : "You're not eligible for the sponsorship benefit."}
           </p>
           <div className="inline-flex items-center gap-6 bg-white rounded-xl px-6 py-4 shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
             <div>
-              <p className="text-4xl font-extrabold text-navy">{totalPercentage}%</p>
+              <p className="text-4xl font-extrabold text-navy">
+                {totalPercentage}%
+              </p>
               <p className="text-xs text-mist mt-1">Overall Score</p>
             </div>
             <div className="text-left">
-              <p className="text-xl font-bold text-navy">{totalScore} / 50</p>
-              <p className="text-xs text-slate mt-1">Questions Correct</p>
+              <p className="text-xl font-bold text-navy">
+                {totalScore} / {TOTAL_MARKS}
+              </p>
+              <p className="text-xs text-slate mt-1">Total Marks</p>
             </div>
           </div>
         </div>
 
         {/* Individual Test Results Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-          {[aptitudeResult, technicalResult].map((testResult) => {
-            // Pass mark is 25 for both tests
-            const passThreshold = 25;
-            const testPassed = testResult.score >= passThreshold;
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+          {[aptitudeResult, technicalResult, codingResult].map((testResult) => {
+            const testPassed = testResult.score >= testResult.pass;
             return (
               <div
                 key={testResult.testType}
@@ -172,11 +202,16 @@ const ResultPage = () => {
                 <div className="px-5 py-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-extrabold text-navy">{testResult.percentage}%</p>
+                      <p className="text-2xl font-extrabold text-navy">
+                        {testResult.percentage}%
+                      </p>
                       <p className="text-xs text-mist mt-0.5">Score %</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-navy">{testResult.score} / {testResult.total}</p>
+                      <p className="text-lg font-bold text-navy">
+                        {testResult.questionsCorrect} /{" "}
+                        {testResult.totalQuestions}
+                      </p>
                       <p className="text-xs text-slate mt-0.5">Questions</p>
                     </div>
                   </div>
@@ -190,7 +225,16 @@ const ResultPage = () => {
         <div className="bg-sky border border-[#ccdff8] rounded-[9px] px-5 py-3 text-center mb-4">
           <p className="text-xs font-bold text-blue uppercase">Pass Criteria</p>
           <p className="text-sm text-navy font-semibold mt-1">
-            Minimum 25 correct answers (out of 50) to qualify for the sponsorship benefit
+            Aptitude: {TEST_CONFIG.aptitude.data.pass}/
+            {TEST_CONFIG.aptitude.data.total} · Tech:{" "}
+            {TEST_CONFIG.technical.data.pass}/{TEST_CONFIG.technical.data.total}{" "}
+            · Coding: {TEST_CONFIG.coding.data.pass}/
+            {TEST_CONFIG.coding.data.total} · Overall Pass: {OVERALL_PASS_MARK}/
+            {TOTAL_MARKS}
+          </p>
+          <p className="text-xs text-navy mt-1">
+            Score above {SCHOLARSHIP_THRESHOLD} to qualify for scholarship
+            benefits
           </p>
         </div>
 

@@ -65,15 +65,33 @@ export interface Question {
   ans: number;
 }
 
+export type CodingQuestion = {
+  id: number;
+  title: string;
+  difficulty: string;
+  description: string;
+  example: string;
+  testCases: { input: any; expected: any }[];
+};
+
 export interface TestData {
   title: string;
   subtitle: string;
   total: number;
   pass: number;
-  questions: Question[];
+  questions: Question[] ;
 }
 
-export type TestType = "aptitude" | "technical";
+export type CodingTestData = {
+  type: "coding";
+  title: string;
+  subtitle: string;
+  total: number;
+  pass: number;
+  questions: CodingQuestion[];
+};
+
+export type TestType = "aptitude" | "technical" | "coding";
 
 export interface TestResult {
   testType: TestType;
@@ -91,6 +109,7 @@ export interface BackendTestResult {
   status: "in_progress" | "completed";
   aptitude_score: number;
   technical_score: number;
+  coding_score: number;
   total_score: number;
   percentage: number;
   submitted_at: string;

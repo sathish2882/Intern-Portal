@@ -82,7 +82,7 @@ const AdminPortalShell = ({ children }: AdminPortalShellProps) => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <header className="border-b border-white/10 bg-[#111827]">
+      <header className="border-b sticky top-0 border-white/10 bg-[#111827]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <NavLink
@@ -126,7 +126,7 @@ const AdminPortalShell = ({ children }: AdminPortalShellProps) => {
             <button
               onClick={handleLogout}
               disabled={loggingOut}
-              className="px-4 py-2 rounded-xl border border-red-400/30 text-red-300 hover:bg-red-500/10 transition-colors text-sm font-semibold"
+              className="px-4 py-2 rounded-xl bg-red-500/30 text-white-300 hover:bg-red-500/50 transition-colors text-sm font-semibold"
             >
               <span className="flex h-5 w-[72px] items-center justify-center">
                 {loggingOut ? (

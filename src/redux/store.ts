@@ -9,7 +9,7 @@ export const store = configureStore({
   },
 })
 
-// 🔥 Save test state to localStorage whenever it changes
+// Save test state to localStorage whenever it changes
 store.subscribe(() => {
   try {
     const state = store.getState();
