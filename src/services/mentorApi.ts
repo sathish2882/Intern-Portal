@@ -1,7 +1,7 @@
 import API from "./authInstance";
 
-export const submitSoftSkillsAssessmentApi = (data: any) => {
-  return API.post("/mentor_assessment/softskills", data);
+export const submitScoreFeedback = (data: any) => {
+  return API.post("/mentor_assessment/save", data);
 };
 
 export const getTypes = () => {

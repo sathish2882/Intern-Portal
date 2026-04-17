@@ -82,7 +82,7 @@ const AdminPortalShell = ({ children }: AdminPortalShellProps) => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <header className="border-b border-white/10 bg-[#111827]">
+      <header className="border-b sticky top-0 border-white/10 bg-[#111827]">
         <div className="max-w-[1280px] mx-auto px-4 lg:px-8 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <NavLink
