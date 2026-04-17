@@ -11,7 +11,6 @@ import {
   FiCheckCircle,
 } from "react-icons/fi";
 import { getCategoriesTechnicalApi, submitScoreFeedback } from "../../services/mentorApi";
-import API from "../../services/authInstance";
 import {
   getBatchesApi,
   getMeApi,
@@ -27,6 +26,12 @@ interface Category {
   totalMarks: number;
   assessmentType: string;
   assessmentTypeId: number;
+  criteria: Criterion[];
+}
+
+interface Criterion {
+  name: string;
+  max: number;
 }
 
 interface Batch {
@@ -37,6 +42,12 @@ interface Batch {
 interface Intern {
   id: number | string;
   name: string;
+}
+
+interface SavedSummary {
+  totalScore: number;
+  totalPct: number;
+  categoryScores: number[];
 }
 
 // No hardcoded categories; will fetch from API
@@ -76,6 +87,7 @@ const TechnicalAssessment = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savedSummary, setSavedSummary] = useState<SavedSummary | null>(null);
   const [selectedBatch, setSelectedBatch] = useState("");
   const [mentorId, setMentorId] = useState("");
 
@@ -125,6 +137,12 @@ const TechnicalAssessment = () => {
           totalMarks: cat.total_marks,
           assessmentType: cat.assessment_type,
           assessmentTypeId: cat.assessment_type_id,
+          criteria: Array.isArray(cat.criteria)
+            ? cat.criteria.map((criterion: any) => ({
+                name: criterion.name,
+                max: criterion.max,
+              }))
+            : [],
         }));
         setCategories(apiCategories);
       } catch (err) {
@@ -177,7 +195,11 @@ const TechnicalAssessment = () => {
     task_details: "",
     category_marks: categories.map((cat) => ({
       category_id: cat.categoryId,
-      marks: 0,
+      criteria_marks: cat.criteria.map((criterion) => ({
+        name: criterion.name,
+        max: criterion.max,
+        marks: 0,
+      })),
     })),
   };
 
@@ -191,9 +213,22 @@ const TechnicalAssessment = () => {
     category_marks: Yup.array().of(
       Yup.object().shape({
         category_id: Yup.number().required(),
-        marks: Yup.number()
-          .min(0, "No negative marks")
-          .required("Marks required"),
+        criteria_marks: Yup.array().of(
+          Yup.object().shape({
+            name: Yup.string().required(),
+            max: Yup.number().required(),
+            marks: Yup.number()
+              .min(0, "No negative marks")
+              .test(
+                "max-criteria-score",
+                "Marks cannot exceed criterion max",
+                function (value) {
+                  return value === undefined || value <= this.parent.max;
+                },
+              )
+              .required("Marks required"),
+          }),
+        ),
       }),
     ),
   });
@@ -203,13 +238,29 @@ const TechnicalAssessment = () => {
     [categories],
   );
 
+  const getCategoryScore = (categoryMark: any) =>
+    (categoryMark?.criteria_marks || []).reduce(
+      (sum: number, criterion: any) => sum + Number(criterion.marks || 0),
+      0,
+    );
+
   // Formik submit handler
   const handleSubmit = async (
     values: any,
-    { setSubmitting, resetForm }: any,
+    { setSubmitting }: any,
   ) => {
     setSaving(true);
     try {
+      const categoryScores = values.category_marks.map((categoryMark: any) =>
+        getCategoryScore(categoryMark),
+      );
+      const totalScore = categoryScores.reduce(
+        (sum: number, score: number) => sum + score,
+        0,
+      );
+      const totalPct =
+        maxTotal > 0 ? Math.round((totalScore / maxTotal) * 100) : 0;
+
       // Prepare payload
       const payload = {
         intern_id: Number(values.intern_id),
@@ -221,15 +272,24 @@ const TechnicalAssessment = () => {
         task_details: values.task_details,
         category_marks: values.category_marks.map((cm: any) => ({
           category_id: Number(cm.category_id),
-          marks: Number(cm.marks),
+          marks: Number(
+            (cm.criteria_marks || []).reduce(
+              (sum: number, criterion: any) => sum + Number(criterion.marks || 0),
+              0,
+            ),
+          ),
         })),
       };
       const response = await submitScoreFeedback(payload);
       console.log("Submitted data:", payload);
       console.log("API response:", response);
       toast.success("Assessment submitted successfully!");
+      setSavedSummary({
+        totalScore,
+        totalPct,
+        categoryScores,
+      });
       setSaved(true);
-      resetForm();
     } catch (err) {
       toast.error("Failed to submit assessment");
     } finally {
@@ -260,14 +320,10 @@ const TechnicalAssessment = () => {
         onSubmit={handleSubmit}
       >
         {({ values, setFieldValue, isSubmitting }) => {
-          // Calculate total and grade
-          const totalScore = values.category_marks.reduce(
-            (s, v) => s + (v.marks || 0),
-            0,
-          );
-          const totalPct =
-            maxTotal > 0 ? Math.round((totalScore / maxTotal) * 100) : 0;
-          const grade = getGrade(totalPct);
+          const displayedTotalScore = savedSummary?.totalScore ?? null;
+          const displayedTotalPct = savedSummary?.totalPct ?? null;
+          const displayedGrade =
+            displayedTotalPct !== null ? getGrade(displayedTotalPct) : null;
           return (
             <Form>
               {/* Header */}
@@ -285,7 +341,10 @@ const TechnicalAssessment = () => {
                   <button
                     type="reset"
                     className="px-3 py-2 rounded-lg text-xs font-semibold text-slate border border-line hover:bg-lightbg transition-colors flex items-center gap-1.5"
-                    onClick={() => setSaved(false)}
+                    onClick={() => {
+                      setSaved(false);
+                      setSavedSummary(null);
+                    }}
                   >
                     <FiRotateCcw className="text-sm" /> Reset
                   </button>
@@ -327,13 +386,13 @@ const TechnicalAssessment = () => {
                       strokeWidth="7"
                       strokeLinecap="round"
                       strokeDasharray={`${2 * Math.PI * 40}`}
-                      strokeDashoffset={`${2 * Math.PI * 40 * (1 - totalPct / 100)}`}
+                      strokeDashoffset={`${2 * Math.PI * 40 * (1 - (displayedTotalPct ?? 0) / 100)}`}
                       className="transition-all duration-700"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-xl font-extrabold text-navy">
-                      {totalScore}
+                      {displayedTotalScore ?? "--"}
                     </span>
                     <span className="text-[10px] text-mist">/ {maxTotal}</span>
                   </div>
@@ -342,46 +401,52 @@ const TechnicalAssessment = () => {
                   <div className="flex items-center gap-2 mb-1">
                     <FiAward className="text-lg text-blue" />
                     <span className="text-sm font-extrabold text-navy">
-                      Overall Score: {totalPct}%
+                      {displayedTotalPct !== null
+                        ? `Overall Score: ${displayedTotalPct}%`
+                        : "Overall Score will appear after save"}
                     </span>
                   </div>
-                  <span
-                    className={`inline-block text-xs font-bold px-3 py-1 rounded-full border ${grade.color}`}
-                  >
-                    {grade.label}
-                  </span>
+                  {displayedGrade && (
+                    <span
+                      className={`inline-block text-xs font-bold px-3 py-1 rounded-full border ${displayedGrade.color}`}
+                    >
+                      {displayedGrade.label}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 w-full sm:w-auto space-y-1.5 sm:pl-6 sm:border-l sm:border-line">
-                  {categories.map((cat, i) => {
-                    const pct =
-                      cat.totalMarks > 0
-                        ? Math.round(
-                            ((values.category_marks[i]?.marks || 0) /
-                              cat.totalMarks) *
-                              100,
-                          )
-                        : 0;
-                    return (
-                      <div
-                        key={cat.categoryId}
-                        className="flex items-center gap-2"
-                      >
-                        <span className="text-[10px] text-slate w-28 truncate">
-                          {cat.categoryName}
-                        </span>
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-blue rounded-full transition-all duration-500"
-                            style={{ width: `${pct}%` }}
-                          />
+                  {savedSummary ? (
+                    categories.map((cat, i) => {
+                      const categoryScore = savedSummary.categoryScores[i] ?? 0;
+                      const pct =
+                        cat.totalMarks > 0
+                          ? Math.round((categoryScore / cat.totalMarks) * 100)
+                          : 0;
+                      return (
+                        <div
+                          key={cat.categoryId}
+                          className="flex items-center gap-2"
+                        >
+                          <span className="text-[10px] text-slate w-28 truncate">
+                            {cat.categoryName}
+                          </span>
+                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-[10px] font-bold text-navy w-14 text-right">
+                            {categoryScore}/{cat.totalMarks}
+                          </span>
                         </div>
-                        <span className="text-[10px] font-bold text-navy w-14 text-right">
-                          {values.category_marks[i]?.marks || 0}/
-                          {cat.totalMarks}
-                        </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  ) : (
+                    <div className="text-xs text-mist">
+                      Category scores will appear here after saving the assessment.
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -504,31 +569,67 @@ const TechnicalAssessment = () => {
                             </div>
                           </div>
                           <span className="text-xs font-bold text-navy">
-                            {values.category_marks[catIdx]?.marks || 0}/
-                            {cat.totalMarks}
+                            {(values.category_marks[catIdx]?.criteria_marks || []).reduce(
+                              (sum: number, criterion: any) =>
+                                sum + Number(criterion.marks || 0),
+                              0,
+                            )}
+                            /{cat.totalMarks}
                           </span>
                         </div>
                         <div className="px-5 pb-5 border-t border-line pt-4">
-                          <Field
-                            name={`category_marks[${catIdx}].marks`}
-                            type="range"
-                            min={0}
-                            max={cat.totalMarks}
-                            step={1}
-                            value={values.category_marks[catIdx]?.marks || 0}
-                            onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>,
-                            ) =>
-                              setFieldValue(
-                                `category_marks[${catIdx}].marks`,
-                                Number(e.target.value),
-                              )
-                            }
-                            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-gray-100 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-sm [&::-moz-range-thumb]:cursor-pointer"
-                            style={{
-                              background: `linear-gradient(to right, #1d6ede ${(values.category_marks[catIdx]?.marks / cat.totalMarks) * 100}%, #f0f2f5 ${(values.category_marks[catIdx]?.marks / cat.totalMarks) * 100}%)`,
-                            }}
-                          />
+                          <div className="space-y-4">
+                            {(cat.criteria || []).map((criterion, criterionIdx) => {
+                              const criterionScore =
+                                values.category_marks[catIdx]?.criteria_marks?.[
+                                  criterionIdx
+                                ]?.marks || 0;
+                              const fillPct =
+                                criterion.max > 0
+                                  ? (criterionScore / criterion.max) * 100
+                                  : 0;
+
+                              return (
+                                <div key={`${cat.categoryId}-${criterion.name}`}>
+                                  <div className="flex items-center justify-between gap-3 mb-2">
+                                    <div>
+                                      <p className="text-xs font-semibold text-navy">
+                                        {criterion.name}
+                                      </p>
+                                      <p className="text-[11px] text-mist">
+                                        Max {criterion.max} pts
+                                      </p>
+                                    </div>
+                                    <span className="text-xs font-bold text-navy">
+                                      {criterionScore}/{criterion.max}
+                                    </span>
+                                  </div>
+                                  <Field
+                                    name={`category_marks[${catIdx}].criteria_marks[${criterionIdx}].marks`}
+                                    type="range"
+                                    min={0}
+                                    max={criterion.max}
+                                    step={1}
+                                    value={criterionScore}
+                                    onChange={(
+                                      e: React.ChangeEvent<HTMLInputElement>,
+                                    ) => {
+                                      setSaved(false);
+                                      setSavedSummary(null);
+                                      setFieldValue(
+                                        `category_marks[${catIdx}].criteria_marks[${criterionIdx}].marks`,
+                                        Number(e.target.value),
+                                      );
+                                    }}
+                                    className="w-full h-2 rounded-full appearance-none cursor-pointer bg-gray-100 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-sm [&::-moz-range-thumb]:cursor-pointer"
+                                    style={{
+                                      background: `linear-gradient(to right, #1d6ede ${fillPct}%, #f0f2f5 ${fillPct}%)`,
+                                    }}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
                     ))
@@ -540,13 +641,17 @@ const TechnicalAssessment = () => {
               <div className="sticky bottom-0 mt-5 bg-white/80 backdrop-blur-sm border border-line rounded-2xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-extrabold text-navy">
-                    Total: {totalScore}/{maxTotal}
+                    {displayedTotalScore !== null
+                      ? `Total: ${displayedTotalScore}/${maxTotal}`
+                      : `Total will appear after save / ${maxTotal}`}
                   </span>
-                  <span
-                    className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${grade.color}`}
-                  >
-                    {grade.label}
-                  </span>
+                  {displayedGrade && (
+                    <span
+                      className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${displayedGrade.color}`}
+                    >
+                      {displayedGrade.label}
+                    </span>
+                  )}
                 </div>
                 <button
                   type="submit"
